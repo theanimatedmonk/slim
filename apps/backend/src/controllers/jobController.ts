@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { getJobStatus } from '../services/jobService.js';
 import { createSignedDownloadUrl } from '../services/storageService.js';
 import { supabase } from '../db/supabase.js';
+import { scheduleQueueProcessing } from '../services/processQueueService.js';
 function routeParam(value: string | string[] | undefined): string | undefined {
   if (value === undefined) return undefined;
   return Array.isArray(value) ? value[0] : value;
@@ -70,25 +71,13 @@ export async function requestBundleDownload(req: Request, res: Response) {
 
     const bundleJobId = crypto.randomUUID();
 
-    const { optimizationQueue } = await import('../queues/optimizationQueue.js');
-    await optimizationQueue.add(
-      'generate-zip',
-      {
-        type: 'generate-zip',
-        assetId: assetIds[0],
-        jobId: bundleJobId,
-        bundleJobId,
-        assetIds,
-      },
-      { jobId: bundleJobId }
-    );
-
     await supabase.from('zip_bundles').insert({
       id: bundleJobId,
       asset_ids: assetIds,
       status: 'processing',
     });
 
+    scheduleQueueProcessing();
     res.status(202).json({ jobId: bundleJobId });
   } catch (err) {
     console.error('bundle request error:', err);

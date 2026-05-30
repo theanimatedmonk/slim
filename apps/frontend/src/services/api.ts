@@ -8,10 +8,10 @@ import type {
   UploadUrlResponse,
 } from '@asset-optimiser/shared-types';
 
-// Dev: use Vite proxy (same origin). Prod: set VITE_API_URL to Render API URL.
-const API_URL =
-  import.meta.env.VITE_API_URL ??
-  (import.meta.env.DEV ? '' : 'http://localhost:3001');
+// Dev: always use Vite proxy (same origin, no CORS). Prod: VITE_API_URL on Vercel.
+const API_URL = import.meta.env.DEV
+  ? ''
+  : (import.meta.env.VITE_API_URL ?? 'http://localhost:3001');
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}/api${path}`, {

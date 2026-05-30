@@ -2,11 +2,15 @@ import type { Job, JobPass, JobStatusResponse, OptimizationReport } from '@asset
 import { supabase } from '../db/supabase.js';
 import { getAsset } from './assetService.js';
 
-export async function createJob(assetId: string): Promise<Job> {
+export async function createJob(
+  assetId: string,
+  jobType: 'optimize' | 'convert-webp' = 'optimize'
+): Promise<Job> {
   const { data, error } = await supabase
     .from('jobs')
     .insert({
       asset_id: assetId,
+      job_type: jobType,
       status: 'queued',
       passes: 0,
       reduction_percent: 0,

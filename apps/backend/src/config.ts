@@ -19,5 +19,5 @@ export const config = {
   supabaseUrl: requireEnv('SUPABASE_URL'),
   supabaseServiceKey: requireEnv('SUPABASE_SERVICE_ROLE_KEY'),
   storageBucket: process.env.SUPABASE_STORAGE_BUCKET ?? 'assets',
-  redisUrl: process.env.REDIS_URL ?? 'redis://localhost:6379',
+  cronSecret: requireEnv('CRON_SECRET'),
 };

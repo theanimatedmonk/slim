@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
-import { optimizationQueue } from '../queues/optimizationQueue.js';
 import { getAsset, updateAssetStatus } from '../services/assetService.js';
 import { createJob } from '../services/jobService.js';
+import { scheduleQueueProcessing } from '../services/processQueueService.js';
 
 export async function convertToWebp(req: Request, res: Response) {
   try {
@@ -18,15 +18,10 @@ export async function convertToWebp(req: Request, res: Response) {
       return;
     }
 
-    const job = await createJob(assetId);
+    const job = await createJob(assetId, 'convert-webp');
     await updateAssetStatus(assetId, 'converting');
 
-    await optimizationQueue.add(
-      'convert-webp',
-      { type: 'convert-webp', assetId, jobId: job.id },
-      { jobId: `webp-${job.id}` }
-    );
-
+    scheduleQueueProcessing();
     res.status(202).json({ jobId: job.id });
   } catch (err) {
     console.error('convert-webp error:', err);

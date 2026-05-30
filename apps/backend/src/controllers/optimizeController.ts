@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
-import { optimizationQueue } from '../queues/optimizationQueue.js';
 import { getAsset, listAssets, updateAssetStatus } from '../services/assetService.js';
 import { createJob } from '../services/jobService.js';
+import { scheduleQueueProcessing } from '../services/processQueueService.js';
 
 export async function startOptimization(req: Request, res: Response) {
   try {
@@ -21,18 +21,12 @@ export async function startOptimization(req: Request, res: Response) {
         return;
       }
 
-      const job = await createJob(assetId);
+      const job = await createJob(assetId, 'optimize');
       await updateAssetStatus(assetId, 'queued');
-
-      await optimizationQueue.add(
-        'optimize',
-        { type: 'optimize', assetId, jobId: job.id },
-        { jobId: job.id }
-      );
-
       jobIds.push(job.id);
     }
 
+    scheduleQueueProcessing();
     res.status(202).json({ jobIds });
   } catch (err) {
     console.error('optimize error:', err);

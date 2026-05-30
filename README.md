@@ -17,9 +17,9 @@ No manual SVGO settings — upload and the system handles the rest.
 ```text
 Upload SVG → Supabase Storage
      ↓
-Optimization queue (Redis + BullMQ)
+Job queued in Postgres
      ↓
-Worker: SVGO passes → complexity check → store result
+Cron (or instant trigger) → API processes SVGO / WebP / ZIP
      ↓
 Download optimized SVG / WebP / bundle
 ```
@@ -29,15 +29,13 @@ Download optimized SVG / WebP / bundle
 | Layer | Stack |
 |-------|--------|
 | Frontend | React, Vite, Tailwind CSS, TanStack Query |
-| API | Node.js, Express |
-| Worker | BullMQ, SVGO, Sharp, archiver |
+| API | Node.js, Express, SVGO, Sharp, archiver |
 | Data | Supabase (Postgres + Storage) |
-| Queue | Redis |
+| Queue | Postgres `jobs` table + cron HTTP trigger |
 
 ## Prerequisites
 
 - **Node.js 20+**
-- **Redis** (local: [Homebrew](https://brew.sh) `brew install redis` or Docker)
 - **Supabase** project (free tier is fine)
 
 ## Local setup
@@ -62,11 +60,11 @@ cp .env.example .env
 |----------|-------------|
 | `SUPABASE_URL` | Supabase project URL (Settings → API) |
 | `SUPABASE_SERVICE_ROLE_KEY` | **service_role** secret key (not `anon`) |
-| `SUPABASE_STORAGE_BUCKET` | `assets` |
-| `REDIS_URL` | `redis://localhost:6379` (default) |
+| `CRON_SECRET` | Random secret for `POST /api/cron/process-jobs` |
+| `SUPABASE_STORAGE_BUCKET` | `assets` (optional, default in code) |
 | `PORT` | API port (default `3001`) |
 | `FRONTEND_URL` | `http://localhost:5173` |
-| `VITE_API_URL` | `http://localhost:3001` |
+| `VITE_API_URL` | Only needed for **production** builds (Vercel). Leave unset locally — Vite proxies `/api` |
 
 > **Security:** Never commit `.env` or share your `service_role` key. It is listed in `.gitignore` and must stay on your machine only.
 
@@ -75,32 +73,17 @@ cp .env.example .env
 1. **SQL Editor** — run migrations in order:
    - `supabase/migrations/001_initial.sql`
    - `supabase/migrations/002_grants_and_policies.sql`
+   - `supabase/migrations/003_job_type.sql`
 2. When prompted about RLS, choose **Run and enable RLS**.
 3. **Storage** → create a **private** bucket named `assets` (all toggles off).
 
-### 4. Start Redis
-
-**Homebrew (macOS):**
-
-```bash
-brew install redis
-brew services start redis
-redis-cli ping   # should return PONG
-```
-
-**Docker (optional):**
-
-```bash
-docker compose up -d
-```
-
-### 5. Run the app
+### 4. Run the app
 
 ```bash
 npm run dev
 ```
 
-This builds shared packages, then starts the API, worker, and frontend together.
+This builds shared packages, then starts the API and frontend. Jobs process automatically when you click **Optimize** (or via the cron endpoint).
 
 | Service | URL |
 |---------|-----|
@@ -111,8 +94,14 @@ This builds shared packages, then starts the API, worker, and frontend together.
 
 ```bash
 npm run dev:backend
-npm run dev:worker
 npm run dev:frontend
+```
+
+### Manual cron (optional)
+
+```bash
+curl -X POST http://localhost:3001/api/cron/process-jobs \
+  -H "Authorization: Bearer YOUR_CRON_SECRET"
 ```
 
 ## Using the app
@@ -149,13 +138,14 @@ Scoring checks file size (&gt;250KB), long paths, node count, gradients, filters
 | `POST` | `/api/convert-webp` | Queue WebP conversion |
 | `POST` | `/api/download` | Queue ZIP bundle |
 | `GET` | `/api/download/:jobId` | Signed ZIP download URL |
+| `POST` | `/api/cron/process-jobs` | Process queued jobs (Bearer `CRON_SECRET`) |
 
 ## Project structure
 
 ```text
 apps/frontend          Web UI
 apps/backend           REST API
-apps/worker            Optimization worker
+apps/worker            (legacy, not required — processing runs in API)
 packages/shared-types  Shared TypeScript types
 packages/shared-utils  Shared constants and helpers
 supabase/migrations    Database SQL
@@ -167,7 +157,7 @@ supabase/migrations    Database SQL
 |-------|-------------|
 | `Failed to fetch` | Ensure `npm run dev` shows backend on port 3001; visit `/health` |
 | `permission denied for table assets` | Run `002_grants_and_policies.sql`; use **service_role** key in `.env` |
-| Jobs stay queued | Redis running? `redis-cli ping` → `PONG` |
+| Jobs stay queued | Hit cron endpoint or wait for Cron-Job.org; check API logs |
 | `buildStoragePath` / module errors | `npm run build -w @asset-optimiser/shared-utils` then restart `npm run dev` |
 | npm `ECONNREFUSED` to registry | VPN off; check network / proxy |
 

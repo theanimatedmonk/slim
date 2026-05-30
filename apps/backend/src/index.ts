@@ -7,7 +7,22 @@ const app = express();
 
 app.use(
   cors({
-    origin: config.frontendUrl,
+    origin(origin, callback) {
+      // Local dev: allow any localhost port (Vite may use 5174 if 5173 is busy)
+      if (
+        !origin ||
+        /^http:\/\/localhost:\d+$/.test(origin) ||
+        /^http:\/\/127\.0\.0\.1:\d+$/.test(origin)
+      ) {
+        callback(null, true);
+        return;
+      }
+      if (origin === config.frontendUrl) {
+        callback(null, true);
+        return;
+      }
+      callback(null, false);
+    },
     credentials: true,
   })
 );
