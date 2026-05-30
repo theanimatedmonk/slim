@@ -4,7 +4,10 @@ import { redisConnection } from './connection.js';
 
 export const OPTIMIZATION_QUEUE_NAME = 'asset-optimization';
 
-export const optimizationQueue = new Queue<QueueJobPayload>(
-  OPTIMIZATION_QUEUE_NAME,
-  { connection: redisConnection }
-);
+export type OptimizationJobName = 'optimize' | 'convert-webp' | 'generate-zip';
+
+export const optimizationQueue = new Queue<
+  QueueJobPayload,
+  void,
+  OptimizationJobName
+>(OPTIMIZATION_QUEUE_NAME, { connection: redisConnection });

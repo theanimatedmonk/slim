@@ -1,5 +1,4 @@
 import { Worker } from 'bullmq';
-import IORedis from 'ioredis';
 import type { QueueJobPayload } from '@asset-optimiser/shared-types';
 import { config } from '../config.js';
 import { processOptimization } from '../processors/optimizeProcessor.js';
@@ -10,10 +9,6 @@ import { supabase } from '../db/supabase.js';
 export const OPTIMIZATION_QUEUE_NAME = 'asset-optimization';
 
 export function startOptimizationWorker(): Worker<QueueJobPayload> {
-  const connection = new IORedis(config.redisUrl, {
-    maxRetriesPerRequest: null,
-  });
-
   const worker = new Worker<QueueJobPayload>(
     OPTIMIZATION_QUEUE_NAME,
     async (job) => {
@@ -37,7 +32,10 @@ export function startOptimizationWorker(): Worker<QueueJobPayload> {
       }
     },
     {
-      connection,
+      connection: {
+        url: config.redisUrl,
+        maxRetriesPerRequest: null,
+      },
       concurrency: 2,
     }
   );

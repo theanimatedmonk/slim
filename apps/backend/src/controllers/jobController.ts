@@ -2,11 +2,18 @@ import type { Request, Response } from 'express';
 import { getJobStatus } from '../services/jobService.js';
 import { createSignedDownloadUrl } from '../services/storageService.js';
 import { supabase } from '../db/supabase.js';
-import { config } from '../config.js';
+function routeParam(value: string | string[] | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  return Array.isArray(value) ? value[0] : value;
+}
 
 export async function getJob(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = routeParam(req.params.id);
+    if (!id) {
+      res.status(400).json({ error: 'Job id is required' });
+      return;
+    }
     const status = await getJobStatus(id);
 
     if (!status) {
@@ -25,7 +32,11 @@ export async function getJob(req: Request, res: Response) {
 
 export async function downloadBundle(req: Request, res: Response) {
   try {
-    const { jobId } = req.params;
+    const jobId = routeParam(req.params.jobId);
+    if (!jobId) {
+      res.status(400).json({ error: 'Job id is required' });
+      return;
+    }
 
     const { data: zipRow } = await supabase
       .from('zip_bundles')

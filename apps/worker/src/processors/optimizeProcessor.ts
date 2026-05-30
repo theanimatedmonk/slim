@@ -1,4 +1,4 @@
-import { optimize } from 'svgo';
+import { optimize, type Config } from 'svgo';
 import {
   calculateReductionPercent,
   isStabilized,
@@ -21,7 +21,7 @@ const svgoConfig = {
       },
     },
   ],
-};
+} satisfies Config;
 
 export async function processOptimization(
   assetId: string,
