@@ -1,0 +1,6 @@
+{
+  "installCommand": "npm install",
+  "buildCommand": "npm run build -w @asset-optimiser/shared-types && npm run build -w @asset-optimiser/shared-utils && npm run build -w @asset-optimiser/frontend",
+  "outputDirectory": "apps/frontend/dist",
+  "framework": "vite"
+}
