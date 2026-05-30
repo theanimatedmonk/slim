@@ -1,67 +1,113 @@
 # Android Asset Optimiser
 
-An asynchronous SVG optimisation pipeline for Android assets. Upload SVGs, the system optimizes automatically until stabilization, analyzes complexity, recommends WebP when needed, and generates downloadable bundles.
+Upload SVG assets. The pipeline optimizes them automatically until size reduction stabilizes, analyzes complexity, recommends WebP when appropriate, and lets you download optimized bundles.
 
-## Architecture
+No manual SVGO settings — upload and the system handles the rest.
+
+## Features
+
+- Drag-and-drop SVG upload (batch supported)
+- Iterative **SVGO** optimization until stabilization (&lt;1% improvement per pass, max 8 passes)
+- **Complexity analysis** after optimization (`simple` / `moderate` / `complex`)
+- **WebP conversion** recommended for complex SVGs or embedded raster images
+- ZIP download with `/svg`, `/webp`, and `report.json`
+
+## How it works
 
 ```text
-apps/frontend     React + Vite + Tailwind + TanStack Query
-apps/backend      Express API + BullMQ producer
-apps/worker       BullMQ worker (SVGO, Sharp, archiver)
-packages/shared-* Shared types and utilities
+Upload SVG → Supabase Storage
+     ↓
+Optimization queue (Redis + BullMQ)
+     ↓
+Worker: SVGO passes → complexity check → store result
+     ↓
+Download optimized SVG / WebP / bundle
 ```
+
+## Tech stack
+
+| Layer | Stack |
+|-------|--------|
+| Frontend | React, Vite, Tailwind CSS, TanStack Query |
+| API | Node.js, Express |
+| Worker | BullMQ, SVGO, Sharp, archiver |
+| Data | Supabase (Postgres + Storage) |
+| Queue | Redis |
 
 ## Prerequisites
 
-- Node.js 20+
-- Docker (for local Redis)
-- Supabase project (Postgres + Storage)
+- **Node.js 20+**
+- **Redis** (local: [Homebrew](https://brew.sh) `brew install redis` or Docker)
+- **Supabase** project (free tier is fine)
 
-## Quick Start
+## Local setup
 
-### 1. Install dependencies
+### 1. Clone and install
 
 ```bash
+git clone <your-repo-url>
+cd asset-optimiser
 npm install
 ```
 
-### 2. Configure environment
+### 2. Environment variables
 
-Copy `.env.example` to `.env` at the repo root and fill in Supabase credentials:
+Copy the example file and fill in your values:
 
 ```bash
 cp .env.example .env
 ```
 
-### 3. Set up Supabase
+| Variable | Description |
+|----------|-------------|
+| `SUPABASE_URL` | Supabase project URL (Settings → API) |
+| `SUPABASE_SERVICE_ROLE_KEY` | **service_role** secret key (not `anon`) |
+| `SUPABASE_STORAGE_BUCKET` | `assets` |
+| `REDIS_URL` | `redis://localhost:6379` (default) |
+| `PORT` | API port (default `3001`) |
+| `FRONTEND_URL` | `http://localhost:5173` |
+| `VITE_API_URL` | `http://localhost:3001` |
 
-1. Run the SQL migration in `supabase/migrations/001_initial.sql` in the Supabase SQL editor.
-2. Create a storage bucket named `assets` (or match `SUPABASE_STORAGE_BUCKET`).
-3. Ensure bucket policies allow signed uploads/downloads via the service role.
+> **Security:** Never commit `.env` or share your `service_role` key. It is listed in `.gitignore` and must stay on your machine only.
+
+### 3. Supabase database and storage
+
+1. **SQL Editor** — run migrations in order:
+   - `supabase/migrations/001_initial.sql`
+   - `supabase/migrations/002_grants_and_policies.sql`
+2. When prompted about RLS, choose **Run and enable RLS**.
+3. **Storage** → create a **private** bucket named `assets` (all toggles off).
 
 ### 4. Start Redis
+
+**Homebrew (macOS):**
+
+```bash
+brew install redis
+brew services start redis
+redis-cli ping   # should return PONG
+```
+
+**Docker (optional):**
 
 ```bash
 docker compose up -d
 ```
 
-### 5. Build shared packages
-
-```bash
-npm run build -w @asset-optimiser/shared-types
-npm run build -w @asset-optimiser/shared-utils
-```
-
-### 6. Run all services
+### 5. Run the app
 
 ```bash
 npm run dev
 ```
 
-- Frontend: http://localhost:5173
-- API: http://localhost:3001
+This builds shared packages, then starts the API, worker, and frontend together.
 
-Or run individually:
+| Service | URL |
+|---------|-----|
+| App | http://localhost:5173 |
+| API health | http://localhost:3001/health |
+
+### Run services separately
 
 ```bash
 npm run dev:backend
@@ -69,42 +115,62 @@ npm run dev:worker
 npm run dev:frontend
 ```
 
-## API Endpoints
+## Using the app
+
+1. Open http://localhost:5173
+2. Drop one or more `.svg` files
+3. Go to **Workspace** → **Optimize All**
+4. Watch status, pass count, reduction %, and complexity per asset
+5. Open a row for pass-by-pass details
+6. Use **Convert to WebP** when recommended (complex SVGs or embedded images)
+7. **Download Bundle** for a ZIP of optimized assets
+
+## Complexity levels
+
+After optimization stabilizes, the worker scores the SVG:
+
+| Level | Score | WebP recommended? |
+|-------|-------|-------------------|
+| Simple | 0–1 | No |
+| Moderate | 2–4 | Only if embedded base64 image detected |
+| Complex | 5+ | Yes |
+
+Scoring checks file size (&gt;250KB), long paths, node count, gradients, filters, masks, clip paths, and embedded raster images.
+
+## API reference
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/upload-url` | Get signed upload URL |
-| POST | `/api/assets/register` | Register asset after upload |
-| GET | `/api/assets` | List assets with job data |
-| POST | `/api/optimize` | Queue optimization jobs |
-| GET | `/api/job/:id` | Job status and passes |
-| POST | `/api/convert-webp` | Queue WebP conversion |
-| POST | `/api/download` | Queue ZIP bundle generation |
-| GET | `/api/download/:jobId` | Get signed ZIP download URL |
+| `POST` | `/api/upload-url` | Signed upload URL |
+| `POST` | `/api/assets/register` | Register asset after upload |
+| `GET` | `/api/assets` | List assets with jobs |
+| `POST` | `/api/optimize` | Queue optimization |
+| `GET` | `/api/job/:id` | Job status and passes |
+| `POST` | `/api/convert-webp` | Queue WebP conversion |
+| `POST` | `/api/download` | Queue ZIP bundle |
+| `GET` | `/api/download/:jobId` | Signed ZIP download URL |
 
-## Optimization Engine
+## Project structure
 
-- **SVGO** with multipass until stabilization (<1% size delta per pass)
-- Max **8 passes** with validation rollback on invalid output
-- **Complexity analysis** after stabilization (size, paths, gradients, filters, base64)
-- **Sharp** for WebP conversion (quality 80)
-- **archiver** for ZIP bundles (`/svg`, `/webp`, `report.json`)
+```text
+apps/frontend          Web UI
+apps/backend           REST API
+apps/worker            Optimization worker
+packages/shared-types  Shared TypeScript types
+packages/shared-utils  Shared constants and helpers
+supabase/migrations    Database SQL
+```
 
-## Deployment (Supabase + Render)
+## Troubleshooting
 
-**Full step-by-step guide:** [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+| Issue | What to try |
+|-------|-------------|
+| `Failed to fetch` | Ensure `npm run dev` shows backend on port 3001; visit `/health` |
+| `permission denied for table assets` | Run `002_grants_and_policies.sql`; use **service_role** key in `.env` |
+| Jobs stay queued | Redis running? `redis-cli ping` → `PONG` |
+| `buildStoragePath` / module errors | `npm run build -w @asset-optimiser/shared-utils` then restart `npm run dev` |
+| npm `ECONNREFUSED` to registry | VPN off; check network / proxy |
 
-Quick overview:
+## License
 
-1. **Supabase** — run `supabase/migrations/001_initial.sql`, create private bucket `assets`, copy URL + service role key
-2. **Redis** — Render Redis or Upstash; set `REDIS_URL` on API and worker (must match)
-3. **Render** — Web Service (API) + Background Worker + optional Static Site
-4. Wire env vars: `FRONTEND_URL` on API, `VITE_API_URL` on frontend
-
-Optional: deploy all Render services via [render.yaml](render.yaml) (Blueprint).
-
-## MVP Scope
-
-Included: SVG uploads, batch optimization, stabilization, complexity analysis, WebP recommendation, ZIP downloads.
-
-Excluded: Auth, team workspaces, manual SVGO controls, SVG editing, CI/CD, VectorDrawable export.
+Private / all rights reserved — update as needed.
