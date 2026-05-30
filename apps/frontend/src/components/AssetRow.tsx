@@ -1,0 +1,100 @@
+import type { AssetWithJob } from '@asset-optimiser/shared-types';
+import { formatBytes, calculateReductionPercent } from '../utils/format';
+import { complexityColor, statusLabel } from '../utils/format';
+import { shouldRecommendWebp } from '../hooks/useAssets';
+
+interface Props {
+  asset: AssetWithJob;
+  onSelect: (asset: AssetWithJob) => void;
+  onConvertWebp: (assetId: string) => void;
+  onDownload: (asset: AssetWithJob) => void;
+  isConverting?: boolean;
+}
+
+export default function AssetRow({
+  asset,
+  onSelect,
+  onConvertWebp,
+  onDownload,
+  isConverting,
+}: Props) {
+  const reduction =
+    asset.optimized_size != null
+      ? calculateReductionPercent(asset.original_size, asset.optimized_size)
+      : null;
+
+  const recommendWebp = shouldRecommendWebp(asset);
+
+  return (
+    <tr
+      className="border-b border-border hover:bg-white/5 cursor-pointer transition-colors"
+      onClick={() => onSelect(asset)}
+    >
+      <td className="py-3 px-4">
+        <div className="w-10 h-10 rounded bg-brand-500/20 flex items-center justify-center text-xs text-brand-500 font-mono">
+          SVG
+        </div>
+      </td>
+      <td className="py-3 px-4 font-medium truncate max-w-[180px]">
+        {asset.filename}
+      </td>
+      <td className="py-3 px-4 text-gray-400 text-sm">
+        {formatBytes(asset.original_size)}
+      </td>
+      <td className="py-3 px-4">
+        <span
+          className={`text-xs px-2 py-1 rounded-full ${
+            asset.status === 'optimizing'
+              ? 'text-brand-400 bg-brand-400/10 animate-pulse'
+              : 'text-gray-300 bg-gray-700/50'
+          }`}
+        >
+          {statusLabel(asset.status)}
+        </span>
+      </td>
+      <td className="py-3 px-4 text-sm text-gray-400">
+        {asset.job?.passes ?? '—'}
+      </td>
+      <td className="py-3 px-4 text-sm">
+        {reduction != null ? (
+          <span className="text-emerald-400">↓ {reduction}%</span>
+        ) : (
+          '—'
+        )}
+      </td>
+      <td className="py-3 px-4">
+        <span
+          className={`text-xs px-2 py-1 rounded-full capitalize ${complexityColor(asset.complexity)}`}
+        >
+          {asset.complexity}
+        </span>
+      </td>
+      <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
+        {asset.status === 'complete' && (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => onDownload(asset)}
+              className="text-xs px-3 py-1.5 rounded-md bg-brand-600 hover:bg-brand-500 text-white"
+            >
+              Download
+            </button>
+            {recommendWebp && !asset.webp_path && (
+              <button
+                type="button"
+                disabled={isConverting}
+                onClick={() => onConvertWebp(asset.id)}
+                className="text-xs px-3 py-1.5 rounded-md border border-amber-500/50 text-amber-400 hover:bg-amber-500/10 disabled:opacity-50"
+              >
+                Convert to WebP
+              </button>
+            )}
+            {asset.webp_path && (
+              <span className="text-xs text-emerald-400 self-center">WebP ready</span>
+            )}
+          </div>
+        )}
+      </td>
+    </tr>
+  );
+}

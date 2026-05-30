@@ -1,0 +1,73 @@
+# Render Blueprint — optional one-click deploy
+# Docs: https://render.com/docs/blueprint-spec
+#
+# After connecting repo in Render: New > Blueprint > select this file
+# Fill in SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY when prompted
+
+services:
+  - type: web
+    name: asset-optimiser-api
+    runtime: node
+    plan: free
+    buildCommand: >-
+      npm install &&
+      npm run build -w @asset-optimiser/shared-types &&
+      npm run build -w @asset-optimiser/shared-utils &&
+      npm run build -w @asset-optimiser/backend
+    startCommand: npm run start -w @asset-optimiser/backend
+    healthCheckPath: /health
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: assets
+      - key: FRONTEND_URL
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          name: asset-optimiser-redis
+          type: redis
+          property: connectionString
+
+  - type: worker
+    name: asset-optimiser-worker
+    runtime: node
+    plan: free
+    buildCommand: >-
+      npm install &&
+      npm run build -w @asset-optimiser/shared-types &&
+      npm run build -w @asset-optimiser/shared-utils &&
+      npm run build -w @asset-optimiser/worker
+    startCommand: npm run start -w @asset-optimiser/worker
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: assets
+      - key: REDIS_URL
+        fromService:
+          name: asset-optimiser-redis
+          type: redis
+          property: connectionString
+
+  - type: redis
+    name: asset-optimiser-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+
+  - type: web
+    name: asset-optimiser-frontend
+    runtime: static
+    buildCommand: >-
+      npm install &&
+      npm run build -w @asset-optimiser/shared-types &&
+      npm run build -w @asset-optimiser/shared-utils &&
+      npm run build -w @asset-optimiser/frontend
+    staticPublishPath: apps/frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false
