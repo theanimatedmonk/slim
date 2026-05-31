@@ -2,16 +2,24 @@ import archiver from 'archiver';
 import { PassThrough } from 'node:stream';
 import { supabase } from '../db/supabase.js';
 import { downloadFile, uploadFile, zipPath } from '../services/storageService.js';
+import {
+  buildBundleReportPdf,
+  buildReportRows,
+} from '../utils/bundleReportPdf.js';
 
 interface AssetRow {
   id: string;
   filename: string;
-  original_path: string;
+  original_path: string | null;
   optimized_path: string | null;
   webp_path: string | null;
   original_size: number;
   optimized_size: number | null;
   complexity: string;
+}
+
+interface OptReportRow {
+  base64_detected: boolean;
 }
 
 export async function processZipBundle(
@@ -41,42 +49,68 @@ export async function processZipBundle(
 
   archive.pipe(passThrough);
 
-  const report: Record<string, unknown> = {
-    generatedAt: new Date().toISOString(),
-    assets: [] as unknown[],
-  };
+  const reportInputs: Array<{
+    filename: string;
+    original_size: number;
+    optimized_size: number | null;
+    complexity: string;
+    webp_path: string | null;
+    base64_detected?: boolean;
+  }> = [];
+
+  let includeWebpsFolder = false;
 
   for (const asset of assets as AssetRow[]) {
     const svgPath = asset.optimized_path ?? asset.original_path;
     if (!svgPath) continue;
-    const svgBuffer = await downloadFile(svgPath);
-    archive.append(svgBuffer, { name: `svg/${asset.filename}` });
 
-    if (asset.webp_path) {
-      const webpBuffer = await downloadFile(asset.webp_path);
-      const webpName = asset.filename.replace(/\.svg$/i, '.webp');
-      archive.append(webpBuffer, { name: `webp/${webpName}` });
-    }
+    const svgBuffer = await downloadFile(svgPath);
+    archive.append(svgBuffer, { name: `svgs/${asset.filename}` });
 
     const { data: optReport } = await supabase
       .from('optimization_reports')
-      .select()
+      .select('base64_detected')
       .eq('asset_id', asset.id)
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
 
-    (report.assets as unknown[]).push({
-      id: asset.id,
+    const base64Detected = (optReport as OptReportRow | null)?.base64_detected ?? false;
+    const webpRecommended =
+      asset.complexity === 'complex' || base64Detected;
+
+    if (webpRecommended) {
+      includeWebpsFolder = true;
+    }
+
+    if (asset.webp_path) {
+      includeWebpsFolder = true;
+      const webpBuffer = await downloadFile(asset.webp_path);
+      const webpName = asset.filename.replace(/\.svg$/i, '.webp');
+      archive.append(webpBuffer, { name: `webps/${webpName}` });
+    }
+
+    reportInputs.push({
       filename: asset.filename,
-      originalSize: asset.original_size,
-      optimizedSize: asset.optimized_size,
+      original_size: asset.original_size,
+      optimized_size: asset.optimized_size,
       complexity: asset.complexity,
-      report: optReport,
+      webp_path: asset.webp_path,
+      base64_detected: base64Detected,
     });
   }
 
-  archive.append(JSON.stringify(report, null, 2), { name: 'report.json' });
+  const { rows, summary } = buildReportRows(reportInputs);
+  const pdfBuffer = await buildBundleReportPdf(rows, summary);
+  archive.append(pdfBuffer, { name: 'report/optimization-report.pdf' });
+
+  if (includeWebpsFolder && summary.webpIncludedCount === 0) {
+    archive.append(
+      'These assets are recommended for WebP conversion. Convert them in the workspace, then download the bundle again to include WebP files.\n',
+      { name: 'webps/README.txt' }
+    );
+  }
+
   await archive.finalize();
 
   const zipBuffer = await zipDone;
