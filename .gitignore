@@ -12,3 +12,4 @@ coverage
 docs/DEPLOYMENT.md
 docs/AUTH_SETUP.md
 render.yaml
+*.tsbuildinfo
