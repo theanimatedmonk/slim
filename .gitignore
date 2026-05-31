@@ -8,6 +8,7 @@ dist
 coverage
 .turbo
 
-# Maintainer-only deployment notes (not published)
+# Maintainer-only notes (not published)
 docs/DEPLOYMENT.md
+docs/AUTH_SETUP.md
 render.yaml
