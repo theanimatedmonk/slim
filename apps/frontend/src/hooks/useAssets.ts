@@ -23,6 +23,7 @@ export function useOptimizeAssets() {
     mutationFn: (assetIds: string[]) => startOptimization(assetIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ['asset-previews'] });
     },
   });
 }
@@ -47,6 +48,7 @@ export function useDeleteAsset() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ['asset-previews'] });
     },
   });
 }
@@ -58,6 +60,7 @@ export function useConvertWebp() {
     mutationFn: (assetId: string) => convertToWebp(assetId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ['asset-previews'] });
     },
   });
 }

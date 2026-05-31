@@ -107,6 +107,29 @@ export interface RegisterAssetRequest {
   size: number;
 }
 
+export type AssetPreviewKind = 'svg' | 'webp';
+
+export interface AssetPreview {
+  url: string;
+  kind: AssetPreviewKind;
+}
+
+/** Signed preview URLs for an asset (thumbnail + optional variants). */
+export interface AssetPreviewSet {
+  thumbnail: AssetPreview | null;
+  original: AssetPreview | null;
+  optimized: AssetPreview | null;
+  webp: AssetPreview | null;
+}
+
+export interface AssetPreviewsRequest {
+  assetIds: string[];
+}
+
+export interface AssetPreviewsResponse {
+  previews: Record<string, AssetPreviewSet>;
+}
+
 export interface QueueJobPayload {
   type: 'optimize' | 'convert-webp' | 'generate-zip';
   assetId: string;

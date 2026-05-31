@@ -73,7 +73,8 @@ export function useUpload() {
       }
     }
 
-    queryClient.invalidateQueries({ queryKey: ['assets'] });
+        queryClient.invalidateQueries({ queryKey: ['assets'] });
+        queryClient.invalidateQueries({ queryKey: ['asset-previews'] });
   }, [queryClient]);
 
   return { uploads, uploadFiles, clearUploads: () => setUploads([]) };

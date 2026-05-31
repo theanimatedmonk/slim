@@ -1,5 +1,6 @@
 import type {
   Asset,
+  AssetPreviewsResponse,
   AssetWithJob,
   ConvertWebpResponse,
   JobStatusResponse,
@@ -98,6 +99,15 @@ export async function uploadToStorage(
 
 export async function listAssets(): Promise<AssetWithJob[]> {
   return request<AssetWithJob[]>('/assets');
+}
+
+export async function fetchAssetPreviews(
+  assetIds: string[]
+): Promise<AssetPreviewsResponse> {
+  return request<AssetPreviewsResponse>('/assets/previews', {
+    method: 'POST',
+    body: JSON.stringify({ assetIds }),
+  });
 }
 
 export async function startOptimization(

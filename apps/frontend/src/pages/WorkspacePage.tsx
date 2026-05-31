@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { AssetWithJob } from '@asset-optimiser/shared-types';
 import UploadDropzone from '../components/UploadDropzone';
 import AssetRow from '../components/AssetRow';
 import AssetDrawer from '../components/AssetDrawer';
 import { useUpload } from '../hooks/useUpload';
+import { getPreviewForAsset, useAssetPreviews } from '../hooks/useAssetPreviews';
 import {
   useAssets,
   useOptimizeAssets,
@@ -20,6 +21,9 @@ export default function WorkspacePage() {
   const deleteAssetMutation = useDeleteAsset();
   const { uploads, uploadFiles } = useUpload();
   const [selected, setSelected] = useState<AssetWithJob | null>(null);
+
+  const assetIds = useMemo(() => assets.map((a) => a.id), [assets]);
+  const { data: previews } = useAssetPreviews(assetIds);
 
   const uploadedIds = assets
     .filter((a) => a.status === 'uploaded')
@@ -119,6 +123,7 @@ export default function WorkspacePage() {
               <AssetRow
                 key={asset.id}
                 asset={asset}
+                thumbnail={getPreviewForAsset(previews, asset.id)?.thumbnail}
                 onSelect={setSelected}
                 onConvertWebp={(id) => convertWebp.mutate(id)}
                 onDownload={() => {
@@ -141,6 +146,7 @@ export default function WorkspacePage() {
 
       <AssetDrawer
         asset={selected}
+        previewSet={selected ? getPreviewForAsset(previews, selected.id) : undefined}
         onClose={() => setSelected(null)}
         onConvertWebp={(id) => convertWebp.mutate(id)}
       />

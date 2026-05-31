@@ -8,7 +8,7 @@ import {
 } from '../controllers/jobController.js';
 import { convertToWebp } from '../controllers/webpController.js';
 import { processJobsCron } from '../controllers/cronController.js';
-import { deleteAsset } from '../controllers/assetController.js';
+import { deleteAsset, getAssetPreviews } from '../controllers/assetController.js';
 import { requireAuth } from '../middleware/auth.js';
 import { authed } from '../utils/authedHandler.js';
 
@@ -21,6 +21,7 @@ router.use(requireAuth as RequestHandler);
 router.post('/upload-url', authed(getUploadUrl));
 router.post('/assets/register', authed(registerAsset));
 router.get('/assets', authed(listAllAssets));
+router.post('/assets/previews', authed(getAssetPreviews));
 router.delete('/assets/:id', authed(deleteAsset));
 router.post('/optimize', authed(startOptimization));
 router.get('/job/:id', authed(getJob));

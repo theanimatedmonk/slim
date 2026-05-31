@@ -1,10 +1,12 @@
-import type { AssetWithJob } from '@asset-optimiser/shared-types';
+import type { AssetPreview, AssetWithJob } from '@asset-optimiser/shared-types';
+import AssetPreviewImage from './AssetPreviewImage';
 import { formatBytes, calculateReductionPercent } from '../utils/format';
 import { complexityColor, statusLabel } from '../utils/format';
 import { shouldRecommendWebp } from '../hooks/useAssets';
 
 interface Props {
   asset: AssetWithJob;
+  thumbnail?: AssetPreview | null;
   onSelect: (asset: AssetWithJob) => void;
   onConvertWebp: (assetId: string) => void;
   onDownload: (asset: AssetWithJob) => void;
@@ -15,6 +17,7 @@ interface Props {
 
 export default function AssetRow({
   asset,
+  thumbnail,
   onSelect,
   onConvertWebp,
   onDownload,
@@ -35,9 +38,11 @@ export default function AssetRow({
       onClick={() => onSelect(asset)}
     >
       <td className="py-3 px-4">
-        <div className="w-10 h-10 rounded bg-brand-500/20 flex items-center justify-center text-xs text-brand-500 font-mono">
-          SVG
-        </div>
+        <AssetPreviewImage
+          preview={thumbnail}
+          alt={asset.filename}
+          size="sm"
+        />
       </td>
       <td className="py-3 px-4 font-medium truncate max-w-[180px]">
         {asset.filename}

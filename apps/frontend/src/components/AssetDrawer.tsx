@@ -1,13 +1,15 @@
-import type { AssetWithJob } from '@asset-optimiser/shared-types';
+import type { AssetPreviewSet, AssetWithJob } from '@asset-optimiser/shared-types';
+import AssetPreviewImage from './AssetPreviewImage';
 import { formatBytes, calculateReductionPercent } from '../utils/format';
 
 interface Props {
   asset: AssetWithJob | null;
+  previewSet?: AssetPreviewSet;
   onClose: () => void;
   onConvertWebp: (assetId: string) => void;
 }
 
-export default function AssetDrawer({ asset, onClose, onConvertWebp }: Props) {
+export default function AssetDrawer({ asset, previewSet, onClose, onConvertWebp }: Props) {
   if (!asset) return null;
 
   const finalReduction =
@@ -43,24 +45,49 @@ export default function AssetDrawer({ asset, onClose, onConvertWebp }: Props) {
             </button>
           </div>
 
+          {previewSet?.thumbnail && (
+            <div className="mb-6 flex justify-center">
+              <AssetPreviewImage
+                preview={previewSet.thumbnail}
+                alt={asset.filename}
+                size="lg"
+                className="max-w-xs"
+              />
+            </div>
+          )}
+
           <section className="mb-6">
             <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide mb-3">
               Before / After
             </h3>
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg bg-surface p-4 border border-border">
-                <p className="text-xs text-gray-500">Original</p>
-                <p className="text-lg font-semibold mt-1">
-                  {formatBytes(asset.original_size)}
-                </p>
+              <div className="rounded-lg bg-surface p-3 border border-border space-y-2">
+                <AssetPreviewImage
+                  preview={previewSet?.original ?? previewSet?.thumbnail}
+                  alt={`${asset.filename} original`}
+                  size="md"
+                />
+                <div>
+                  <p className="text-xs text-gray-500">Original</p>
+                  <p className="text-lg font-semibold mt-0.5">
+                    {formatBytes(asset.original_size)}
+                  </p>
+                </div>
               </div>
-              <div className="rounded-lg bg-surface p-4 border border-border">
-                <p className="text-xs text-gray-500">Optimized</p>
-                <p className="text-lg font-semibold mt-1 text-emerald-400">
-                  {asset.optimized_size != null
-                    ? formatBytes(asset.optimized_size)
-                    : '—'}
-                </p>
+              <div className="rounded-lg bg-surface p-3 border border-border space-y-2">
+                <AssetPreviewImage
+                  preview={previewSet?.optimized ?? previewSet?.webp}
+                  alt={`${asset.filename} optimized`}
+                  size="md"
+                />
+                <div>
+                  <p className="text-xs text-gray-500">Optimized</p>
+                  <p className="text-lg font-semibold mt-0.5 text-emerald-400">
+                    {asset.optimized_size != null
+                      ? formatBytes(asset.optimized_size)
+                      : '—'}
+                  </p>
+                </div>
               </div>
             </div>
             {asset.job?.stabilized && (
