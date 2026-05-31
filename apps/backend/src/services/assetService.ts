@@ -133,7 +133,6 @@ export async function deleteAssetForUser(
   const paths = [asset.original_path, asset.optimized_path, asset.webp_path].filter(
     (p): p is string => Boolean(p)
   );
-  await deleteFiles(paths);
 
   const { error } = await supabase
     .from('assets')
@@ -142,6 +141,12 @@ export async function deleteAssetForUser(
     .eq('user_id', userId);
 
   if (error) throw new Error(error.message);
+
+  try {
+    await deleteFiles(paths);
+  } catch (err) {
+    console.warn(`Storage cleanup failed for asset ${assetId}:`, err);
+  }
 }
 
 function mapAsset(row: Record<string, unknown>): Asset {

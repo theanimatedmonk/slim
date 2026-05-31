@@ -32,7 +32,20 @@ export function useDeleteAsset() {
 
   return useMutation({
     mutationFn: (assetId: string) => deleteAsset(assetId),
-    onSuccess: () => {
+    onMutate: async (assetId) => {
+      await queryClient.cancelQueries({ queryKey: ['assets'] });
+      const previous = queryClient.getQueryData<AssetWithJob[]>(['assets']);
+      queryClient.setQueryData<AssetWithJob[]>(['assets'], (old) =>
+        (old ?? []).filter((a) => a.id !== assetId)
+      );
+      return { previous };
+    },
+    onError: (_err, _assetId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['assets'], context.previous);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
     },
   });

@@ -80,6 +80,12 @@ export default function WorkspacePage() {
         </div>
       )}
 
+      {deleteAssetMutation.isError && (
+        <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 text-rose-300 text-sm mb-6">
+          Delete failed: {(deleteAssetMutation.error as Error).message}
+        </div>
+      )}
+
       <div className="rounded-xl border border-border overflow-hidden bg-surface-elevated">
         <table className="w-full text-left">
           <thead>
