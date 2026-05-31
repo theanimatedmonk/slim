@@ -1,20 +1,31 @@
-import { Router } from 'express';
+import { Router, type RequestHandler } from 'express';
 import { getUploadUrl, registerAsset } from '../controllers/uploadController.js';
 import { listAllAssets, startOptimization } from '../controllers/optimizeController.js';
-import { getJob, downloadBundle, requestBundleDownload } from '../controllers/jobController.js';
+import {
+  getJob,
+  downloadBundle,
+  requestBundleDownload,
+} from '../controllers/jobController.js';
 import { convertToWebp } from '../controllers/webpController.js';
 import { processJobsCron } from '../controllers/cronController.js';
+import { deleteAsset } from '../controllers/assetController.js';
+import { requireAuth } from '../middleware/auth.js';
+import { authed } from '../utils/authedHandler.js';
 
 const router = Router();
 
-router.post('/upload-url', getUploadUrl);
-router.post('/assets/register', registerAsset);
-router.get('/assets', listAllAssets);
-router.post('/optimize', startOptimization);
-router.get('/job/:id', getJob);
-router.post('/convert-webp', convertToWebp);
-router.post('/download', requestBundleDownload);
-router.get('/download/:jobId', downloadBundle);
 router.post('/cron/process-jobs', processJobsCron);
+
+router.use(requireAuth as RequestHandler);
+
+router.post('/upload-url', authed(getUploadUrl));
+router.post('/assets/register', authed(registerAsset));
+router.get('/assets', authed(listAllAssets));
+router.delete('/assets/:id', authed(deleteAsset));
+router.post('/optimize', authed(startOptimization));
+router.get('/job/:id', authed(getJob));
+router.post('/convert-webp', authed(convertToWebp));
+router.post('/download', authed(requestBundleDownload));
+router.get('/download/:jobId', authed(downloadBundle));
 
 export default router;

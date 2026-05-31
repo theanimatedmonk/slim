@@ -1,6 +1,6 @@
 import type { Job, JobPass, JobStatusResponse, OptimizationReport } from '@asset-optimiser/shared-types';
 import { supabase } from '../db/supabase.js';
-import { getAsset } from './assetService.js';
+import { getAssetForUser } from './assetService.js';
 
 export async function createJob(
   assetId: string,
@@ -26,7 +26,10 @@ export async function createJob(
   return mapJob(data);
 }
 
-export async function getJobStatus(jobId: string): Promise<JobStatusResponse | null> {
+export async function getJobStatus(
+  jobId: string,
+  userId: string
+): Promise<JobStatusResponse | null> {
   const { data: jobRow, error } = await supabase
     .from('jobs')
     .select()
@@ -36,7 +39,7 @@ export async function getJobStatus(jobId: string): Promise<JobStatusResponse | n
   if (error || !jobRow) return null;
 
   const job = mapJob(jobRow);
-  const asset = await getAsset(job.asset_id);
+  const asset = await getAssetForUser(job.asset_id, userId);
   if (!asset) return null;
 
   const { data: passRows } = await supabase

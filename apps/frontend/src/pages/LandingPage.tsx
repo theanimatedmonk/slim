@@ -1,9 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import UploadDropzone from '../components/UploadDropzone';
+import { useAuth } from '../context/AuthContext.js';
 import { useUpload } from '../hooks/useUpload';
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { user, loading, signInWithGoogle } = useAuth();
   const { uploads, uploadFiles } = useUpload();
 
   const allDone =
@@ -28,15 +30,34 @@ export default function LandingPage() {
       </section>
 
       <section className="max-w-2xl mx-auto px-4 pb-12">
-        <UploadDropzone onFiles={uploadFiles} uploads={uploads} />
-        {allDone && (
-          <div className="mt-6 text-center">
+        {loading ? (
+          <p className="text-center text-gray-500">Loading…</p>
+        ) : user ? (
+          <>
+            <UploadDropzone onFiles={uploadFiles} uploads={uploads} />
+            {allDone && (
+              <div className="mt-6 text-center">
+                <button
+                  type="button"
+                  onClick={() => navigate('/workspace')}
+                  className="px-6 py-3 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-medium"
+                >
+                  Go to Workspace →
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="rounded-xl border border-border bg-surface-elevated p-8 text-center">
+            <p className="text-gray-400 mb-6">
+              Sign in with Google to upload and manage your assets privately.
+            </p>
             <button
               type="button"
-              onClick={() => navigate('/workspace')}
-              className="px-6 py-3 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-medium"
+              onClick={() => signInWithGoogle()}
+              className="px-6 py-3 rounded-lg bg-white text-gray-900 font-medium hover:bg-gray-100"
             >
-              Go to Workspace →
+              Sign in with Google
             </button>
           </div>
         )}

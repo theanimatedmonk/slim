@@ -1,9 +1,10 @@
-import type { Request, Response } from 'express';
-import { getAsset, updateAssetStatus } from '../services/assetService.js';
+import type { Response } from 'express';
+import type { AuthenticatedRequest } from '../middleware/auth.js';
+import { getAssetForUser, updateAssetStatus } from '../services/assetService.js';
 import { createJob } from '../services/jobService.js';
 import { scheduleQueueProcessing } from '../services/processQueueService.js';
 
-export async function convertToWebp(req: Request, res: Response) {
+export async function convertToWebp(req: AuthenticatedRequest, res: Response) {
   try {
     const { assetId } = req.body as { assetId?: string };
 
@@ -12,14 +13,14 @@ export async function convertToWebp(req: Request, res: Response) {
       return;
     }
 
-    const asset = await getAsset(assetId);
+    const asset = await getAssetForUser(assetId, req.userId);
     if (!asset) {
       res.status(404).json({ error: 'Asset not found' });
       return;
     }
 
     const job = await createJob(assetId, 'convert-webp');
-    await updateAssetStatus(assetId, 'converting');
+    await updateAssetStatus(assetId, req.userId, 'converting');
 
     scheduleQueueProcessing();
     res.status(202).json({ jobId: job.id });

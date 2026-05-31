@@ -48,6 +48,7 @@ export async function processZipBundle(
 
   for (const asset of assets as AssetRow[]) {
     const svgPath = asset.optimized_path ?? asset.original_path;
+    if (!svgPath) continue;
     const svgBuffer = await downloadFile(svgPath);
     archive.append(svgBuffer, { name: `svg/${asset.filename}` });
 

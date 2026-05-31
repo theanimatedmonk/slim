@@ -5,7 +5,12 @@ import {
   MAX_OPTIMIZATION_PASSES,
 } from '@asset-optimiser/shared-utils';
 import { supabase } from '../db/supabase.js';
-import { downloadFile, uploadFile, optimizedPath } from '../services/storageService.js';
+import {
+  deleteFile,
+  downloadFile,
+  uploadFile,
+  optimizedPath,
+} from '../services/storageService.js';
 import { validateSvgPass } from '../utils/svgValidation.js';
 import { analyzeComplexity } from '../utils/complexityAnalyzer.js';
 
@@ -40,7 +45,12 @@ export async function processOptimization(
   await supabase.from('assets').update({ status: 'optimizing' }).eq('id', assetId);
   await supabase.from('jobs').update({ status: 'optimizing' }).eq('id', jobId);
 
-  const originalBuffer = await downloadFile(asset.original_path);
+  if (!asset.original_path) {
+    throw new Error('Original SVG no longer available');
+  }
+
+  const originalPathToDelete = asset.original_path;
+  const originalBuffer = await downloadFile(originalPathToDelete);
   let currentSvg = originalBuffer.toString('utf-8');
   let previousValidSvg: string | null = null;
   let previousSize = asset.original_size;
@@ -104,6 +114,12 @@ export async function processOptimization(
     final_complexity_score: complexity.score,
   });
 
+  try {
+    await deleteFile(originalPathToDelete);
+  } catch (err) {
+    console.warn(`Could not delete original for ${assetId}:`, err);
+  }
+
   await supabase
     .from('assets')
     .update({
@@ -111,6 +127,7 @@ export async function processOptimization(
       optimized_path: outPath,
       optimized_size: finalSize,
       complexity: complexity.level,
+      original_path: null,
     })
     .eq('id', assetId);
 

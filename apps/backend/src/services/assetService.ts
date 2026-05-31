@@ -1,8 +1,10 @@
 import type { Asset, AssetWithJob, JobPass, OptimizationReport } from '@asset-optimiser/shared-types';
 import { supabase } from '../db/supabase.js';
+import { deleteFiles } from './storageService.js';
 
 export async function createAssetRecord(params: {
   id: string;
+  userId: string;
   filename: string;
   originalPath: string;
   originalSize: number;
@@ -11,6 +13,7 @@ export async function createAssetRecord(params: {
     .from('assets')
     .insert({
       id: params.id,
+      user_id: params.userId,
       filename: params.filename,
       original_path: params.originalPath,
       original_size: params.originalSize,
@@ -27,6 +30,22 @@ export async function createAssetRecord(params: {
   return mapAsset(data);
 }
 
+export async function getAssetForUser(
+  id: string,
+  userId: string
+): Promise<Asset | null> {
+  const { data, error } = await supabase
+    .from('assets')
+    .select()
+    .eq('id', id)
+    .eq('user_id', userId)
+    .single();
+
+  if (error || !data) return null;
+  return mapAsset(data);
+}
+
+/** @deprecated use getAssetForUser */
 export async function getAsset(id: string): Promise<Asset | null> {
   const { data, error } = await supabase
     .from('assets')
@@ -38,10 +57,11 @@ export async function getAsset(id: string): Promise<Asset | null> {
   return mapAsset(data);
 }
 
-export async function listAssets(): Promise<AssetWithJob[]> {
+export async function listAssetsForUser(userId: string): Promise<AssetWithJob[]> {
   const { data: assets, error } = await supabase
     .from('assets')
     .select()
+    .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
   if (error || !assets) {
@@ -89,12 +109,37 @@ export async function listAssets(): Promise<AssetWithJob[]> {
 
 export async function updateAssetStatus(
   id: string,
+  userId: string,
   status: string
 ): Promise<void> {
   const { error } = await supabase
     .from('assets')
     .update({ status })
-    .eq('id', id);
+    .eq('id', id)
+    .eq('user_id', userId);
+
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteAssetForUser(
+  assetId: string,
+  userId: string
+): Promise<void> {
+  const asset = await getAssetForUser(assetId, userId);
+  if (!asset) {
+    throw new Error('Asset not found');
+  }
+
+  const paths = [asset.original_path, asset.optimized_path, asset.webp_path].filter(
+    (p): p is string => Boolean(p)
+  );
+  await deleteFiles(paths);
+
+  const { error } = await supabase
+    .from('assets')
+    .delete()
+    .eq('id', assetId)
+    .eq('user_id', userId);
 
   if (error) throw new Error(error.message);
 }
@@ -102,8 +147,9 @@ export async function updateAssetStatus(
 function mapAsset(row: Record<string, unknown>): Asset {
   return {
     id: row.id as string,
+    user_id: (row.user_id as string) ?? null,
     filename: row.filename as string,
-    original_path: row.original_path as string,
+    original_path: (row.original_path as string) ?? null,
     optimized_path: (row.optimized_path as string) ?? null,
     webp_path: (row.webp_path as string) ?? null,
     original_size: row.original_size as number,

@@ -21,6 +21,9 @@ export async function processWebpConversion(
   await supabase.from('jobs').update({ status: 'converting' }).eq('id', jobId);
 
   const svgPath = asset.optimized_path ?? asset.original_path;
+  if (!svgPath) {
+    throw new Error('No SVG file available for WebP conversion');
+  }
   const svgBuffer = await downloadFile(svgPath);
 
   const webpBuffer = await sharp(svgBuffer, { density: 150 })

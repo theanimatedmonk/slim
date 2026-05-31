@@ -1,9 +1,10 @@
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import type { AuthenticatedRequest } from '../middleware/auth.js';
 import { createAssetRecord } from '../services/assetService.js';
 import { createSignedUploadUrl } from '../services/storageService.js';
 
-export async function getUploadUrl(req: Request, res: Response) {
+export async function getUploadUrl(req: AuthenticatedRequest, res: Response) {
   try {
     const { filename, contentType } = req.body as {
       filename?: string;
@@ -32,7 +33,7 @@ export async function getUploadUrl(req: Request, res: Response) {
   }
 }
 
-export async function registerAsset(req: Request, res: Response) {
+export async function registerAsset(req: AuthenticatedRequest, res: Response) {
   try {
     const { assetId, filename, path, size } = req.body as {
       assetId?: string;
@@ -48,6 +49,7 @@ export async function registerAsset(req: Request, res: Response) {
 
     const asset = await createAssetRecord({
       id: assetId,
+      userId: req.userId,
       filename,
       originalPath: path,
       originalSize: size,

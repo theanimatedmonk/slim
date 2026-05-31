@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { config } from '../config.js';
+import { cleanupExpiredAssets } from '../services/cleanupService.js';
 import { processQueue } from '../services/processQueueService.js';
 
 function isAuthorized(req: Request): boolean {
@@ -16,8 +17,9 @@ export async function processJobsCron(req: Request, res: Response) {
   }
 
   try {
+    const cleanup = await cleanupExpiredAssets();
     const result = await processQueue();
-    res.json({ ok: true, ...result });
+    res.json({ ok: true, ...result, expiredAssetsDeleted: cleanup.deleted });
   } catch (err) {
     console.error('cron process-jobs error:', err);
     res.status(500).json({

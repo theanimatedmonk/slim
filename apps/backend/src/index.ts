@@ -5,25 +5,43 @@ import routes from './routes/index.js';
 
 const app = express();
 
+function normalizeOrigin(origin: string): string {
+  return origin.trim().replace(/\/$/, '');
+}
+
+function isAllowedOrigin(origin: string | undefined): boolean {
+  if (!origin) return true;
+
+  const normalized = normalizeOrigin(origin);
+
+  if (
+    /^http:\/\/localhost:\d+$/.test(normalized) ||
+    /^http:\/\/127\.0\.0\.1:\d+$/.test(normalized)
+  ) {
+    return true;
+  }
+
+  return config.allowedOrigins.some((allowed) => normalized === allowed);
+}
+
 app.use(
   cors({
     origin(origin, callback) {
-      // Local dev: allow any localhost port (Vite may use 5174 if 5173 is busy)
-      if (
-        !origin ||
-        /^http:\/\/localhost:\d+$/.test(origin) ||
-        /^http:\/\/127\.0\.0\.1:\d+$/.test(origin)
-      ) {
-        callback(null, true);
+      if (isAllowedOrigin(origin)) {
+        callback(null, origin ?? config.frontendUrl);
         return;
       }
-      if (origin === config.frontendUrl) {
-        callback(null, true);
-        return;
-      }
+      console.warn(
+        'CORS blocked:',
+        origin,
+        '| allowed:',
+        config.allowedOrigins.join(', ')
+      );
       callback(null, false);
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 app.use(express.json());

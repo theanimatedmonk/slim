@@ -18,8 +18,9 @@ export type ComplexityLevel = 'simple' | 'moderate' | 'complex' | 'unknown';
 
 export interface Asset {
   id: string;
+  user_id: string | null;
   filename: string;
-  original_path: string;
+  original_path: string | null;
   optimized_path: string | null;
   webp_path: string | null;
   original_size: number;

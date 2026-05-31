@@ -13,10 +13,24 @@ const API_URL = import.meta.env.DEV
   ? ''
   : (import.meta.env.VITE_API_URL ?? 'http://localhost:3001');
 
+let accessToken: string | null = null;
+
+export function setAccessToken(token: string | null) {
+  accessToken = token;
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers as Record<string, string> | undefined),
+  };
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
   const res = await fetch(`${API_URL}/api${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
     ...options,
+    headers,
   });
 
   if (!res.ok) {
@@ -24,7 +38,15 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     throw new Error((body as { error?: string }).error ?? res.statusText);
   }
 
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
   return res.json() as Promise<T>;
+}
+
+export async function deleteAsset(assetId: string): Promise<void> {
+  await request<void>(`/assets/${assetId}`, { method: 'DELETE' });
 }
 
 export async function getUploadUrl(filename: string): Promise<UploadUrlResponse> {

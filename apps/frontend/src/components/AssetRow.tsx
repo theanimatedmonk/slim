@@ -8,7 +8,9 @@ interface Props {
   onSelect: (asset: AssetWithJob) => void;
   onConvertWebp: (assetId: string) => void;
   onDownload: (asset: AssetWithJob) => void;
+  onDelete: (assetId: string) => void;
   isConverting?: boolean;
+  isDeleting?: boolean;
 }
 
 export default function AssetRow({
@@ -16,7 +18,9 @@ export default function AssetRow({
   onSelect,
   onConvertWebp,
   onDownload,
+  onDelete,
   isConverting,
+  isDeleting,
 }: Props) {
   const reduction =
     asset.optimized_size != null
@@ -70,30 +74,44 @@ export default function AssetRow({
         </span>
       </td>
       <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
-        {asset.status === 'complete' && (
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => onDownload(asset)}
-              className="text-xs px-3 py-1.5 rounded-md bg-brand-600 hover:bg-brand-500 text-white"
-            >
-              Download
-            </button>
-            {recommendWebp && !asset.webp_path && (
+        <div className="flex flex-wrap gap-2">
+          {asset.status === 'complete' && (
+            <>
               <button
                 type="button"
-                disabled={isConverting}
-                onClick={() => onConvertWebp(asset.id)}
-                className="text-xs px-3 py-1.5 rounded-md border border-amber-500/50 text-amber-400 hover:bg-amber-500/10 disabled:opacity-50"
+                onClick={() => onDownload(asset)}
+                className="text-xs px-3 py-1.5 rounded-md bg-brand-600 hover:bg-brand-500 text-white"
               >
-                Convert to WebP
+                Download
               </button>
-            )}
-            {asset.webp_path && (
-              <span className="text-xs text-emerald-400 self-center">WebP ready</span>
-            )}
-          </div>
-        )}
+              {recommendWebp && !asset.webp_path && (
+                <button
+                  type="button"
+                  disabled={isConverting}
+                  onClick={() => onConvertWebp(asset.id)}
+                  className="text-xs px-3 py-1.5 rounded-md border border-amber-500/50 text-amber-400 hover:bg-amber-500/10 disabled:opacity-50"
+                >
+                  Convert to WebP
+                </button>
+              )}
+              {asset.webp_path && (
+                <span className="text-xs text-emerald-400 self-center">WebP ready</span>
+              )}
+            </>
+          )}
+          <button
+            type="button"
+            disabled={isDeleting}
+            onClick={() => {
+              if (window.confirm(`Delete "${asset.filename}"? This cannot be undone.`)) {
+                onDelete(asset.id);
+              }
+            }}
+            className="text-xs px-3 py-1.5 rounded-md border border-rose-500/40 text-rose-400 hover:bg-rose-500/10 disabled:opacity-50"
+          >
+            Delete
+          </button>
+        </div>
       </td>
     </tr>
   );

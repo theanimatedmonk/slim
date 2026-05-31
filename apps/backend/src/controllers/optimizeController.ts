@@ -1,9 +1,14 @@
-import type { Request, Response } from 'express';
-import { getAsset, listAssets, updateAssetStatus } from '../services/assetService.js';
+import type { Response } from 'express';
+import type { AuthenticatedRequest } from '../middleware/auth.js';
+import {
+  getAssetForUser,
+  listAssetsForUser,
+  updateAssetStatus,
+} from '../services/assetService.js';
 import { createJob } from '../services/jobService.js';
 import { scheduleQueueProcessing } from '../services/processQueueService.js';
 
-export async function startOptimization(req: Request, res: Response) {
+export async function startOptimization(req: AuthenticatedRequest, res: Response) {
   try {
     const { assetIds } = req.body as { assetIds?: string[] };
 
@@ -15,14 +20,14 @@ export async function startOptimization(req: Request, res: Response) {
     const jobIds: string[] = [];
 
     for (const assetId of assetIds) {
-      const asset = await getAsset(assetId);
+      const asset = await getAssetForUser(assetId, req.userId);
       if (!asset) {
         res.status(404).json({ error: `Asset not found: ${assetId}` });
         return;
       }
 
       const job = await createJob(assetId, 'optimize');
-      await updateAssetStatus(assetId, 'queued');
+      await updateAssetStatus(assetId, req.userId, 'queued');
       jobIds.push(job.id);
     }
 
@@ -36,9 +41,9 @@ export async function startOptimization(req: Request, res: Response) {
   }
 }
 
-export async function listAllAssets(_req: Request, res: Response) {
+export async function listAllAssets(req: AuthenticatedRequest, res: Response) {
   try {
-    const assets = await listAssets();
+    const assets = await listAssetsForUser(req.userId);
     res.json(assets);
   } catch (err) {
     console.error('list assets error:', err);

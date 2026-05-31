@@ -9,6 +9,7 @@ import {
   useOptimizeAssets,
   useConvertWebp,
   useDownloadBundle,
+  useDeleteAsset,
 } from '../hooks/useAssets';
 
 export default function WorkspacePage() {
@@ -16,6 +17,7 @@ export default function WorkspacePage() {
   const optimize = useOptimizeAssets();
   const convertWebp = useConvertWebp();
   const downloadBundle = useDownloadBundle();
+  const deleteAssetMutation = useDeleteAsset();
   const { uploads, uploadFiles } = useUpload();
   const [selected, setSelected] = useState<AssetWithJob | null>(null);
 
@@ -116,7 +118,15 @@ export default function WorkspacePage() {
                 onDownload={() => {
                   if (completeIds.length) downloadBundle.mutate([asset.id]);
                 }}
+                onDelete={(id) => {
+                  deleteAssetMutation.mutate(id, {
+                    onSuccess: () => {
+                      if (selected?.id === id) setSelected(null);
+                    },
+                  });
+                }}
                 isConverting={convertWebp.isPending}
+                isDeleting={deleteAssetMutation.isPending}
               />
             ))}
           </tbody>

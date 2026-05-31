@@ -1,8 +1,16 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
+import { useAuth } from '../context/AuthContext.js';
 
 export default function Layout({ children }: { children: ReactNode }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, loading, signInWithGoogle, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -14,24 +22,58 @@ export default function Layout({ children }: { children: ReactNode }) {
             </span>
             Android Asset Optimiser
           </Link>
-          <nav className="flex gap-4 text-sm">
-            <Link
-              to="/"
-              className={location.pathname === '/' ? 'text-brand-500' : 'text-gray-400 hover:text-white'}
-            >
-              Home
-            </Link>
-            <Link
-              to="/workspace"
-              className={
-                location.pathname === '/workspace'
-                  ? 'text-brand-500'
-                  : 'text-gray-400 hover:text-white'
-              }
-            >
-              Workspace
-            </Link>
-          </nav>
+          <div className="flex items-center gap-4">
+            <nav className="flex gap-4 text-sm">
+              <Link
+                to="/"
+                className={
+                  location.pathname === '/'
+                    ? 'text-brand-500'
+                    : 'text-gray-400 hover:text-white'
+                }
+              >
+                Home
+              </Link>
+              {user && (
+                <Link
+                  to="/workspace"
+                  className={
+                    location.pathname === '/workspace'
+                      ? 'text-brand-500'
+                      : 'text-gray-400 hover:text-white'
+                  }
+                >
+                  Workspace
+                </Link>
+              )}
+            </nav>
+            {!loading && (
+              <div className="flex items-center gap-3 text-sm">
+                {user ? (
+                  <>
+                    <span className="text-gray-400 hidden sm:inline truncate max-w-[160px]">
+                      {user.email}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      className="text-gray-400 hover:text-white"
+                    >
+                      Sign out
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => signInWithGoogle()}
+                    className="px-3 py-1.5 rounded-lg bg-white text-gray-900 font-medium hover:bg-gray-100"
+                  >
+                    Sign in with Google
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </header>
       <main className="flex-1">{children}</main>

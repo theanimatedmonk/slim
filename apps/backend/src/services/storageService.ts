@@ -73,3 +73,19 @@ export function webpPath(assetId: string, filename: string): string {
 export function zipPath(bundleId: string): string {
   return `zips/${bundleId}/optimized-assets.zip`;
 }
+
+export async function deleteFile(path: string): Promise<void> {
+  const { error } = await supabase.storage.from(config.storageBucket).remove([path]);
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+export async function deleteFiles(paths: string[]): Promise<void> {
+  const unique = [...new Set(paths.filter(Boolean))];
+  if (!unique.length) return;
+  const { error } = await supabase.storage.from(config.storageBucket).remove(unique);
+  if (error) {
+    throw new Error(error.message);
+  }
+}

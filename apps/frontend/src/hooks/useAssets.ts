@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AssetWithJob } from '@asset-optimiser/shared-types';
 import {
   convertToWebp,
+  deleteAsset,
   getBundleDownloadUrl,
   listAssets,
   requestBundle,
@@ -20,6 +21,17 @@ export function useOptimizeAssets() {
 
   return useMutation({
     mutationFn: (assetIds: string[]) => startOptimization(assetIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+    },
+  });
+}
+
+export function useDeleteAsset() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (assetId: string) => deleteAsset(assetId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
     },
