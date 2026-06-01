@@ -132,7 +132,7 @@ export default function AssetDrawer({
 
           {showWebpCallout && (
             <section className="asset-drawer__section asset-drawer__webp-callout">
-              <h3 className="asset-drawer__webp-title">Complex SVG detected</h3>
+              <h3 className="asset-drawer__webp-title">Complex SVG</h3>
               <p className="asset-drawer__webp-desc">
                 This asset still contains characteristics that may impact Android rendering
                 performance. WebP conversion is recommended.

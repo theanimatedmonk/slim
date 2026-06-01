@@ -94,7 +94,7 @@ function ComplexSvgPill() {
         <circle cx="8" cy="8" r="7" strokeWidth="1.5" />
         <path d="M8 5v3.5M8 10.5v.5" strokeWidth="1.5" strokeLinecap="round" />
       </Icon>
-      Complex SVG detected
+      Complex SVG
     </span>
   );
 }
