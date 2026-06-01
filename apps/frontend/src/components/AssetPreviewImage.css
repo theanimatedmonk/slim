@@ -1,0 +1,53 @@
+/* Layer 3 — AssetPreviewImage component tokens */
+.asset-preview {
+  --preview-border: var(--color-border-default);
+  --preview-bg: var(--color-bg-inset);
+  --preview-radius: var(--radius-control);
+  --preview-placeholder-color: var(--color-text-disabled);
+  --preview-size-sm: 2.5rem;
+  --preview-max-height-md: 10rem;
+  --preview-max-height-lg: 14rem;
+
+  width: var(--preview-width, var(--preview-size-sm));
+  height: var(--preview-height, var(--preview-size-sm));
+  border-radius: var(--preview-radius);
+  border: 1px solid var(--preview-border);
+  background: var(--preview-bg);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.asset-preview--md {
+  --preview-width: 100%;
+  --preview-height: auto;
+  aspect-ratio: 1;
+  max-height: var(--preview-max-height-md);
+}
+
+.asset-preview--lg {
+  --preview-width: 100%;
+  --preview-height: auto;
+  aspect-ratio: 1;
+  max-height: var(--preview-max-height-lg);
+}
+
+.asset-preview__placeholder {
+  font-size: 0.625rem;
+  font-family: var(--font-family-mono);
+  color: var(--preview-placeholder-color);
+  text-transform: uppercase;
+}
+
+.asset-preview__image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: var(--primitive-space-1);
+}
+
+.asset-preview--constrained {
+  max-width: 20rem;
+}

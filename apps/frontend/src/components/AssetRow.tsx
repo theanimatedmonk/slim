@@ -1,123 +1,206 @@
 import type { AssetPreview, AssetWithJob } from '@asset-optimiser/shared-types';
 import AssetPreviewImage from './AssetPreviewImage';
+import Icon from './Icon';
 import { formatBytes, calculateReductionPercent } from '../utils/format';
-import { complexityColor, statusLabel } from '../utils/format';
 import { shouldRecommendWebp } from '../hooks/useAssets';
+import './AssetRow.css';
 
 interface Props {
   asset: AssetWithJob;
   thumbnail?: AssetPreview | null;
   onSelect: (asset: AssetWithJob) => void;
-  onConvertWebp: (assetId: string) => void;
   onDownload: (asset: AssetWithJob) => void;
   onDelete: (assetId: string) => void;
-  isConverting?: boolean;
   isDeleting?: boolean;
+}
+
+function StatusIcon({ status }: { status: string }) {
+  switch (status) {
+    case 'uploaded':
+      return (
+        <Icon size="sm" viewBox="0 0 16 16" stroke="var(--color-text-muted)">
+          <circle cx="8" cy="8" r="7" strokeWidth="1.5" />
+          <path d="M5 8l2 2 4-4" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </Icon>
+      );
+    case 'queued':
+      return (
+        <Icon size="sm" viewBox="0 0 16 16" stroke="var(--color-text-muted)">
+          <circle cx="8" cy="8" r="6.5" strokeWidth="1.5" />
+          <path d="M8 4.5V8l2.5 1.5" strokeWidth="1.5" strokeLinecap="round" />
+        </Icon>
+      );
+    case 'optimizing':
+    case 'converting':
+      return (
+        <Icon
+          size="sm"
+          viewBox="0 0 16 16"
+          stroke="var(--color-text-muted)"
+          className="asset-row__feedback-icon--spin"
+        >
+          <circle cx="8" cy="8" r="2" strokeWidth="1.5" />
+          <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2" strokeWidth="1.5" strokeLinecap="round" />
+        </Icon>
+      );
+    case 'failed':
+      return (
+        <Icon size="sm" viewBox="0 0 16 16" stroke="var(--color-error-text)">
+          <circle cx="8" cy="8" r="7" strokeWidth="1.5" />
+          <path d="M8 5v3.5M8 10.5v.5" strokeWidth="1.5" strokeLinecap="round" />
+        </Icon>
+      );
+    default:
+      return null;
+  }
+}
+
+function statusDisplayLabel(status: string): string {
+  const labels: Record<string, string> = {
+    uploaded: 'Uploaded',
+    queued: 'Queued',
+    optimizing: 'Optimising...',
+    converting: 'Optimising...',
+    failed: 'Failed',
+  };
+  return labels[status] ?? status;
+}
+
+function statusFeedbackClass(status: string): string {
+  switch (status) {
+    case 'uploaded':
+      return 'asset-row__feedback--uploaded';
+    case 'queued':
+      return 'asset-row__feedback--queued';
+    case 'optimizing':
+    case 'converting':
+      return 'asset-row__feedback--optimizing';
+    case 'failed':
+      return 'asset-row__feedback--failed';
+    default:
+      return 'asset-row__feedback--default';
+  }
+}
+
+function ComplexSvgPill() {
+  return (
+    <span className="asset-row__complex-pill">
+      <Icon size="sm" viewBox="0 0 16 16" stroke="#92400e">
+        <circle cx="8" cy="8" r="7" strokeWidth="1.5" />
+        <path d="M8 5v3.5M8 10.5v.5" strokeWidth="1.5" strokeLinecap="round" />
+      </Icon>
+      Complex SVG detected
+    </span>
+  );
 }
 
 export default function AssetRow({
   asset,
   thumbnail,
   onSelect,
-  onConvertWebp,
   onDownload,
   onDelete,
-  isConverting,
   isDeleting,
 }: Props) {
+  const isComplete = asset.status === 'complete';
   const reduction =
     asset.optimized_size != null
       ? calculateReductionPercent(asset.original_size, asset.optimized_size)
       : null;
-
-  const recommendWebp = shouldRecommendWebp(asset);
+  const isComplexSvg = isComplete && shouldRecommendWebp(asset);
 
   return (
-    <tr
-      className="border-b border-border hover:bg-white/5 cursor-pointer transition-colors"
-      onClick={() => onSelect(asset)}
-    >
-      <td className="py-3 px-4">
-        <AssetPreviewImage
-          preview={thumbnail}
-          alt={asset.filename}
-          size="sm"
-        />
-      </td>
-      <td className="py-3 px-4 font-medium truncate max-w-[180px]">
-        {asset.filename}
-      </td>
-      <td className="py-3 px-4 text-gray-400 text-sm">
-        {formatBytes(asset.original_size)}
-      </td>
-      <td className="py-3 px-4">
-        <span
-          className={`text-xs px-2 py-1 rounded-full ${
-            asset.status === 'optimizing'
-              ? 'text-brand-400 bg-brand-400/10 animate-pulse'
-              : 'text-gray-300 bg-gray-700/50'
-          }`}
-        >
-          {statusLabel(asset.status)}
+    <li className="asset-row" onClick={() => onSelect(asset)}>
+      {/* C1 — asset name */}
+      <div className="asset-row__col asset-row__col--name">
+        <AssetPreviewImage preview={thumbnail} alt={asset.filename} size="sm" />
+        <span className="asset-row__name" title={asset.filename}>
+          {asset.filename}
         </span>
-      </td>
-      <td className="py-3 px-4 text-sm text-gray-400">
-        {asset.job?.passes ?? '—'}
-      </td>
-      <td className="py-3 px-4 text-sm">
-        {reduction != null ? (
-          <span className="text-emerald-400">↓ {reduction}%</span>
+      </div>
+
+      {/* C2 — size / optimised meta */}
+      <div className="asset-row__col asset-row__col--meta">
+        {isComplete && asset.optimized_size != null ? (
+          <>
+            <span className="asset-row__size-compare">
+              {formatBytes(asset.original_size)}
+              <span className="asset-row__arrow" aria-hidden>
+                →
+              </span>
+              <strong>{formatBytes(asset.optimized_size)}</strong>
+            </span>
+            {reduction != null && (
+              <span className="asset-row__savings">
+                <Icon size="sm" viewBox="0 0 16 16" stroke="#15803d">
+                  <path
+                    d="M8 3v10M4.5 9.5 8 13l3.5-3.5"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </Icon>
+                {reduction}%
+              </span>
+            )}
+            {isComplexSvg && <ComplexSvgPill />}
+          </>
         ) : (
-          '—'
+          <span className="asset-row__size">{formatBytes(asset.original_size)}</span>
         )}
-      </td>
-      <td className="py-3 px-4">
-        <span
-          className={`text-xs px-2 py-1 rounded-full capitalize ${complexityColor(asset.complexity)}`}
-        >
-          {asset.complexity}
-        </span>
-      </td>
-      <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
-        <div className="flex flex-wrap gap-2">
-          {asset.status === 'complete' && (
-            <>
-              <button
-                type="button"
-                onClick={() => onDownload(asset)}
-                className="text-xs px-3 py-1.5 rounded-md bg-brand-600 hover:bg-brand-500 text-white"
+      </div>
+
+      {/* C3 — actions or feedback */}
+      <div
+        className="asset-row__col asset-row__col--trail"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {isComplete ? (
+          <div className="asset-row__actions">
+            <button
+              type="button"
+              onClick={() => onDownload(asset)}
+              className="asset-row__icon-btn asset-row__icon-btn--download"
+              aria-label={`Download ${asset.filename}`}
+            >
+              <Icon size="sm" viewBox="0 0 16 16" stroke="var(--color-text-inverse)">
+                <path
+                  d="M8 2.5v7M5 8.5l3 3 3-3"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path d="M3 13.5h10" strokeWidth="1.5" strokeLinecap="round" />
+              </Icon>
+            </button>
+            <button
+              type="button"
+              disabled={isDeleting}
+              onClick={() => {
+                if (window.confirm(`Delete "${asset.filename}"? This cannot be undone.`)) {
+                  onDelete(asset.id);
+                }
+              }}
+              className="asset-row__icon-btn asset-row__icon-btn--delete"
+              aria-label={`Delete ${asset.filename}`}
+            >
+              <Icon
+                size="md"
+                viewBox="0 0 20 20"
+                fill="var(--color-text-primary)"
+                stroke="none"
               >
-                Download
-              </button>
-              {recommendWebp && !asset.webp_path && (
-                <button
-                  type="button"
-                  disabled={isConverting}
-                  onClick={() => onConvertWebp(asset.id)}
-                  className="text-xs px-3 py-1.5 rounded-md border border-amber-500/50 text-amber-400 hover:bg-amber-500/10 disabled:opacity-50"
-                >
-                  Convert to WebP
-                </button>
-              )}
-              {asset.webp_path && (
-                <span className="text-xs text-emerald-400 self-center">WebP ready</span>
-              )}
-            </>
-          )}
-          <button
-            type="button"
-            disabled={isDeleting}
-            onClick={() => {
-              if (window.confirm(`Delete "${asset.filename}"? This cannot be undone.`)) {
-                onDelete(asset.id);
-              }
-            }}
-            className="text-xs px-3 py-1.5 rounded-md border border-rose-500/40 text-rose-400 hover:bg-rose-500/10 disabled:opacity-50"
-          >
-            Delete
-          </button>
-        </div>
-      </td>
-    </tr>
+                <path d="M8.33366 5.00033H11.667C11.667 4.5583 11.4914 4.13437 11.1788 3.82181C10.8663 3.50925 10.4424 3.33366 10.0003 3.33366C9.5583 3.33366 9.13437 3.50925 8.82181 3.82181C8.50925 4.13437 8.33366 4.5583 8.33366 5.00033ZM6.66699 5.00033C6.66699 4.11627 7.01818 3.26842 7.6433 2.6433C8.26842 2.01818 9.11627 1.66699 10.0003 1.66699C10.8844 1.66699 11.7322 2.01818 12.3573 2.6433C12.9825 3.26842 13.3337 4.11627 13.3337 5.00033H17.5003C17.7213 5.00033 17.9333 5.08812 18.0896 5.2444C18.2459 5.40068 18.3337 5.61265 18.3337 5.83366C18.3337 6.05467 18.2459 6.26663 18.0896 6.42291C17.9333 6.57919 17.7213 6.66699 17.5003 6.66699H16.7653L16.027 15.2837C15.956 16.1157 15.5753 16.8908 14.9602 17.4556C14.3451 18.0204 13.5404 18.3338 12.7053 18.3337H7.29533C6.46025 18.3338 5.65555 18.0204 5.04045 17.4556C4.42534 16.8908 4.04464 16.1157 3.97366 15.2837L3.23533 6.66699H2.50033C2.27931 6.66699 2.06735 6.57919 1.91107 6.42291C1.75479 6.26663 1.66699 6.05467 1.66699 5.83366C1.66699 5.61265 1.75479 5.40068 1.91107 5.2444C2.06735 5.08812 2.27931 5.00033 2.50033 5.00033H6.66699ZM12.5003 10.0003C12.5003 9.77931 12.4125 9.56735 12.2562 9.41107C12.1 9.25479 11.888 9.16699 11.667 9.16699C11.446 9.16699 11.234 9.25479 11.0777 9.41107C10.9215 9.56735 10.8337 9.77931 10.8337 10.0003V13.3337C10.8337 13.5547 10.9215 13.7666 11.0777 13.9229C11.234 14.0792 11.446 14.167 11.667 14.167C11.888 14.167 12.1 14.0792 12.2562 13.9229C12.4125 13.7666 12.5003 13.5547 12.5003 13.3337V10.0003ZM8.33366 9.16699C8.55467 9.16699 8.76663 9.25479 8.92291 9.41107C9.07919 9.56735 9.16699 9.77931 9.16699 10.0003V13.3337C9.16699 13.5547 9.07919 13.7666 8.92291 13.9229C8.76663 14.0792 8.55467 14.167 8.33366 14.167C8.11264 14.167 7.90068 14.0792 7.7444 13.9229C7.58812 13.7666 7.50033 13.5547 7.50033 13.3337V10.0003C7.50033 9.77931 7.58812 9.56735 7.7444 9.41107C7.90068 9.25479 8.11264 9.16699 8.33366 9.16699ZM5.63366 15.142C5.66916 15.5582 5.85963 15.9458 6.16736 16.2283C6.47509 16.5107 6.87764 16.6673 7.29533 16.667H12.7053C13.1227 16.6668 13.5249 16.5101 13.8322 16.2277C14.1396 15.9453 14.3298 15.5579 14.3653 15.142L15.092 6.66699H4.90866L5.63366 15.142Z" />
+              </Icon>
+            </button>
+          </div>
+        ) : (
+          <span className={`asset-row__feedback ${statusFeedbackClass(asset.status)}`}>
+            <StatusIcon status={asset.status} />
+            {statusDisplayLabel(asset.status)}
+          </span>
+        )}
+      </div>
+    </li>
   );
 }

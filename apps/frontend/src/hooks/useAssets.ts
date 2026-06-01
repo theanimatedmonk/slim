@@ -3,6 +3,8 @@ import type { AssetWithJob } from '@asset-optimiser/shared-types';
 import {
   convertToWebp,
   deleteAsset,
+  getAssetDownloadUrl,
+  getAssetWebpDownloadUrl,
   getBundleDownloadUrl,
   listAssets,
   requestBundle,
@@ -58,11 +60,54 @@ export function useConvertWebp() {
 
   return useMutation({
     mutationFn: (assetId: string) => convertToWebp(assetId),
-    onSuccess: () => {
+    onMutate: async (assetId) => {
+      await queryClient.cancelQueries({ queryKey: ['assets'] });
+      const previous = queryClient.getQueryData<AssetWithJob[]>(['assets']);
+      queryClient.setQueryData<AssetWithJob[]>(['assets'], (old) =>
+        (old ?? []).map((a) =>
+          a.id === assetId ? { ...a, status: 'converting' as const } : a
+        )
+      );
+      return { previous };
+    },
+    onError: (_err, _assetId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['assets'], context.previous);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
       queryClient.invalidateQueries({ queryKey: ['asset-previews'] });
     },
   });
+}
+
+export function useDownloadAsset() {
+  return useMutation({
+    mutationFn: async (assetId: string) => {
+      const { downloadUrl, filename } = await getAssetDownloadUrl(assetId);
+      triggerFileDownload(downloadUrl, filename);
+    },
+  });
+}
+
+export function useDownloadWebp() {
+  return useMutation({
+    mutationFn: async (assetId: string) => {
+      const { downloadUrl, filename } = await getAssetWebpDownloadUrl(assetId);
+      triggerFileDownload(downloadUrl, filename);
+    },
+  });
+}
+
+function triggerFileDownload(downloadUrl: string, filename: string) {
+  const link = document.createElement('a');
+  link.href = downloadUrl;
+  link.download = filename;
+  link.rel = 'noopener';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 
 export function useDownloadBundle() {

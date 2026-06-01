@@ -1,0 +1,187 @@
+/* Layer 3 — AppPage component tokens */
+.app-page {
+  --app-page-max-width: var(--layout-max-width-lg);
+  --app-page-upload-max-width: 36rem;
+  --app-page-table-max-width: 52rem;
+  --app-page-table-radius: var(--radius-card);
+
+  max-width: var(--app-page-max-width);
+  margin: 0 auto;
+  padding: var(--space-page-y) var(--space-page-x);
+}
+
+.app-page--guest {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - var(--layout-header-height, 3.5rem) - var(--space-page-y) * 2);
+}
+
+.app-page__loading {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: var(--primitive-space-12);
+}
+
+.app-page__sign-in {
+  width: min(100%, 24rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-stack-lg);
+  padding: var(--space-stack-xl);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-card);
+  background: var(--color-bg-elevated);
+}
+
+.app-page__sign-in-icon {
+  width: 5rem;
+  height: 5rem;
+  object-fit: contain;
+}
+
+.app-page__sign-in-text {
+  margin: 0;
+  font-size: var(--font-size-body);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-body);
+}
+
+.app-page__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--primitive-space-2);
+  padding: var(--space-stack-sm) var(--space-stack-md);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-body-sm);
+  font-weight: var(--font-weight-label);
+  border: none;
+  transition:
+    background var(--duration-interaction) var(--ease-interaction),
+    opacity var(--duration-interaction) var(--ease-interaction);
+}
+
+.app-page__btn .icon {
+  flex-shrink: 0;
+}
+
+.app-page__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.app-page__btn--solid {
+  background: var(--color-bg-inverse);
+  color: var(--color-text-inverse);
+}
+
+.app-page__btn--solid:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.app-page__btn--primary {
+  background: var(--color-primary-active);
+  color: var(--color-text-on-primary);
+}
+
+.app-page__btn--primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.app-page__btn--secondary {
+  background: transparent;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-default);
+}
+
+.app-page__btn--secondary:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+}
+
+.app-page__upload {
+  max-width: var(--app-page-upload-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: var(--space-stack-xl);
+}
+
+.app-page__assets {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-stack-md);
+  width: 100%;
+  max-width: var(--app-page-table-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  min-width: 0;
+}
+
+.app-page__assets-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-stack-md);
+}
+
+@media (min-width: 640px) {
+  .app-page__assets-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.app-page__assets-title {
+  font-size: var(--font-size-heading-sm);
+  font-weight: var(--font-weight-heading);
+  margin: 0;
+}
+
+.app-page__assets-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-inline-sm);
+}
+
+.app-page__alert {
+  border: 1px solid var(--color-error-border);
+  background: var(--color-error-subtle);
+  color: var(--color-error-text);
+  border-radius: var(--radius-control);
+  padding: var(--space-stack-md);
+  font-size: var(--font-size-body-sm);
+  margin-bottom: var(--space-stack-lg);
+}
+
+.app-page__list-wrap {
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--app-page-table-radius);
+  overflow: hidden;
+  background: var(--color-bg-elevated);
+}
+
+.app-page__asset-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.app-page__list-empty {
+  padding: var(--primitive-space-12) var(--space-page-x);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+[data-theme='light'] .app-page {
+  --app-page-table-shadow: var(--shadow-sm);
+}
+
+[data-theme='light'] .app-page__list-wrap {
+  box-shadow: var(--app-page-table-shadow);
+}
+
+[data-theme='light'] .app-page__sign-in {
+  box-shadow: var(--shadow-sm);
+}

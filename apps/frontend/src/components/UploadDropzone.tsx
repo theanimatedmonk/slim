@@ -1,86 +1,172 @@
-import { useCallback, useState } from 'react';
-import type { UploadItem } from '../hooks/useUpload';
+import { useCallback, useId, useRef, useState } from 'react';
+import { formatBytes } from '../utils/format';
+import type { UploadItem, UploadZonePhase } from '../hooks/useUpload';
+import './UploadDropzone.css';
+
+const UPLOAD_ICONS = {
+  idle: '/landing/other/hero image.svg',
+  uploading: '/landing/other/hero image.svg',
+  success: '/landing/other/hero image.svg',
+} as const;
 
 interface Props {
   onFiles: (files: File[]) => void;
   uploads?: UploadItem[];
-  compact?: boolean;
+  zonePhase?: UploadZonePhase;
+  batchTotal?: number;
+  batchProgress?: number;
+  batchLoadedBytes?: number;
+  disabled?: boolean;
 }
 
-export default function UploadDropzone({ onFiles, uploads = [], compact }: Props) {
+function aggregateLoadedBytes(items: UploadItem[], batchLoadedBytes: number): number {
+  const inFlight = items.filter((u) => u.status === 'pending' || u.status === 'uploading');
+  if (inFlight.length > 0) {
+    return inFlight.reduce((sum, u) => sum + u.file.size * (u.progress / 100), 0);
+  }
+  return batchLoadedBytes;
+}
+
+export default function UploadDropzone({
+  onFiles,
+  uploads = [],
+  zonePhase = 'idle',
+  batchTotal = 0,
+  batchProgress = 0,
+  batchLoadedBytes = 0,
+  disabled = false,
+}: Props) {
+  const inputId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
+
+  const batchCount = batchTotal;
+  const overallProgress =
+    zonePhase === 'success' ? 100 : zonePhase === 'uploading' ? batchProgress : 0;
+  const loadedLabel = formatBytes(Math.max(aggregateLoadedBytes(uploads, batchLoadedBytes), 0));
+
+  const isBusy = zonePhase === 'uploading' || zonePhase === 'success';
+  const zoneDisabled = disabled || isBusy;
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       setDragOver(false);
-      const files = Array.from(e.dataTransfer.files);
-      onFiles(files);
+      if (zoneDisabled) return;
+      onFiles(Array.from(e.dataTransfer.files));
     },
-    [onFiles]
+    [onFiles, zoneDisabled]
   );
 
+  const openFilePicker = () => {
+    if (!zoneDisabled) inputRef.current?.click();
+  };
+
+  const iconSrc =
+    zonePhase === 'success'
+      ? UPLOAD_ICONS.success
+      : zonePhase === 'uploading'
+        ? UPLOAD_ICONS.uploading
+        : UPLOAD_ICONS.idle;
+
   return (
-    <div className="space-y-4">
-      <label
+    <div className="upload-dropzone">
+      <div
+        role="button"
+        tabIndex={zoneDisabled ? -1 : 0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') openFilePicker();
+        }}
         onDragOver={(e) => {
           e.preventDefault();
-          setDragOver(true);
+          if (!zoneDisabled) setDragOver(true);
         }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
-        className={`
-          flex flex-col items-center justify-center border-2 border-dashed rounded-xl cursor-pointer transition-colors
-          ${dragOver ? 'border-brand-500 bg-brand-500/10' : 'border-border hover:border-brand-600 hover:bg-white/5'}
-          ${compact ? 'p-8' : 'p-16'}
-        `}
+        onClick={() => {
+          if (!zoneDisabled && zonePhase === 'idle') openFilePicker();
+        }}
+        className={`upload-dropzone__zone${dragOver ? ' upload-dropzone__zone--drag-over' : ''}${isBusy ? ' upload-dropzone__zone--busy' : ''}${zonePhase === 'success' ? ' upload-dropzone__zone--success' : ''}`}
       >
         <input
+          ref={inputRef}
+          id={inputId}
           type="file"
           accept=".svg,image/svg+xml"
           multiple
-          className="hidden"
+          className="upload-dropzone__input"
+          disabled={zoneDisabled}
           onChange={(e) => {
             const files = Array.from(e.target.files ?? []);
             onFiles(files);
             e.target.value = '';
           }}
         />
-        <div className="text-4xl mb-3 opacity-60">↑</div>
-        <p className="text-lg font-medium text-white">
-          Drop SVG assets here
-        </p>
-        <p className="text-sm text-gray-400 mt-1">
-          or click to browse — multiple files supported
-        </p>
-      </label>
 
-      {uploads.length > 0 && (
-        <ul className="space-y-2">
-          {uploads.map((u) => (
-            <li
-              key={u.id}
-              className="flex items-center gap-3 text-sm bg-surface-elevated rounded-lg px-3 py-2 border border-border"
+        <div className={`upload-dropzone__icon-wrap${zonePhase === 'success' ? ' upload-dropzone__icon-wrap--success' : ''}`}>
+          {zonePhase === 'success' ? (
+            <span className="upload-dropzone__success-mark" aria-hidden>
+              ✓
+            </span>
+          ) : (
+            <img src={iconSrc} alt="" className="upload-dropzone__icon-img" />
+          )}
+        </div>
+
+        {zonePhase === 'idle' && (
+          <>
+            <p className="upload-dropzone__title">Drag and drop SVG files here</p>
+            <button
+              type="button"
+              className="upload-dropzone__browse"
+              onClick={(e) => {
+                e.stopPropagation();
+                openFilePicker();
+              }}
             >
-              <span className="flex-1 truncate">{u.file.name}</span>
-              {u.status === 'uploading' && (
-                <div className="w-24 h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-brand-500 transition-all"
-                    style={{ width: `${u.progress}%` }}
-                  />
+              Or choose a file
+            </button>
+          </>
+        )}
+
+        {zonePhase === 'uploading' && (
+          <>
+            <p className="upload-dropzone__title">
+              Uploading <strong>{batchCount}</strong> file(s)
+            </p>
+            <div className="upload-dropzone__batch-progress">
+              <div className="upload-dropzone__batch-track">
+                <div
+                  className="upload-dropzone__batch-fill"
+                  style={{ width: `${overallProgress}%` }}
+                />
+              </div>
+              {overallProgress >= 100 ? (
+                <p className="upload-dropzone__subtext">Processing…</p>
+              ) : (
+                <div className="upload-dropzone__batch-meta">
+                  <span>{loadedLabel}</span>
+                  <span>{overallProgress}%</span>
                 </div>
               )}
-              {u.status === 'done' && (
-                <span className="text-emerald-400">Uploaded</span>
-              )}
-              {u.status === 'error' && (
-                <span className="text-rose-400">{u.error}</span>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+            </div>
+          </>
+        )}
+
+        {zonePhase === 'success' && (
+          <>
+            <p className="upload-dropzone__title upload-dropzone__title--success">Success!</p>
+            <div className="upload-dropzone__batch-progress">
+              <div className="upload-dropzone__batch-track">
+                <div className="upload-dropzone__batch-fill" style={{ width: '100%' }} />
+              </div>
+              <p className="upload-dropzone__subtext">
+                {batchCount} file{batchCount === 1 ? '' : 's'} uploaded
+              </p>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

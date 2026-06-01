@@ -1,7 +1,8 @@
 import type { Response } from 'express';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
-import { deleteAssetForUser } from '../services/assetService.js';
+import { deleteAssetForUser, getAssetForUser } from '../services/assetService.js';
 import { getPreviewSetsForUser } from '../services/previewService.js';
+import { createSignedDownloadUrl } from '../services/storageService.js';
 
 function routeParam(value: string | string[] | undefined): string | undefined {
   if (value === undefined) return undefined;
@@ -28,6 +29,69 @@ export async function getAssetPreviews(req: AuthenticatedRequest, res: Response)
     console.error('asset previews error:', err);
     res.status(500).json({
       error: err instanceof Error ? err.message : 'Failed to load previews',
+    });
+  }
+}
+
+export async function downloadAsset(req: AuthenticatedRequest, res: Response) {
+  try {
+    const id = routeParam(req.params.id);
+    if (!id) {
+      res.status(400).json({ error: 'Asset id is required' });
+      return;
+    }
+
+    const asset = await getAssetForUser(id, req.userId);
+    if (!asset) {
+      res.status(404).json({ error: 'Asset not found' });
+      return;
+    }
+
+    if (asset.status !== 'complete' || !asset.optimized_path) {
+      res.status(400).json({ error: 'Optimized SVG is not available yet' });
+      return;
+    }
+
+    const downloadUrl = await createSignedDownloadUrl(asset.optimized_path, {
+      download: asset.filename,
+    });
+
+    res.json({ downloadUrl, filename: asset.filename });
+  } catch (err) {
+    console.error('asset download error:', err);
+    res.status(500).json({
+      error: err instanceof Error ? err.message : 'Failed to generate download',
+    });
+  }
+}
+
+export async function downloadAssetWebp(req: AuthenticatedRequest, res: Response) {
+  try {
+    const id = routeParam(req.params.id);
+    if (!id) {
+      res.status(400).json({ error: 'Asset id is required' });
+      return;
+    }
+
+    const asset = await getAssetForUser(id, req.userId);
+    if (!asset) {
+      res.status(404).json({ error: 'Asset not found' });
+      return;
+    }
+
+    if (!asset.webp_path) {
+      res.status(400).json({ error: 'WebP is not available yet' });
+      return;
+    }
+
+    const filename = asset.filename.replace(/\.svg$/i, '.webp');
+    const downloadUrl = await createSignedDownloadUrl(asset.webp_path, { download: filename });
+
+    res.json({ downloadUrl, filename });
+  } catch (err) {
+    console.error('asset webp download error:', err);
+    res.status(500).json({
+      error: err instanceof Error ? err.message : 'Failed to generate WebP download',
     });
   }
 }

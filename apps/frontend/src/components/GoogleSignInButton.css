@@ -1,0 +1,70 @@
+/* Layer 3 — GoogleSignInButton component tokens */
+.google-sign-in {
+  --google-btn-radius: var(--radius-pill);
+  --google-btn-font-size: var(--font-size-body-sm);
+  --google-btn-font-weight: var(--font-weight-label);
+  --google-btn-gap: var(--primitive-space-2);
+  --google-btn-padding-y: var(--primitive-space-2);
+  --google-btn-padding-x: var(--primitive-space-4);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--google-btn-gap);
+  padding: var(--google-btn-padding-y) var(--google-btn-padding-x);
+  border-radius: var(--google-btn-radius);
+  font-size: var(--google-btn-font-size);
+  font-weight: var(--google-btn-font-weight);
+  line-height: 1;
+  border: 1px solid transparent;
+  transition:
+    background var(--duration-interaction) var(--ease-interaction),
+    border-color var(--duration-interaction) var(--ease-interaction);
+}
+
+.google-sign-in--outline {
+  --google-btn-bg: var(--color-bg-elevated);
+  --google-btn-border: var(--color-border-default);
+  --google-btn-text: var(--color-text-primary);
+  --google-btn-hover-bg: var(--color-bg-subtle);
+
+  background: var(--google-btn-bg);
+  border-color: var(--google-btn-border);
+  color: var(--google-btn-text);
+}
+
+.google-sign-in--outline:hover {
+  background: var(--google-btn-hover-bg);
+}
+
+.google-sign-in--solid {
+  --google-btn-bg: var(--color-btn-social-bg);
+  --google-btn-border: var(--color-btn-social-border);
+  --google-btn-text: var(--color-btn-social-text);
+  --google-btn-hover-bg: var(--color-btn-social-hover);
+
+  background: var(--google-btn-bg);
+  border-color: var(--google-btn-border);
+  color: var(--google-btn-text);
+  padding: var(--primitive-space-4) var(--primitive-space-6);
+  font-size: var(--font-size-body);
+}
+
+.google-sign-in--solid:hover {
+  background: var(--google-btn-hover-bg);
+}
+
+.google-sign-in--full {
+  width: 100%;
+}
+
+.google-sign-in__icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+}
+
+.google-sign-in--solid .google-sign-in__icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}

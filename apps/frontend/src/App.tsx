@@ -1,22 +1,13 @@
-import { Routes, Route } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
-import ProtectedRoute from './components/ProtectedRoute';
-import LandingPage from './pages/LandingPage';
-import WorkspacePage from './pages/WorkspacePage';
+import AppPage from './pages/AppPage';
 
 export default function App() {
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route
-          path="/workspace"
-          element={
-            <ProtectedRoute>
-              <WorkspacePage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/" element={<AppPage />} />
+        <Route path="/workspace" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
   );

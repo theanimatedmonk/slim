@@ -14,7 +14,7 @@ async function signPreview(
   kind: AssetPreviewKind
 ): Promise<AssetPreview | null> {
   if (!path) return null;
-  const url = await createSignedDownloadUrl(path, PREVIEW_URL_TTL_SEC);
+  const url = await createSignedDownloadUrl(path, { expiresIn: PREVIEW_URL_TTL_SEC });
   return { url, kind };
 }
 

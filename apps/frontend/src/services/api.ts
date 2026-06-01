@@ -132,6 +132,18 @@ export async function convertToWebp(
   });
 }
 
+export async function getAssetDownloadUrl(
+  assetId: string
+): Promise<{ downloadUrl: string; filename: string }> {
+  return request<{ downloadUrl: string; filename: string }>(`/assets/${assetId}/download`);
+}
+
+export async function getAssetWebpDownloadUrl(
+  assetId: string
+): Promise<{ downloadUrl: string; filename: string }> {
+  return request<{ downloadUrl: string; filename: string }>(`/assets/${assetId}/download-webp`);
+}
+
 export async function requestBundle(assetIds: string[]): Promise<{ jobId: string }> {
   return request<{ jobId: string }>('/download', {
     method: 'POST',

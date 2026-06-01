@@ -1,15 +1,25 @@
 import type { AssetPreviewSet, AssetWithJob } from '@asset-optimiser/shared-types';
 import AssetPreviewImage from './AssetPreviewImage';
 import { formatBytes, calculateReductionPercent } from '../utils/format';
+import './AssetDrawer.css';
 
 interface Props {
   asset: AssetWithJob | null;
   previewSet?: AssetPreviewSet;
   onClose: () => void;
   onConvertWebp: (assetId: string) => void;
+  onDownloadWebp: (assetId: string) => void;
+  isConverting?: boolean;
 }
 
-export default function AssetDrawer({ asset, previewSet, onClose, onConvertWebp }: Props) {
+export default function AssetDrawer({
+  asset,
+  previewSet,
+  onClose,
+  onConvertWebp,
+  onDownloadWebp,
+  isConverting,
+}: Props) {
   if (!asset) return null;
 
   const finalReduction =
@@ -17,72 +27,67 @@ export default function AssetDrawer({ asset, previewSet, onClose, onConvertWebp 
       ? calculateReductionPercent(asset.original_size, asset.optimized_size)
       : 0;
 
-  const recommendWebp =
-    asset.complexity === 'complex' || asset.report?.base64_detected;
+  const isComplexAsset =
+    asset.complexity === 'complex' || asset.report?.base64_detected === true;
+  const showWebpCallout =
+    isComplexAsset && !['uploaded', 'queued', 'optimizing'].includes(asset.status);
+  const isWebpReady = Boolean(asset.webp_path);
+  const isWebpConverting =
+    !isWebpReady && (asset.status === 'converting' || isConverting);
 
   return (
     <>
-      <div
-        className="fixed inset-0 bg-black/50 z-40"
-        onClick={onClose}
-        aria-hidden
-      />
-      <aside className="fixed right-0 top-0 h-full w-full max-w-md bg-surface-elevated border-l border-border z-50 overflow-y-auto shadow-2xl">
-        <div className="p-6">
-          <div className="flex items-start justify-between mb-6">
+      <div className="asset-drawer__overlay" onClick={onClose} aria-hidden />
+      <aside className="asset-drawer">
+        <div className="asset-drawer__inner">
+          <div className="asset-drawer__header">
             <div>
-              <h2 className="text-xl font-semibold">{asset.filename}</h2>
-              <p className="text-sm text-gray-400 mt-1 capitalize">
+              <h2 className="asset-drawer__title">{asset.filename}</h2>
+              <p className="asset-drawer__meta">
                 {asset.complexity} · {asset.status}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-gray-400 hover:text-white p-1"
-            >
+            <button type="button" onClick={onClose} className="asset-drawer__close">
               ✕
             </button>
           </div>
 
           {previewSet?.thumbnail && (
-            <div className="mb-6 flex justify-center">
+            <div className="asset-drawer__hero-preview">
               <AssetPreviewImage
                 preview={previewSet.thumbnail}
                 alt={asset.filename}
                 size="lg"
-                className="max-w-xs"
+                className="asset-preview--constrained"
               />
             </div>
           )}
 
-          <section className="mb-6">
-            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide mb-3">
-              Before / After
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg bg-surface p-3 border border-border space-y-2">
+          <section className="asset-drawer__section">
+            <h3 className="asset-drawer__section-title">Before / After</h3>
+            <div className="asset-drawer__compare-grid">
+              <div className="asset-drawer__compare-card">
                 <AssetPreviewImage
                   preview={previewSet?.original ?? previewSet?.thumbnail}
                   alt={`${asset.filename} original`}
                   size="md"
                 />
                 <div>
-                  <p className="text-xs text-gray-500">Original</p>
-                  <p className="text-lg font-semibold mt-0.5">
+                  <p className="asset-drawer__compare-label">Original</p>
+                  <p className="asset-drawer__compare-value">
                     {formatBytes(asset.original_size)}
                   </p>
                 </div>
               </div>
-              <div className="rounded-lg bg-surface p-3 border border-border space-y-2">
+              <div className="asset-drawer__compare-card">
                 <AssetPreviewImage
                   preview={previewSet?.optimized ?? previewSet?.webp}
                   alt={`${asset.filename} optimized`}
                   size="md"
                 />
                 <div>
-                  <p className="text-xs text-gray-500">Optimized</p>
-                  <p className="text-lg font-semibold mt-0.5 text-emerald-400">
+                  <p className="asset-drawer__compare-label">Optimized</p>
+                  <p className="asset-drawer__compare-value asset-drawer__compare-value--success">
                     {asset.optimized_size != null
                       ? formatBytes(asset.optimized_size)
                       : '—'}
@@ -91,28 +96,23 @@ export default function AssetDrawer({ asset, previewSet, onClose, onConvertWebp 
               </div>
             </div>
             {asset.job?.stabilized && (
-              <p className="text-sm text-emerald-400 mt-3">
+              <p className="asset-drawer__stabilized">
                 Optimization stabilized · Final reduction: {finalReduction}%
               </p>
             )}
           </section>
 
           {asset.passes && asset.passes.length > 0 && (
-            <section className="mb-6">
-              <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide mb-3">
-                Optimization Passes
-              </h3>
-              <div className="space-y-3">
+            <section className="asset-drawer__section">
+              <h3 className="asset-drawer__section-title">Optimization Passes</h3>
+              <div className="asset-drawer__pass-list">
                 {asset.passes.map((pass) => (
-                  <div
-                    key={pass.id}
-                    className="flex items-center gap-3 text-sm border-l-2 border-brand-600 pl-3"
-                  >
+                  <div key={pass.id} className="asset-drawer__pass-item">
                     <div>
-                      <p className="font-medium">Pass {pass.pass_number}</p>
-                      <p className="text-gray-400">{formatBytes(pass.size_bytes)}</p>
+                      <p className="asset-drawer__pass-size">Pass {pass.pass_number}</p>
+                      <p className="asset-drawer__pass-size">{formatBytes(pass.size_bytes)}</p>
                     </div>
-                    <span className="ml-auto text-emerald-400">
+                    <span className="asset-drawer__pass-reduction">
                       ↓ {pass.reduction_percent}%
                     </span>
                   </div>
@@ -121,48 +121,57 @@ export default function AssetDrawer({ asset, previewSet, onClose, onConvertWebp 
             </section>
           )}
 
-          {recommendWebp && (
-            <section className="mb-6 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
-              <h3 className="font-medium text-amber-400 mb-2">
-                Complex SVG detected
-              </h3>
-              <p className="text-sm text-gray-300 mb-3">
-                This asset still contains characteristics that may impact Android
-                rendering performance. WebP conversion is recommended.
+          {showWebpCallout && (
+            <section className="asset-drawer__section asset-drawer__webp-callout">
+              <h3 className="asset-drawer__webp-title">Complex SVG detected</h3>
+              <p className="asset-drawer__webp-desc">
+                This asset still contains characteristics that may impact Android rendering
+                performance. WebP conversion is recommended.
               </p>
               {asset.report?.operations && asset.report.operations.length > 0 && (
-                <ul className="text-xs text-gray-400 space-y-1 mb-3 list-disc list-inside">
+                <ul className="asset-drawer__webp-ops">
                   {asset.report.operations.map((op) => (
                     <li key={op}>{op}</li>
                   ))}
                 </ul>
               )}
-              {!asset.webp_path && (
+              {isWebpReady ? (
                 <button
                   type="button"
-                  onClick={() => onConvertWebp(asset.id)}
-                  className="w-full py-2 rounded-md bg-amber-500 hover:bg-amber-400 text-black font-medium text-sm"
+                  onClick={() => onDownloadWebp(asset.id)}
+                  className="asset-drawer__webp-btn"
                 >
-                  Convert to WebP
+                  Download WebP
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={isWebpConverting}
+                  onClick={() => onConvertWebp(asset.id)}
+                  className="asset-drawer__webp-btn"
+                >
+                  {isWebpConverting ? 'Converting…' : 'Convert to WebP'}
                 </button>
               )}
             </section>
           )}
 
           {asset.report && (
-            <section>
-              <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide mb-3">
-                Complexity Report
-              </h3>
-              <dl className="grid grid-cols-2 gap-2 text-sm">
-                <dt className="text-gray-500">Paths</dt>
-                <dd>{asset.report.path_count}</dd>
-                <dt className="text-gray-500">Gradients</dt>
-                <dd>{asset.report.gradients}</dd>
-                <dt className="text-gray-500">Score</dt>
-                <dd>{asset.report.final_complexity_score}</dd>
-                <dt className="text-gray-500">Base64 images</dt>
-                <dd>{asset.report.base64_detected ? 'Yes' : 'No'}</dd>
+            <section className="asset-drawer__section">
+              <h3 className="asset-drawer__section-title">Complexity Report</h3>
+              <dl className="asset-drawer__report-grid">
+                <dt className="asset-drawer__report-term">Paths</dt>
+                <dd className="asset-drawer__report-value">{asset.report.path_count}</dd>
+                <dt className="asset-drawer__report-term">Gradients</dt>
+                <dd className="asset-drawer__report-value">{asset.report.gradients}</dd>
+                <dt className="asset-drawer__report-term">Score</dt>
+                <dd className="asset-drawer__report-value">
+                  {asset.report.final_complexity_score}
+                </dd>
+                <dt className="asset-drawer__report-term">Base64 images</dt>
+                <dd className="asset-drawer__report-value">
+                  {asset.report.base64_detected ? 'Yes' : 'No'}
+                </dd>
               </dl>
             </section>
           )}

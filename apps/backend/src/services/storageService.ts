@@ -21,11 +21,13 @@ export async function createSignedUploadUrl(
 
 export async function createSignedDownloadUrl(
   path: string,
-  expiresIn = 3600
+  options?: { expiresIn?: number; download?: string | boolean }
 ): Promise<string> {
   const { data, error } = await supabase.storage
     .from(config.storageBucket)
-    .createSignedUrl(path, expiresIn);
+    .createSignedUrl(path, options?.expiresIn ?? 3600, {
+      download: options?.download,
+    });
 
   if (error || !data?.signedUrl) {
     throw new Error(error?.message ?? 'Failed to create signed download URL');

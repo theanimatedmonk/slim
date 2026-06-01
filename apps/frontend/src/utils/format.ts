@@ -12,15 +12,20 @@ export function statusLabel(status: string): string {
   return labels[status] ?? status;
 }
 
-export function complexityColor(level: string): string {
+export function complexityClass(level: string): string {
   switch (level) {
     case 'simple':
-      return 'text-emerald-400 bg-emerald-400/10';
+      return 'asset-row__complexity--simple';
     case 'moderate':
-      return 'text-amber-400 bg-amber-400/10';
+      return 'asset-row__complexity--moderate';
     case 'complex':
-      return 'text-rose-400 bg-rose-400/10';
+      return 'asset-row__complexity--complex';
     default:
-      return 'text-gray-400 bg-gray-400/10';
+      return 'asset-row__complexity--unknown';
   }
+}
+
+/** @deprecated use complexityClass — returns design-system CSS class names */
+export function complexityColor(level: string): string {
+  return complexityClass(level);
 }

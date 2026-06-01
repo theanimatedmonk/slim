@@ -1,4 +1,5 @@
 import type { AssetPreview } from '@asset-optimiser/shared-types';
+import './AssetPreviewImage.css';
 
 interface Props {
   preview: AssetPreview | null | undefined;
@@ -7,37 +8,26 @@ interface Props {
   size?: 'sm' | 'md' | 'lg';
 }
 
-const sizeClasses = {
-  sm: 'w-10 h-10',
-  md: 'w-full aspect-square max-h-40',
-  lg: 'w-full aspect-square max-h-56',
-};
-
 export default function AssetPreviewImage({
   preview,
   alt,
   className = '',
   size = 'sm',
 }: Props) {
-  const frame = `${sizeClasses[size]} rounded-lg border border-border bg-[#1a1a1e] overflow-hidden flex items-center justify-center shrink-0`;
+  const sizeClass =
+    size === 'md' ? 'asset-preview--md' : size === 'lg' ? 'asset-preview--lg' : '';
 
   if (!preview?.url) {
     return (
-      <div className={`${frame} ${className}`} aria-hidden>
-        <span className="text-[10px] font-mono text-gray-600 uppercase">svg</span>
+      <div className={`asset-preview ${sizeClass} ${className}`.trim()} aria-hidden>
+        <span className="asset-preview__placeholder">svg</span>
       </div>
     );
   }
 
   return (
-    <div className={`${frame} ${className}`}>
-      <img
-        src={preview.url}
-        alt={alt}
-        className="w-full h-full object-contain p-1"
-        loading="lazy"
-        draggable={false}
-      />
+    <div className={`asset-preview ${sizeClass} ${className}`.trim()}>
+      <img src={preview.url} alt={alt} className="asset-preview__image" loading="lazy" draggable={false} />
     </div>
   );
 }

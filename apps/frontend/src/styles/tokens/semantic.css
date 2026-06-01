@@ -1,0 +1,171 @@
+/**
+ * Layer 2 — Shared semantic tokens (theme-agnostic)
+ */
+:root {
+  --space-page-x: var(--primitive-space-4);
+  --space-page-y: var(--primitive-space-8);
+  --space-section-y: var(--primitive-space-16);
+  --space-stack-xs: var(--primitive-space-1);
+  --space-stack-sm: var(--primitive-space-2);
+  --space-stack-md: var(--primitive-space-4);
+  --space-stack-lg: var(--primitive-space-6);
+  --space-stack-xl: var(--primitive-space-8);
+  --space-inline-sm: var(--primitive-space-2);
+  --space-inline-md: var(--primitive-space-4);
+
+  --font-family-sans: var(--primitive-font-sans);
+  --font-family-mono: var(--primitive-font-mono);
+  --font-size-caption: var(--primitive-font-size-xs);
+  --font-size-body-sm: var(--primitive-font-size-sm);
+  --font-size-body: var(--primitive-font-size-base);
+  --font-size-body-lg: var(--primitive-font-size-lg);
+  --font-size-heading-sm: var(--primitive-font-size-xl);
+  --font-size-heading-md: var(--primitive-font-size-2xl);
+  --font-size-heading-lg: var(--primitive-font-size-4xl);
+  --font-size-display: var(--primitive-font-size-5xl);
+  --font-weight-body: var(--primitive-font-weight-normal);
+  --font-weight-label: var(--primitive-font-weight-medium);
+  --font-weight-heading: var(--primitive-font-weight-bold);
+  --line-height-tight: var(--primitive-line-height-tight);
+  --line-height-body: var(--primitive-line-height-normal);
+  --letter-spacing-label: var(--primitive-letter-spacing-wide);
+  --letter-spacing-overline: var(--primitive-letter-spacing-wider);
+
+  --radius-control: var(--primitive-radius-md);
+  --radius-card: var(--primitive-radius-xl);
+  --radius-pill: var(--primitive-radius-full);
+
+  --duration-interaction: var(--primitive-duration-normal);
+  --duration-enter: var(--primitive-duration-slow);
+  --ease-interaction: var(--primitive-ease-default);
+
+  --layout-max-width-sm: 42rem;
+  --layout-max-width-md: 48rem;
+  --layout-max-width-lg: 72rem;
+
+  --icon-size-sm: 1rem;
+  --icon-size-md: 1.25rem;
+  --icon-size-lg: 1.5rem;
+}
+
+/**
+ * Layer 2 — Semantic tokens (light mode, default)
+ */
+:root,
+[data-theme='light'] {
+  --color-bg-canvas: var(--primitive-neutral-50);
+  --color-bg-elevated: var(--primitive-white);
+  --color-bg-subtle: var(--primitive-neutral-100);
+  --color-bg-inset: var(--primitive-neutral-100);
+  --color-bg-overlay: rgb(15 23 42 / 0.35);
+  --color-bg-hover: rgb(15 23 42 / 0.04);
+  --color-bg-inverse: var(--primitive-neutral-900);
+  --color-bg-card: var(--primitive-white);
+
+  --color-btn-social-bg: var(--primitive-neutral-900);
+  --color-btn-social-text: var(--primitive-white);
+  --color-btn-social-hover: var(--primitive-neutral-800);
+  --color-btn-social-border: var(--primitive-neutral-900);
+
+  --color-text-primary: var(--primitive-neutral-900);
+  --color-text-secondary: var(--primitive-neutral-600);
+  --color-text-muted: var(--primitive-neutral-500);
+  --color-text-disabled: var(--primitive-neutral-400);
+  --color-text-inverse: var(--primitive-white);
+  --color-text-on-primary: var(--primitive-white);
+
+  --color-primary: var(--primitive-brand-600);
+  --color-primary-hover: var(--primitive-brand-500);
+  --color-primary-active: var(--primitive-brand-600);
+  --color-primary-subtle: var(--primitive-brand-50);
+  --color-primary-border: var(--primitive-brand-300);
+
+  --color-secondary: transparent;
+  --color-secondary-hover: rgb(15 23 42 / 0.04);
+  --color-secondary-border: var(--primitive-neutral-200);
+  --color-secondary-text: var(--primitive-neutral-800);
+
+  --color-border-default: var(--primitive-neutral-200);
+  --color-border-subtle: var(--primitive-neutral-100);
+  --color-border-focus: var(--primitive-brand-500);
+
+  --color-success: var(--primitive-success-600);
+  --color-success-subtle: rgb(16 185 129 / 0.1);
+  --color-success-border: rgb(16 185 129 / 0.25);
+
+  --color-warning: var(--primitive-warning-600);
+  --color-warning-subtle: rgb(245 158 11 / 0.1);
+  --color-warning-border: rgb(245 158 11 / 0.25);
+  --color-warning-text: var(--primitive-warning-600);
+  --color-warning-action: var(--primitive-warning-500);
+  --color-warning-action-hover: var(--primitive-warning-400);
+
+  --color-error: var(--primitive-error-600);
+  --color-error-subtle: rgb(244 63 94 / 0.08);
+  --color-error-border: rgb(244 63 94 / 0.25);
+  --color-error-text: var(--primitive-error-600);
+
+  --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.05);
+  --shadow-md: 0 4px 12px rgb(15 23 42 / 0.08);
+  --shadow-lg: 0 12px 24px rgb(15 23 42 / 0.1);
+  --shadow-drawer: 0 20px 40px rgb(15 23 42 / 0.12);
+}
+
+/**
+ * Layer 2 — Semantic tokens (dark mode)
+ */
+[data-theme='dark'] {
+  --color-bg-canvas: var(--primitive-neutral-950);
+  --color-bg-elevated: var(--primitive-neutral-900);
+  --color-bg-subtle: var(--primitive-neutral-800);
+  --color-bg-inset: #1a1a1e;
+  --color-bg-overlay: var(--primitive-black-alpha-50);
+  --color-bg-hover: var(--primitive-white-alpha-5);
+  --color-bg-inverse: var(--primitive-white);
+  --color-bg-card: var(--color-bg-elevated);
+
+  --color-btn-social-bg: var(--primitive-white);
+  --color-btn-social-text: var(--primitive-neutral-900);
+  --color-btn-social-hover: var(--primitive-neutral-100);
+  --color-btn-social-border: transparent;
+
+  --color-text-primary: var(--primitive-neutral-100);
+  --color-text-secondary: var(--primitive-neutral-400);
+  --color-text-muted: var(--primitive-neutral-500);
+  --color-text-disabled: var(--primitive-neutral-600);
+  --color-text-inverse: var(--primitive-neutral-900);
+  --color-text-on-primary: var(--primitive-white);
+
+  --color-primary: var(--primitive-brand-500);
+  --color-primary-hover: var(--primitive-brand-400);
+  --color-primary-active: var(--primitive-brand-600);
+  --color-primary-subtle: rgb(14 165 233 / 0.1);
+  --color-primary-border: var(--primitive-brand-600);
+
+  --color-secondary-hover: var(--primitive-white-alpha-5);
+  --color-secondary-border: var(--color-border-default);
+  --color-secondary-text: var(--color-text-primary);
+
+  --color-border-default: var(--primitive-neutral-800);
+  --color-border-subtle: var(--primitive-neutral-700);
+  --color-border-focus: var(--primitive-brand-500);
+
+  --color-success: var(--primitive-success-400);
+  --color-success-subtle: rgb(52 211 153 / 0.1);
+  --color-success-border: rgb(52 211 153 / 0.3);
+
+  --color-warning: var(--primitive-warning-400);
+  --color-warning-subtle: rgb(251 191 36 / 0.05);
+  --color-warning-border: rgb(251 191 36 / 0.3);
+  --color-warning-text: var(--primitive-warning-400);
+
+  --color-error: var(--primitive-error-400);
+  --color-error-subtle: rgb(251 113 133 / 0.1);
+  --color-error-border: rgb(251 113 133 / 0.3);
+  --color-error-text: var(--primitive-error-300);
+
+  --shadow-sm: var(--primitive-shadow-sm);
+  --shadow-md: var(--primitive-shadow-md);
+  --shadow-lg: var(--primitive-shadow-lg);
+  --shadow-drawer: var(--primitive-shadow-2xl);
+}
