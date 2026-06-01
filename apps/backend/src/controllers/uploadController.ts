@@ -1,7 +1,9 @@
 import type { Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
-import { createAssetRecord } from '../services/assetService.js';
+import { createAssetRecord, getAssetForUser } from '../services/assetService.js';
+import { queueOptimizationForAsset } from '../services/optimizationService.js';
+import { scheduleQueueProcessing } from '../services/processQueueService.js';
 import { createSignedUploadUrl } from '../services/storageService.js';
 
 export async function getUploadUrl(req: AuthenticatedRequest, res: Response) {
@@ -55,7 +57,11 @@ export async function registerAsset(req: AuthenticatedRequest, res: Response) {
       originalSize: size,
     });
 
-    res.status(201).json(asset);
+    await queueOptimizationForAsset(asset.id, req.userId);
+    scheduleQueueProcessing();
+
+    const queued = await getAssetForUser(asset.id, req.userId);
+    res.status(201).json(queued ?? { ...asset, status: 'queued' });
   } catch (err) {
     console.error('register-asset error:', err);
     res.status(500).json({

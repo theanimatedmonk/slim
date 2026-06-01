@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useAuth } from '../context/AuthContext.js';
 import GoogleSignInButton from './GoogleSignInButton';
 import ThemeToggle from './ThemeToggle';
+import UserMenu from './UserMenu';
 import './Layout.css';
 
 const HEADER_LOGO = '/landing/other/header-logo.svg';
@@ -22,12 +23,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             {!loading && (
               <div className="layout__auth">
                 {user ? (
-                  <>
-                    <span className="layout__user-email">{user.email}</span>
-                    <button type="button" onClick={() => signOut()} className="layout__sign-out">
-                      Sign out
-                    </button>
-                  </>
+                  <UserMenu user={user} onSignOut={signOut} />
                 ) : (
                   <GoogleSignInButton variant="outline" onClick={() => signInWithGoogle()} />
                 )}

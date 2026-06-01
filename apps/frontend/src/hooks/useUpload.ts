@@ -159,6 +159,30 @@ export function useUpload(assets: AssetListItem[] = []) {
         size: item.file.size,
       });
 
+      queryClient.setQueryData<AssetListItem[]>(['assets'], (old) => {
+        const existing = old ?? [];
+        const nextItem: AssetListItem = {
+          id: assetId,
+          user_id: null,
+          filename: item.file.name,
+          original_path: path,
+          optimized_path: null,
+          webp_path: null,
+          original_size: item.file.size,
+          optimized_size: null,
+          complexity: 'unknown',
+          status: 'queued',
+          created_at: new Date().toISOString(),
+          base64_detected: null,
+        };
+        if (existing.some((a) => a.id === assetId)) {
+          return existing.map((a) =>
+            a.id === assetId ? { ...a, status: 'queued' as const } : a
+          );
+        }
+        return [nextItem, ...existing];
+      });
+
       const batch = batchRef.current;
       if (batch) {
         batch.expectedAssetIds.push(assetId);
@@ -175,7 +199,7 @@ export function useUpload(assets: AssetListItem[] = []) {
       schedulePreviewRefresh();
       return assetId;
     },
-    [refreshAssets, schedulePreviewRefresh, syncBatchProgress]
+    [queryClient, refreshAssets, schedulePreviewRefresh, syncBatchProgress]
   );
 
   const uploadFiles = useCallback(

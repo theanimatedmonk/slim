@@ -1,0 +1,107 @@
+/* Layer 3 — BulkActionBar */
+.bulk-action-bar {
+  position: fixed;
+  bottom: var(--space-stack-xl);
+  left: 50%;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: var(--space-inline-md);
+  padding: var(--space-stack-sm) var(--space-stack-md);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-md, 0 8px 24px rgb(15 23 42 / 0.12));
+  transform: translateX(-50%);
+}
+
+.bulk-action-bar__count {
+  font-size: var(--font-size-body-sm);
+  font-weight: var(--font-weight-label);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.bulk-action-bar__divider {
+  width: 1px;
+  height: 1.25rem;
+  background: var(--color-border-default);
+  flex-shrink: 0;
+}
+
+.bulk-action-bar__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--primitive-radius-lg);
+  background: transparent;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background var(--duration-interaction) var(--ease-interaction),
+    border-color var(--duration-interaction) var(--ease-interaction);
+}
+
+.bulk-action-bar__btn:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+}
+
+.bulk-action-bar__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bulk-action-bar__btn--download.bulk-action-bar__btn--loading {
+  border: 1px solid var(--color-border-default);
+  background: var(--color-bg-subtle);
+  opacity: 1;
+  cursor: wait;
+}
+
+.bulk-action-bar__btn--download.bulk-action-bar__btn--loading:hover {
+  background: var(--color-bg-subtle);
+}
+
+/* Pie-style ZIP progress (steps through 25% → 50% → 75% while polling) */
+@property --bulk-pie-fill {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 90deg;
+}
+
+.bulk-action-bar__pie {
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: conic-gradient(
+    from -90deg,
+    var(--color-text-primary) 0deg var(--bulk-pie-fill),
+    var(--color-border-default) var(--bulk-pie-fill) 360deg
+  );
+  animation: bulk-action-bar-pie 2.4s ease-in-out infinite;
+}
+
+@keyframes bulk-action-bar-pie {
+  0%,
+  100% {
+    --bulk-pie-fill: 90deg;
+  }
+
+  33% {
+    --bulk-pie-fill: 180deg;
+  }
+
+  66% {
+    --bulk-pie-fill: 270deg;
+  }
+}
+
+[data-theme='light'] .bulk-action-bar {
+  box-shadow: var(--shadow-md, 0 8px 24px rgb(15 23 42 / 0.1));
+}

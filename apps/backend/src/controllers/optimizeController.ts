@@ -1,11 +1,7 @@
 import type { Response } from 'express';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
-import {
-  getAssetForUser,
-  listAssetsForUser,
-  updateAssetStatus,
-} from '../services/assetService.js';
-import { createJob } from '../services/jobService.js';
+import { listAssetsForUser } from '../services/assetService.js';
+import { queueOptimizationForAsset } from '../services/optimizationService.js';
 import { scheduleQueueProcessing } from '../services/processQueueService.js';
 
 export async function startOptimization(req: AuthenticatedRequest, res: Response) {
@@ -20,15 +16,8 @@ export async function startOptimization(req: AuthenticatedRequest, res: Response
     const jobIds: string[] = [];
 
     for (const assetId of assetIds) {
-      const asset = await getAssetForUser(assetId, req.userId);
-      if (!asset) {
-        res.status(404).json({ error: `Asset not found: ${assetId}` });
-        return;
-      }
-
-      const job = await createJob(assetId, 'optimize');
-      await updateAssetStatus(assetId, req.userId, 'queued');
-      jobIds.push(job.id);
+      const jobId = await queueOptimizationForAsset(assetId, req.userId);
+      jobIds.push(jobId);
     }
 
     scheduleQueueProcessing();

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AssetListItem, AssetStatus, AssetWithJob } from '@asset-optimiser/shared-types';
 import {
@@ -9,6 +10,7 @@ import {
   getBundleDownloadUrl,
   listAssets,
   requestBundle,
+  retryAsset,
   startOptimization,
 } from '../services/api';
 
@@ -77,6 +79,25 @@ export function useOptimizeAssets() {
   });
 }
 
+/** Queues any legacy assets still in `uploaded` status (pre auto-optimize). */
+export function useAutoOptimizePending(assets: AssetListItem[]) {
+  const optimize = useOptimizeAssets();
+  const queuedRef = useRef(new Set<string>());
+  const mutateRef = useRef(optimize.mutate);
+  mutateRef.current = optimize.mutate;
+
+  useEffect(() => {
+    const pending = assets
+      .filter((a) => a.status === 'uploaded' && !queuedRef.current.has(a.id))
+      .map((a) => a.id);
+
+    if (!pending.length) return;
+
+    pending.forEach((id) => queuedRef.current.add(id));
+    mutateRef.current(pending);
+  }, [assets]);
+}
+
 export function useDeleteAsset() {
   const queryClient = useQueryClient();
 
@@ -99,6 +120,70 @@ export function useDeleteAsset() {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
       queryClient.invalidateQueries({ queryKey: ['asset-previews'] });
       queryClient.removeQueries({ queryKey: ['asset', assetId] });
+    },
+  });
+}
+
+export function useDeleteAssets() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (assetIds: string[]) => {
+      await Promise.all(assetIds.map((id) => deleteAsset(id)));
+    },
+    onMutate: async (assetIds) => {
+      await queryClient.cancelQueries({ queryKey: ['assets'] });
+      const previous = queryClient.getQueryData<AssetListItem[]>(['assets']);
+      const idSet = new Set(assetIds);
+      queryClient.setQueryData<AssetListItem[]>(['assets'], (old) =>
+        (old ?? []).filter((a) => !idSet.has(a.id))
+      );
+      return { previous, assetIds };
+    },
+    onError: (_err, _assetIds, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['assets'], context.previous);
+      }
+    },
+    onSettled: (_data, _err, assetIds) => {
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ['asset-previews'] });
+      assetIds.forEach((id) => {
+        queryClient.removeQueries({ queryKey: ['asset', id] });
+      });
+    },
+  });
+}
+
+export function useRetryAsset() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (assetId: string) => retryAsset(assetId),
+    onMutate: async (assetId) => {
+      await queryClient.cancelQueries({ queryKey: ['assets'] });
+      const previous = queryClient.getQueryData<AssetListItem[]>(['assets']);
+      const asset = previous?.find((a) => a.id === assetId);
+      const nextStatus = asset?.original_path
+        ? ('queued' as const)
+        : asset?.optimized_path
+          ? ('converting' as const)
+          : ('queued' as const);
+
+      queryClient.setQueryData<AssetListItem[]>(['assets'], (old) =>
+        (old ?? []).map((a) => (a.id === assetId ? { ...a, status: nextStatus } : a))
+      );
+      return { previous };
+    },
+    onError: (_err, _assetId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['assets'], context.previous);
+      }
+    },
+    onSettled: (_data, _err, assetId) => {
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ['asset-previews'] });
+      queryClient.invalidateQueries({ queryKey: ['asset', assetId] });
     },
   });
 }

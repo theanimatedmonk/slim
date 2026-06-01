@@ -98,6 +98,12 @@ export interface ConvertWebpResponse {
   jobId: string;
 }
 
+export interface RetryAssetResponse {
+  jobId: string;
+  jobType: 'optimize' | 'convert-webp';
+  status: 'queued' | 'converting';
+}
+
 export interface JobStatusResponse {
   job: Job;
   asset: Asset;

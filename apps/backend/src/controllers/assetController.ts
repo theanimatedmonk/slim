@@ -1,6 +1,8 @@
 import type { Response } from 'express';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 import { deleteAssetForUser, getAssetForUser, getAssetWithDetailsForUser } from '../services/assetService.js';
+import { retryFailedAsset } from '../services/optimizationService.js';
+import { scheduleQueueProcessing } from '../services/processQueueService.js';
 import { getPreviewSetsForUser } from '../services/previewService.js';
 import { createSignedDownloadUrl } from '../services/storageService.js';
 
@@ -133,6 +135,28 @@ export async function deleteAsset(req: AuthenticatedRequest, res: Response) {
     console.error('delete asset error:', err);
     const message = err instanceof Error ? err.message : 'Failed to delete asset';
     const status = message === 'Asset not found' ? 404 : 500;
+    res.status(status).json({ error: message });
+  }
+}
+
+export async function retryAsset(req: AuthenticatedRequest, res: Response) {
+  try {
+    const id = routeParam(req.params.id);
+    if (!id) {
+      res.status(400).json({ error: 'Asset id is required' });
+      return;
+    }
+
+    const result = await retryFailedAsset(id, req.userId);
+    scheduleQueueProcessing();
+    res.json(result);
+  } catch (err) {
+    console.error('retry asset error:', err);
+    const message = err instanceof Error ? err.message : 'Failed to retry asset';
+    const status =
+      message.startsWith('Asset not found') ? 404
+      : message.startsWith('Asset cannot be retried') || message.startsWith('No source file') ? 400
+      : 500;
     res.status(status).json({ error: message });
   }
 }

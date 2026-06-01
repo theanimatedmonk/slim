@@ -1,7 +1,8 @@
-/* Layer 3 — AssetRow — 3-column grid: 1fr | 3fr | 1fr */
+/* Layer 3 — AssetRow — checkbox + 3-column grid */
 .app-page__asset-list {
   --row-thumb-size: 3rem;
   --row-icon-btn-size: 2.5rem;
+  --row-checkbox-size: 1.125rem;
 }
 
 .asset-row {
@@ -9,13 +10,24 @@
   --row-hover-bg: var(--color-bg-hover);
 
   display: grid;
-  grid-template-columns: 2fr 4fr 1fr;
+  grid-template-columns: var(--row-checkbox-size) 2fr 4fr 1fr;
   align-items: center;
-  column-gap: var(--space-inline-lg);
+  column-gap: var(--space-inline-md);
   padding: var(--space-stack-md) var(--space-page-x);
   border-bottom: 1px solid var(--row-border);
   cursor: pointer;
   transition: background var(--duration-interaction) var(--ease-interaction);
+}
+
+.asset-row--selected {
+  background: var(--color-bg-subtle);
+}
+
+.asset-row__col--select {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .asset-row:last-child {
@@ -125,6 +137,14 @@
   flex-shrink: 0;
 }
 
+.asset-row__trail-failed {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-inline-md);
+  flex-shrink: 0;
+}
+
 .asset-row__feedback {
   display: inline-flex;
   align-items: center;
@@ -207,6 +227,27 @@
   background: var(--color-bg-hover);
 }
 
+.asset-row__icon-btn--dismiss {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border-default);
+}
+
+.asset-row__icon-btn--retry {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-default);
+}
+
+.asset-row__icon-btn--retry:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+}
+
+.asset-row__icon-btn--dismiss:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
 [data-theme='dark'] .asset-row__savings {
   color: #86efac;
   background: rgb(22 101 52 / 0.25);
@@ -221,6 +262,10 @@
   .asset-row {
     grid-template-columns: 1fr;
     row-gap: var(--space-stack-sm);
+  }
+
+  .asset-row__col--select {
+    justify-content: flex-start;
   }
 
   .asset-row__col--trail {

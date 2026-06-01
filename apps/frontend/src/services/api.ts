@@ -7,6 +7,7 @@ import type {
   JobStatusResponse,
   OptimizeResponse,
   RegisterAssetRequest,
+  RetryAssetResponse,
   UploadUrlResponse,
 } from '@asset-optimiser/shared-types';
 
@@ -54,6 +55,10 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
 export async function deleteAsset(assetId: string): Promise<void> {
   await request<void>(`/assets/${assetId}`, { method: 'DELETE' });
+}
+
+export async function retryAsset(assetId: string): Promise<RetryAssetResponse> {
+  return request<RetryAssetResponse>(`/assets/${assetId}/retry`, { method: 'POST' });
 }
 
 export async function getUploadUrl(filename: string): Promise<UploadUrlResponse> {

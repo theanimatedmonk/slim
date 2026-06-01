@@ -87,53 +87,6 @@
   color: var(--layout-nav-active);
 }
 
-.layout__user-email {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-body-sm);
-  max-width: 10rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  display: none;
-}
-
-@media (min-width: 640px) {
-  .layout__user-email {
-    display: inline;
-  }
-}
-
-.layout__sign-out {
-  color: var(--color-text-secondary);
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: var(--font-size-body-sm);
-  transition: color var(--duration-interaction) var(--ease-interaction);
-}
-
-.layout__sign-out:hover {
-  color: var(--color-text-primary);
-}
-
-.layout__sign-in {
-  padding: var(--primitive-space-1) var(--primitive-space-3);
-  border-radius: var(--radius-control);
-  background: var(--layout-auth-btn-bg);
-  color: var(--layout-auth-btn-text);
-  font-weight: var(--font-weight-label);
-  border: 1px solid var(--layout-auth-btn-border);
-  transition: background var(--duration-interaction) var(--ease-interaction);
-}
-
-.layout__sign-in:hover {
-  background: var(--layout-auth-btn-hover);
-}
-
-.layout__header--minimal {
-  border-bottom-color: var(--color-border-subtle);
-}
-
 .layout__auth {
   display: flex;
   align-items: center;
