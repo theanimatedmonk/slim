@@ -34,16 +34,16 @@ export interface Job {
   id: string;
   asset_id: string;
   status: JobStatus;
-  passes: number;
+  iterations: number;
   reduction_percent: number;
   stabilized: boolean;
   created_at: string;
 }
 
-export interface JobPass {
+export interface JobIteration {
   id: string;
   job_id: string;
-  pass_number: number;
+  iteration_number: number;
   size_bytes: number;
   reduction_percent: number;
   created_at: string;
@@ -62,7 +62,7 @@ export interface OptimizationReport {
 
 export interface AssetWithJob extends Asset {
   job?: Job | null;
-  passes?: JobPass[];
+  iterations?: JobIteration[];
   report?: OptimizationReport | null;
 }
 
@@ -107,7 +107,7 @@ export interface RetryAssetResponse {
 export interface JobStatusResponse {
   job: Job;
   asset: Asset;
-  passes: JobPass[];
+  iterations: JobIteration[];
   report: OptimizationReport | null;
 }
 

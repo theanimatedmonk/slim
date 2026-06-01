@@ -1,4 +1,4 @@
-import type { Job, JobPass, JobStatusResponse, OptimizationReport } from '@asset-optimiser/shared-types';
+import type { Job, JobIteration, JobStatusResponse, OptimizationReport } from '@asset-optimiser/shared-types';
 import { supabase } from '../db/supabase.js';
 import { getAssetForUser } from './assetService.js';
 
@@ -59,7 +59,7 @@ export async function getJobStatus(
   return {
     job,
     asset,
-    passes: (passRows ?? []).map(mapJobPass),
+    iterations: (passRows ?? []).map(mapJobIteration),
     report: reportRow ? mapReport(reportRow) : null,
   };
 }
@@ -69,18 +69,18 @@ function mapJob(row: Record<string, unknown>): Job {
     id: row.id as string,
     asset_id: row.asset_id as string,
     status: row.status as Job['status'],
-    passes: row.passes as number,
+    iterations: row.passes as number,
     reduction_percent: row.reduction_percent as number,
     stabilized: row.stabilized as boolean,
     created_at: row.created_at as string,
   };
 }
 
-function mapJobPass(row: Record<string, unknown>): JobPass {
+function mapJobIteration(row: Record<string, unknown>): JobIteration {
   return {
     id: row.id as string,
     job_id: row.job_id as string,
-    pass_number: row.pass_number as number,
+    iteration_number: row.pass_number as number,
     size_bytes: row.size_bytes as number,
     reduction_percent: row.reduction_percent as number,
     created_at: row.created_at as string,

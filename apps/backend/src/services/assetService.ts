@@ -1,4 +1,4 @@
-import type { Asset, AssetListItem, AssetWithJob, JobPass, OptimizationReport } from '@asset-optimiser/shared-types';
+import type { Asset, AssetListItem, AssetWithJob, JobIteration, OptimizationReport } from '@asset-optimiser/shared-types';
 import { supabase } from '../db/supabase.js';
 import { deleteFiles } from './storageService.js';
 
@@ -111,7 +111,7 @@ export async function getAssetWithDetailsForUser(
     .limit(1);
 
   const job = jobs?.[0] ? mapJob(jobs[0]) : null;
-  let passes: JobPass[] = [];
+  let iterations: JobIteration[] = [];
   let report: OptimizationReport | null = null;
 
   if (job) {
@@ -120,7 +120,7 @@ export async function getAssetWithDetailsForUser(
       .select()
       .eq('job_id', job.id)
       .order('pass_number', { ascending: true });
-    passes = (passRows ?? []).map(mapJobPass);
+    iterations = (passRows ?? []).map(mapJobIteration);
 
     const { data: reportRow } = await supabase
       .from('optimization_reports')
@@ -132,7 +132,7 @@ export async function getAssetWithDetailsForUser(
     report = reportRow ? mapReport(reportRow) : null;
   }
 
-  return { ...asset, job, passes, report };
+  return { ...asset, job, iterations, report };
 }
 
 export async function updateAssetStatus(
@@ -198,18 +198,18 @@ function mapJob(row: Record<string, unknown>) {
     id: row.id as string,
     asset_id: row.asset_id as string,
     status: row.status as import('@asset-optimiser/shared-types').JobStatus,
-    passes: row.passes as number,
+    iterations: row.passes as number,
     reduction_percent: row.reduction_percent as number,
     stabilized: row.stabilized as boolean,
     created_at: row.created_at as string,
   };
 }
 
-function mapJobPass(row: Record<string, unknown>): JobPass {
+function mapJobIteration(row: Record<string, unknown>): JobIteration {
   return {
     id: row.id as string,
     job_id: row.job_id as string,
-    pass_number: row.pass_number as number,
+    iteration_number: row.pass_number as number,
     size_bytes: row.size_bytes as number,
     reduction_percent: row.reduction_percent as number,
     created_at: row.created_at as string,

@@ -10,7 +10,7 @@ const FEATURE_IMAGES = {
 const FEATURES = [
   {
     title: "We'll keep squeezing.",
-    desc: "Your SVG says it's optimised. We don't believe it. Slim keeps running passes until there are no meaningful bytes left to steal.",
+    desc: "Your SVG says it's optimised. We don't believe it. Slim keeps running iterations until there are no meaningful bytes left to steal.",
     image: FEATURE_IMAGES.squeezing,
     imageAlt: 'Optimisation illustration',
   },

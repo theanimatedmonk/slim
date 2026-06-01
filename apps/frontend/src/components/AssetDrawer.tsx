@@ -107,18 +107,22 @@ export default function AssetDrawer({
             )}
           </section>
 
-          {asset.passes && asset.passes.length > 0 && (
+          {asset.iterations && asset.iterations.length > 0 && (
             <section className="asset-drawer__section">
-              <h3 className="asset-drawer__section-title">Optimization Passes</h3>
-              <div className="asset-drawer__pass-list">
-                {asset.passes.map((pass) => (
-                  <div key={pass.id} className="asset-drawer__pass-item">
+              <h3 className="asset-drawer__section-title">Optimization Iterations</h3>
+              <div className="asset-drawer__iteration-list">
+                {asset.iterations.map((iteration) => (
+                  <div key={iteration.id} className="asset-drawer__iteration-item">
                     <div>
-                      <p className="asset-drawer__pass-size">Pass {pass.pass_number}</p>
-                      <p className="asset-drawer__pass-size">{formatBytes(pass.size_bytes)}</p>
+                      <p className="asset-drawer__iteration-size">
+                        Iteration {iteration.iteration_number}
+                      </p>
+                      <p className="asset-drawer__iteration-size">
+                        {formatBytes(iteration.size_bytes)}
+                      </p>
                     </div>
-                    <span className="asset-drawer__pass-reduction">
-                      ↓ {pass.reduction_percent}%
+                    <span className="asset-drawer__iteration-reduction">
+                      ↓ {iteration.reduction_percent}%
                     </span>
                   </div>
                 ))}
