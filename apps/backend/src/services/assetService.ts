@@ -1,4 +1,4 @@
-import type { Asset, AssetWithJob, JobPass, OptimizationReport } from '@asset-optimiser/shared-types';
+import type { Asset, AssetListItem, AssetWithJob, JobPass, OptimizationReport } from '@asset-optimiser/shared-types';
 import { supabase } from '../db/supabase.js';
 import { deleteFiles } from './storageService.js';
 
@@ -57,7 +57,7 @@ export async function getAsset(id: string): Promise<Asset | null> {
   return mapAsset(data);
 }
 
-export async function listAssetsForUser(userId: string): Promise<AssetWithJob[]> {
+export async function listAssetsForUser(userId: string): Promise<AssetListItem[]> {
   const { data: assets, error } = await supabase
     .from('assets')
     .select()
@@ -68,43 +68,71 @@ export async function listAssetsForUser(userId: string): Promise<AssetWithJob[]>
     throw new Error(error?.message ?? 'Failed to list assets');
   }
 
-  const result: AssetWithJob[] = [];
+  const completeIds = assets
+    .filter((row) => row.status === 'complete')
+    .map((row) => row.id as string);
 
-  for (const row of assets) {
+  const base64ByAssetId = new Map<string, boolean>();
+
+  if (completeIds.length > 0) {
+    const { data: reports } = await supabase
+      .from('optimization_reports')
+      .select('asset_id, base64_detected')
+      .in('asset_id', completeIds);
+
+    for (const row of reports ?? []) {
+      base64ByAssetId.set(row.asset_id as string, row.base64_detected as boolean);
+    }
+  }
+
+  return assets.map((row) => {
     const asset = mapAsset(row);
-    const { data: jobs } = await supabase
-      .from('jobs')
+    return {
+      ...asset,
+      base64_detected: completeIds.includes(asset.id)
+        ? (base64ByAssetId.get(asset.id) ?? false)
+        : null,
+    };
+  });
+}
+
+export async function getAssetWithDetailsForUser(
+  assetId: string,
+  userId: string
+): Promise<AssetWithJob | null> {
+  const asset = await getAssetForUser(assetId, userId);
+  if (!asset) return null;
+
+  const { data: jobs } = await supabase
+    .from('jobs')
+    .select()
+    .eq('asset_id', asset.id)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  const job = jobs?.[0] ? mapJob(jobs[0]) : null;
+  let passes: JobPass[] = [];
+  let report: OptimizationReport | null = null;
+
+  if (job) {
+    const { data: passRows } = await supabase
+      .from('job_passes')
+      .select()
+      .eq('job_id', job.id)
+      .order('pass_number', { ascending: true });
+    passes = (passRows ?? []).map(mapJobPass);
+
+    const { data: reportRow } = await supabase
+      .from('optimization_reports')
       .select()
       .eq('asset_id', asset.id)
       .order('created_at', { ascending: false })
-      .limit(1);
-
-    const job = jobs?.[0] ? mapJob(jobs[0]) : null;
-    let passes: JobPass[] = [];
-    let report: OptimizationReport | null = null;
-
-    if (job) {
-      const { data: passRows } = await supabase
-        .from('job_passes')
-        .select()
-        .eq('job_id', job.id)
-        .order('pass_number', { ascending: true });
-      passes = (passRows ?? []).map(mapJobPass);
-
-      const { data: reportRow } = await supabase
-        .from('optimization_reports')
-        .select()
-        .eq('asset_id', asset.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      report = reportRow ? mapReport(reportRow) : null;
-    }
-
-    result.push({ ...asset, job, passes, report });
+      .limit(1)
+      .single();
+    report = reportRow ? mapReport(reportRow) : null;
   }
 
-  return result;
+  return { ...asset, job, passes, report };
 }
 
 export async function updateAssetStatus(

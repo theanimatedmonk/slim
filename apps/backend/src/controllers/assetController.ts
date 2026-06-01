@@ -1,6 +1,6 @@
 import type { Response } from 'express';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
-import { deleteAssetForUser, getAssetForUser } from '../services/assetService.js';
+import { deleteAssetForUser, getAssetForUser, getAssetWithDetailsForUser } from '../services/assetService.js';
 import { getPreviewSetsForUser } from '../services/previewService.js';
 import { createSignedDownloadUrl } from '../services/storageService.js';
 
@@ -92,6 +92,29 @@ export async function downloadAssetWebp(req: AuthenticatedRequest, res: Response
     console.error('asset webp download error:', err);
     res.status(500).json({
       error: err instanceof Error ? err.message : 'Failed to generate WebP download',
+    });
+  }
+}
+
+export async function getAssetDetail(req: AuthenticatedRequest, res: Response) {
+  try {
+    const id = routeParam(req.params.id);
+    if (!id) {
+      res.status(400).json({ error: 'Asset id is required' });
+      return;
+    }
+
+    const asset = await getAssetWithDetailsForUser(id, req.userId);
+    if (!asset) {
+      res.status(404).json({ error: 'Asset not found' });
+      return;
+    }
+
+    res.json(asset);
+  } catch (err) {
+    console.error('asset detail error:', err);
+    res.status(500).json({
+      error: err instanceof Error ? err.message : 'Failed to load asset',
     });
   }
 }

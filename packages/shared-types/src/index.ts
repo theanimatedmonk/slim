@@ -66,6 +66,11 @@ export interface AssetWithJob extends Asset {
   report?: OptimizationReport | null;
 }
 
+/** Slim row payload for GET /assets (table list). */
+export interface AssetListItem extends Asset {
+  base64_detected?: boolean | null;
+}
+
 export interface UploadUrlRequest {
   filename: string;
   contentType?: string;

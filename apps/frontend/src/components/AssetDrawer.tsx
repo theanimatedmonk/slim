@@ -1,10 +1,13 @@
-import type { AssetPreviewSet, AssetWithJob } from '@asset-optimiser/shared-types';
+import type { AssetListItem, AssetPreviewSet, AssetWithJob } from '@asset-optimiser/shared-types';
 import AssetPreviewImage from './AssetPreviewImage';
+import { shouldRecommendWebp } from '../hooks/useAssets';
 import { formatBytes, calculateReductionPercent } from '../utils/format';
 import './AssetDrawer.css';
 
+type DrawerAsset = AssetWithJob & Pick<AssetListItem, 'base64_detected'>;
+
 interface Props {
-  asset: AssetWithJob | null;
+  asset: DrawerAsset | null;
   previewSet?: AssetPreviewSet;
   onClose: () => void;
   onConvertWebp: (assetId: string) => void;
@@ -28,7 +31,9 @@ export default function AssetDrawer({
       : 0;
 
   const isComplexAsset =
-    asset.complexity === 'complex' || asset.report?.base64_detected === true;
+    shouldRecommendWebp(asset) ||
+    asset.complexity === 'complex' ||
+    asset.base64_detected === true;
   const showWebpCallout =
     isComplexAsset && !['uploaded', 'queued', 'optimizing'].includes(asset.status);
   const isWebpReady = Boolean(asset.webp_path);

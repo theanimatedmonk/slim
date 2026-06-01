@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import type { AssetWithJob } from '@asset-optimiser/shared-types';
+import type { AssetListItem } from '@asset-optimiser/shared-types';
 import { getUploadUrl, registerAsset, uploadToStorage } from '../services/api';
 
 export type UploadZonePhase = 'idle' | 'uploading' | 'success';
@@ -34,7 +34,7 @@ function batchPercent(batch: BatchTracker, inFlight: UploadItem[]): number {
   return Math.min(100, Math.round((loaded / batch.totalBytes) * 100));
 }
 
-export function useUpload(assets: AssetWithJob[] = []) {
+export function useUpload(assets: AssetListItem[] = []) {
   const queryClient = useQueryClient();
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [zonePhase, setZonePhase] = useState<UploadZonePhase>('idle');

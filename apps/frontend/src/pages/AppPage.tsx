@@ -9,6 +9,7 @@ import { useUpload } from '../hooks/useUpload';
 import { getPreviewForAsset, useAssetPreviews } from '../hooks/useAssetPreviews';
 import {
   useAssets,
+  useAssetDetail,
   useOptimizeAssets,
   useConvertWebp,
   useDownloadBundle,
@@ -19,21 +20,39 @@ import {
 import './AppPage.css';
 
 function AppPageContent() {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
   const { data: assets = [], isLoading, error } = useAssets();
+  const { uploads, uploadFiles, zonePhase, batchTotal, batchProgress, batchLoadedBytes } =
+    useUpload(assets);
+
   const optimize = useOptimizeAssets();
   const convertWebp = useConvertWebp();
   const downloadBundle = useDownloadBundle();
   const downloadAsset = useDownloadAsset();
   const downloadWebp = useDownloadWebp();
   const deleteAssetMutation = useDeleteAsset();
-  const { uploads, uploadFiles, zonePhase, batchTotal, batchProgress, batchLoadedBytes } =
-    useUpload(assets);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const selectedAsset = useMemo(
     () => (selectedId ? assets.find((a) => a.id === selectedId) ?? null : null),
     [assets, selectedId]
   );
+
+  const { data: assetDetail } = useAssetDetail(selectedId, selectedAsset?.status);
+
+  const drawerAsset = useMemo(() => {
+    if (!selectedAsset) return null;
+    if (!assetDetail) return selectedAsset;
+    return {
+      ...assetDetail,
+      status: selectedAsset.status,
+      webp_path: selectedAsset.webp_path ?? assetDetail.webp_path,
+      optimized_size: selectedAsset.optimized_size ?? assetDetail.optimized_size,
+      complexity:
+        selectedAsset.complexity !== 'unknown' ? selectedAsset.complexity : assetDetail.complexity,
+      base64_detected: selectedAsset.base64_detected ?? assetDetail.report?.base64_detected ?? null,
+    };
+  }, [selectedAsset, assetDetail]);
 
   const assetIds = useMemo(() => assets.map((a) => a.id), [assets]);
   const { data: previews } = useAssetPreviews(assetIds);
@@ -142,15 +161,15 @@ function AppPageContent() {
       </section>
 
       <AssetDrawer
-        asset={selectedAsset}
+        asset={drawerAsset}
         previewSet={
-          selectedAsset ? getPreviewForAsset(previews, selectedAsset.id) : undefined
+          drawerAsset ? getPreviewForAsset(previews, drawerAsset.id) : undefined
         }
         onClose={() => setSelectedId(null)}
         onConvertWebp={(id) => convertWebp.mutate(id)}
         onDownloadWebp={(id) => downloadWebp.mutate(id)}
         isConverting={
-          convertWebp.isPending && convertWebp.variables === selectedAsset?.id
+          convertWebp.isPending && convertWebp.variables === selectedId
         }
       />
     </div>

@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { AssetWithJob } from '@asset-optimiser/shared-types';
+import type { AssetListItem, AssetStatus, AssetWithJob } from '@asset-optimiser/shared-types';
 import {
   convertToWebp,
   deleteAsset,
+  getAssetDetail,
   getAssetDownloadUrl,
   getAssetWebpDownloadUrl,
   getBundleDownloadUrl,
@@ -11,10 +12,40 @@ import {
   startOptimization,
 } from '../services/api';
 
-export function useAssets() {
+const POLL_MS = 1000;
+
+function hasProcessingAssets(assets: AssetListItem[] | undefined): boolean {
+  return assets?.some((a) => isAssetProcessing(a)) ?? false;
+}
+
+interface UseAssetsOptions {
+  /** Poll while uploads are in flight (before rows appear in the list). */
+  pollWhileBusy?: boolean;
+}
+
+export function useAssets(options?: UseAssetsOptions) {
+  const pollWhileBusy = options?.pollWhileBusy ?? false;
+
   return useQuery({
     queryKey: ['assets'],
     queryFn: listAssets,
+    refetchInterval: (query) => {
+      if (pollWhileBusy) return POLL_MS;
+      const assets = query.state.data as AssetListItem[] | undefined;
+      return hasProcessingAssets(assets) ? POLL_MS : false;
+    },
+  });
+}
+
+export function useAssetDetail(assetId: string | null, listStatus?: AssetStatus) {
+  const isProcessing = listStatus ? isAssetProcessing({ status: listStatus }) : false;
+
+  return useQuery({
+    queryKey: ['asset', assetId],
+    queryFn: () => getAssetDetail(assetId!),
+    enabled: Boolean(assetId),
+    staleTime: 30_000,
+    refetchInterval: isProcessing ? POLL_MS : false,
   });
 }
 
@@ -23,9 +54,25 @@ export function useOptimizeAssets() {
 
   return useMutation({
     mutationFn: (assetIds: string[]) => startOptimization(assetIds),
-    onSuccess: () => {
+    onMutate: async (assetIds) => {
+      await queryClient.cancelQueries({ queryKey: ['assets'] });
+      const previous = queryClient.getQueryData<AssetListItem[]>(['assets']);
+      queryClient.setQueryData<AssetListItem[]>(['assets'], (old) =>
+        (old ?? []).map((a) =>
+          assetIds.includes(a.id) ? { ...a, status: 'queued' as const } : a
+        )
+      );
+      return { previous };
+    },
+    onError: (_err, _assetIds, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['assets'], context.previous);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
       queryClient.invalidateQueries({ queryKey: ['asset-previews'] });
+      queryClient.invalidateQueries({ queryKey: ['asset'] });
     },
   });
 }
@@ -37,8 +84,8 @@ export function useDeleteAsset() {
     mutationFn: (assetId: string) => deleteAsset(assetId),
     onMutate: async (assetId) => {
       await queryClient.cancelQueries({ queryKey: ['assets'] });
-      const previous = queryClient.getQueryData<AssetWithJob[]>(['assets']);
-      queryClient.setQueryData<AssetWithJob[]>(['assets'], (old) =>
+      const previous = queryClient.getQueryData<AssetListItem[]>(['assets']);
+      queryClient.setQueryData<AssetListItem[]>(['assets'], (old) =>
         (old ?? []).filter((a) => a.id !== assetId)
       );
       return { previous };
@@ -48,9 +95,10 @@ export function useDeleteAsset() {
         queryClient.setQueryData(['assets'], context.previous);
       }
     },
-    onSettled: () => {
+    onSettled: (_data, _err, assetId) => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
       queryClient.invalidateQueries({ queryKey: ['asset-previews'] });
+      queryClient.removeQueries({ queryKey: ['asset', assetId] });
     },
   });
 }
@@ -62,8 +110,8 @@ export function useConvertWebp() {
     mutationFn: (assetId: string) => convertToWebp(assetId),
     onMutate: async (assetId) => {
       await queryClient.cancelQueries({ queryKey: ['assets'] });
-      const previous = queryClient.getQueryData<AssetWithJob[]>(['assets']);
-      queryClient.setQueryData<AssetWithJob[]>(['assets'], (old) =>
+      const previous = queryClient.getQueryData<AssetListItem[]>(['assets']);
+      queryClient.setQueryData<AssetListItem[]>(['assets'], (old) =>
         (old ?? []).map((a) =>
           a.id === assetId ? { ...a, status: 'converting' as const } : a
         )
@@ -75,9 +123,10 @@ export function useConvertWebp() {
         queryClient.setQueryData(['assets'], context.previous);
       }
     },
-    onSettled: () => {
+    onSettled: (_data, _err, assetId) => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
       queryClient.invalidateQueries({ queryKey: ['asset-previews'] });
+      queryClient.invalidateQueries({ queryKey: ['asset', assetId] });
     },
   });
 }
@@ -132,13 +181,19 @@ export function useDownloadBundle() {
   });
 }
 
-export function isAssetProcessing(asset: AssetWithJob): boolean {
+export function isAssetProcessing(asset: Pick<AssetListItem, 'status'>): boolean {
   return ['queued', 'optimizing', 'converting'].includes(asset.status);
 }
 
-export function shouldRecommendWebp(asset: AssetWithJob): boolean {
+export function shouldRecommendWebp(
+  asset: Pick<AssetListItem, 'status' | 'complexity' | 'base64_detected'> & {
+    report?: AssetWithJob['report'];
+  }
+): boolean {
   return (
     asset.status === 'complete' &&
-    (asset.complexity === 'complex' || asset.report?.base64_detected === true)
+    (asset.complexity === 'complex' ||
+      asset.base64_detected === true ||
+      asset.report?.base64_detected === true)
   );
 }

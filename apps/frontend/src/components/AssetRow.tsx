@@ -1,4 +1,4 @@
-import type { AssetPreview, AssetWithJob } from '@asset-optimiser/shared-types';
+import type { AssetListItem, AssetPreview } from '@asset-optimiser/shared-types';
 import AssetPreviewImage from './AssetPreviewImage';
 import Icon from './Icon';
 import { formatBytes, calculateReductionPercent } from '../utils/format';
@@ -6,10 +6,10 @@ import { shouldRecommendWebp } from '../hooks/useAssets';
 import './AssetRow.css';
 
 interface Props {
-  asset: AssetWithJob;
+  asset: AssetListItem;
   thumbnail?: AssetPreview | null;
-  onSelect: (asset: AssetWithJob) => void;
-  onDownload: (asset: AssetWithJob) => void;
+  onSelect: (asset: AssetListItem) => void;
+  onDownload: (asset: AssetListItem) => void;
   onDelete: (assetId: string) => void;
   isDeleting?: boolean;
 }

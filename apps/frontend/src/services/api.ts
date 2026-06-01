@@ -1,5 +1,6 @@
 import type {
   Asset,
+  AssetListItem,
   AssetPreviewsResponse,
   AssetWithJob,
   ConvertWebpResponse,
@@ -97,8 +98,12 @@ export async function uploadToStorage(
   });
 }
 
-export async function listAssets(): Promise<AssetWithJob[]> {
-  return request<AssetWithJob[]>('/assets');
+export async function listAssets(): Promise<AssetListItem[]> {
+  return request<AssetListItem[]>('/assets');
+}
+
+export async function getAssetDetail(assetId: string): Promise<AssetWithJob> {
+  return request<AssetWithJob>(`/assets/${assetId}`);
 }
 
 export async function fetchAssetPreviews(

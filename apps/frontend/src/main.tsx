@@ -10,11 +10,6 @@ import './index.css';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchInterval: (query) => {
-        const key = query.queryKey[0];
-        if (key === 'assets' || key === 'job') return 2000;
-        return false;
-      },
       staleTime: 1000,
     },
   },
