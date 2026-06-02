@@ -31,7 +31,7 @@ function inFlightLoadedBytes(items: UploadItem[]): number {
 function batchPercent(batch: BatchTracker, inFlight: UploadItem[]): number {
   if (batch.totalBytes === 0) return 0;
   const loaded = batch.loadedBytes + inFlightLoadedBytes(inFlight);
-  return Math.min(100, Math.round((loaded / batch.totalBytes) * 100));
+  return Math.min(100, (loaded / batch.totalBytes) * 100);
 }
 
 export function useUpload(assets: AssetListItem[] = []) {

@@ -2,7 +2,7 @@
 .upload-dropzone {
   --dropzone-border: var(--color-border-default);
   --dropzone-border-active: var(--color-primary-border);
-  --dropzone-bg: var(--color-bg-elevated);
+  --dropzone-bg: var(--color-bg-below);
   --dropzone-bg-active: var(--color-primary-subtle);
   --dropzone-radius: 2rem;
   --dropzone-padding-y: var(--primitive-space-10);
@@ -20,7 +20,7 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  border: 2px dashed var(--dropzone-border);
+  border: 1.5px dashed var(--dropzone-border);
   border-radius: var(--dropzone-radius);
   padding: var(--dropzone-padding-y) var(--dropzone-padding-x);
   background: var(--dropzone-bg);

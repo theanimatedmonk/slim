@@ -140,7 +140,7 @@ export default function UploadDropzone({
             ) : (
               <div className="upload-dropzone__batch-meta">
                 <span>{loadedLabel}</span>
-                <span>{overallProgress}%</span>
+                <span>{Math.round(overallProgress)}%</span>
               </div>
             ))}
         </div>

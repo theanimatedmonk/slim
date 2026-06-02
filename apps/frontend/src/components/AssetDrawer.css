@@ -7,6 +7,15 @@
   inset: 0;
   background: var(--drawer-overlay-bg);
   z-index: var(--drawer-overlay-z);
+  opacity: 1;
+}
+
+.asset-drawer__overlay--open {
+  animation: asset-drawer-overlay-in var(--duration-enter) var(--ease-interaction);
+}
+
+.asset-drawer__overlay--closing {
+  animation: asset-drawer-overlay-out var(--duration-enter) var(--ease-interaction) forwards;
 }
 
 .asset-drawer {
@@ -29,6 +38,64 @@
   box-shadow: var(--drawer-shadow);
   z-index: var(--drawer-z);
   overflow-y: auto;
+  transform: translateX(0);
+}
+
+.asset-drawer--open {
+  animation: asset-drawer-slide-in var(--duration-enter) var(--ease-interaction);
+}
+
+.asset-drawer--closing {
+  animation: asset-drawer-slide-out var(--duration-enter) var(--ease-interaction) forwards;
+}
+
+@keyframes asset-drawer-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes asset-drawer-slide-out {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes asset-drawer-overlay-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes asset-drawer-overlay-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .asset-drawer--open,
+  .asset-drawer--closing,
+  .asset-drawer__overlay--open,
+  .asset-drawer__overlay--closing {
+    animation: none;
+  }
 }
 
 .asset-drawer__inner {
@@ -56,14 +123,25 @@
 }
 
 .asset-drawer__close {
-  background: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-control);
+  background: transparent;
   border: none;
   color: var(--color-text-secondary);
-  padding: var(--primitive-space-1);
-  transition: color var(--duration-interaction) var(--ease-interaction);
+  padding: 0;
+  cursor: pointer;
+  transition:
+    background var(--duration-interaction) var(--ease-interaction),
+    color var(--duration-interaction) var(--ease-interaction);
 }
 
 .asset-drawer__close:hover {
+  background: var(--color-bg-hover);
   color: var(--color-text-primary);
 }
 
@@ -95,7 +173,7 @@
 .asset-drawer__compare-card {
   background: var(--color-bg-canvas);
   border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-card);
   padding: var(--primitive-space-3);
   display: flex;
   flex-direction: column;
@@ -156,14 +234,14 @@
 
 .asset-drawer__webp-callout {
   border: 1px solid var(--color-warning-border);
-  background: var(--color-warning-subtle);
-  border-radius: var(--radius-control);
+  background: var(--color-badge-warning-bg);
+  border-radius: var(--radius-card);
   padding: var(--space-stack-md);
 }
 
 .asset-drawer__webp-title {
-  color: var(--color-warning-text);
-  font-weight: var(--font-weight-label);
+  color: var(--color-badge-warning-text);
+  font-weight: var(--font-weight-heading);
   margin: 0 0 var(--space-stack-sm);
 }
 
@@ -174,26 +252,29 @@
 }
 
 .asset-drawer__webp-ops {
-  font-size: var(--font-size-caption);
+  font-size: var(--font-size-body-sm);
   color: var(--color-text-secondary);
   margin: 0 0 var(--primitive-space-3);
-  padding-left: var(--space-stack-md);
+  padding-left: 1.25rem;
+  list-style-type: disc;
+  list-style-position: outside;
 }
+
 
 .asset-drawer__webp-btn {
   width: 100%;
   padding: var(--space-stack-sm) 0;
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-pill);
   border: none;
-  background: var(--color-warning-action);
-  color: var(--primitive-black);
+  background: var(--color-badge-warning-text);
+  color: var(--color-badge-warning-solid-text);
   font-weight: var(--font-weight-label);
   font-size: var(--font-size-body-sm);
   transition: background var(--duration-interaction) var(--ease-interaction);
 }
 
 .asset-drawer__webp-btn:hover:not(:disabled) {
-  background: var(--color-warning-action-hover);
+  background: color-mix(in srgb, var(--color-badge-warning-text) 88%, var(--primitive-white));
 }
 
 .asset-drawer__webp-btn:disabled {

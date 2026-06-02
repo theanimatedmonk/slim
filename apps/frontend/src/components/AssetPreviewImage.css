@@ -11,8 +11,6 @@
   width: var(--preview-width, var(--preview-size-sm));
   height: var(--preview-height, var(--preview-size-sm));
   border-radius: var(--preview-radius);
-  border: 1px solid var(--preview-border);
-  background: var(--preview-bg);
   overflow: hidden;
   display: flex;
   align-items: center;

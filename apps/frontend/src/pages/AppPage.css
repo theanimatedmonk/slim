@@ -161,6 +161,14 @@
   background: var(--color-bg-elevated);
 }
 
+.app-page__list-wrap--empty {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
 .app-page__asset-list {
   list-style: none;
   margin: 0;
@@ -178,7 +186,7 @@
   --app-page-table-shadow: var(--shadow-sm);
 }
 
-[data-theme='light'] .app-page__list-wrap {
+[data-theme='light'] .app-page__list-wrap:not(.app-page__list-wrap--empty) {
   box-shadow: var(--app-page-table-shadow);
 }
 

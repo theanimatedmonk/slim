@@ -102,8 +102,8 @@
   border-radius: var(--radius-pill);
   font-size: var(--font-size-caption);
   font-weight: var(--font-weight-label);
-  color: #15803d;
-  background: #dcfce7;
+  color: var(--color-badge-success-text);
+  background: var(--color-badge-success-bg);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -116,8 +116,8 @@
   border-radius: var(--radius-pill);
   font-size: var(--font-size-caption);
   font-weight: var(--font-weight-label);
-  color: #92400e;
-  background: #fef3c7;
+  color: var(--color-badge-warning-text);
+  background: var(--color-badge-warning-bg);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -246,16 +246,6 @@
 .asset-row__icon-btn--dismiss:hover:not(:disabled) {
   background: var(--color-bg-hover);
   color: var(--color-text-primary);
-}
-
-[data-theme='dark'] .asset-row__savings {
-  color: #86efac;
-  background: rgb(22 101 52 / 0.25);
-}
-
-[data-theme='dark'] .asset-row__complex-pill {
-  color: #fcd34d;
-  background: rgb(146 64 14 / 0.25);
 }
 
 @media (max-width: 640px) {

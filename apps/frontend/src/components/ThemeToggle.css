@@ -1,17 +1,16 @@
 /* Layer 3 — ThemeToggle component tokens */
 .theme-toggle {
-  --toggle-bg: var(--color-bg-elevated);
-  --toggle-border: var(--color-border-default);
+  --toggle-bg: var(--primitive-white);
+  --toggle-border: var(--primitive-brand-200);
   --toggle-shadow: var(--shadow-md);
   --toggle-radius: var(--radius-pill);
   --toggle-padding: var(--primitive-space-1);
   --toggle-gap: var(--primitive-space-1);
   --toggle-z: var(--primitive-z-dropdown);
-  --toggle-option-color: var(--color-text-secondary);
-  --toggle-option-active-bg: var(--color-bg-subtle);
-  --toggle-option-active-color: var(--color-text-primary);
-  --toggle-option-hover-bg: var(--color-bg-hover);
-  --toggle-icon-size: var(--font-size-body-sm);
+  --toggle-option-color: var(--primitive-brand-700);
+  --toggle-option-active-bg: var(--primitive-brand-900);
+  --toggle-option-active-color: var(--primitive-white);
+  --toggle-option-hover-bg: rgb(0 0 0 / 0.04);
 
   position: fixed;
   bottom: var(--space-stack-lg);
@@ -30,23 +29,20 @@
 .theme-toggle__option {
   display: inline-flex;
   align-items: center;
-  gap: var(--primitive-space-1);
-  padding: var(--primitive-space-2) var(--primitive-space-3);
+  justify-content: center;
+  padding: var(--primitive-space-2);
   border-radius: var(--radius-pill);
   border: none;
   background: transparent;
   color: var(--toggle-option-color);
-  font-size: var(--font-size-caption);
-  font-weight: var(--font-weight-label);
-  line-height: 1;
+  cursor: pointer;
   transition:
     background var(--duration-interaction) var(--ease-interaction),
     color var(--duration-interaction) var(--ease-interaction);
 }
 
-.theme-toggle__option:hover {
+.theme-toggle__option:hover:not(.theme-toggle__option--active) {
   background: var(--toggle-option-hover-bg);
-  color: var(--color-text-primary);
 }
 
 .theme-toggle__option--active {
@@ -54,27 +50,29 @@
   color: var(--toggle-option-active-color);
 }
 
+.theme-toggle__option--active:hover {
+  background: var(--toggle-option-active-bg);
+  color: var(--toggle-option-active-color);
+}
+
 .theme-toggle__icon {
-  font-size: var(--toggle-icon-size);
-  line-height: 1;
+  --icon-size: var(--icon-size-md);
+  flex-shrink: 0;
 }
 
 [data-theme='light'] .theme-toggle {
-  --toggle-shadow: var(--shadow-md);
-  --toggle-option-active-bg: var(--color-primary-subtle);
-  --toggle-option-active-color: var(--color-primary-active);
+  --toggle-bg: var(--primitive-white);
+  --toggle-border: var(--primitive-brand-200);
+  --toggle-option-color: var(--primitive-brand-700);
+  --toggle-option-active-bg: var(--primitive-brand-900);
+  --toggle-option-active-color: var(--primitive-white);
 }
 
-@media (max-width: 480px) {
-  .theme-toggle__label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
+[data-theme='dark'] .theme-toggle {
+  --toggle-bg: var(--primitive-brand-900);
+  --toggle-border: var(--primitive-brand-800);
+  --toggle-option-color: var(--primitive-white);
+  --toggle-option-active-bg: var(--primitive-white);
+  --toggle-option-active-color: var(--primitive-brand-900);
+  --toggle-option-hover-bg: rgb(255 255 255 / 0.06);
 }

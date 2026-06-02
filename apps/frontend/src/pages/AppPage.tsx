@@ -4,9 +4,11 @@ import AssetRow from '../components/AssetRow';
 import AssetDrawer from '../components/AssetDrawer';
 import AssetTableHeader from '../components/AssetTableHeader';
 import BulkActionBar from '../components/BulkActionBar';
+import ConfirmModal from '../components/ConfirmModal';
 import GuestLanding from '../components/GuestLanding';
 import { useAuth } from '../context/AuthContext.js';
 import { useUpload } from '../hooks/useUpload';
+import { useUploadSounds } from '../hooks/useUploadSounds';
 import { getPreviewForAsset, useAssetPreviews } from '../hooks/useAssetPreviews';
 import {
   useAssets,
@@ -25,11 +27,16 @@ import './AppPage.css';
 function AppPageContent() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(() => new Set());
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    assetIds: string[];
+    message: string;
+  } | null>(null);
 
   const { data: assets = [], isLoading, error } = useAssets();
   useAutoOptimizePending(assets);
   const { uploads, uploadFiles, zonePhase, batchTotal, batchProgress, batchLoadedBytes } =
     useUpload(assets);
+  useUploadSounds(zonePhase);
 
   const convertWebp = useConvertWebp();
   const downloadBundle = useDownloadBundle();
@@ -115,15 +122,48 @@ function AppPageContent() {
 
     const message =
       count === 1
-        ? 'Delete 1 selected file? This cannot be undone.'
-        : `Delete ${count} selected files? This cannot be undone.`;
+        ? 'Are you sure you want to delete 1 selected file?'
+        : `Are you sure you want to delete ${count} selected files?`;
 
-    if (!window.confirm(message)) return;
+    setDeleteConfirm({ assetIds: selectedCompleteIds, message });
+  };
 
-    deleteAssetsMutation.mutate(selectedCompleteIds, {
+  const handleRequestDelete = (assetId: string) => {
+    const asset = assets.find((a) => a.id === assetId);
+    if (!asset) return;
+
+    setDeleteConfirm({
+      assetIds: [assetId],
+      message: 'Are you sure you want to delete this file?',
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteConfirm) return;
+
+    const { assetIds } = deleteConfirm;
+    const idSet = new Set(assetIds);
+    setDeleteConfirm(null);
+
+    if (assetIds.length === 1) {
+      const id = assetIds[0];
+      deleteAssetMutation.mutate(id, {
+        onSuccess: () => {
+          setCheckedIds((prev) => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+          });
+          if (selectedId === id) setSelectedId(null);
+        },
+      });
+      return;
+    }
+
+    deleteAssetsMutation.mutate(assetIds, {
       onSuccess: () => {
         setCheckedIds(new Set());
-        if (selectedId && selectedCompleteIds.includes(selectedId)) {
+        if (selectedId && idSet.has(selectedId)) {
           setSelectedId(null);
         }
       },
@@ -159,7 +199,9 @@ function AppPageContent() {
       )}
 
       <section className="app-page__assets">
-        <div className="app-page__list-wrap">
+        <div
+          className={`app-page__list-wrap${assets.length === 0 ? ' app-page__list-wrap--empty' : ''}`}
+        >
           <ul className="app-page__asset-list">
             {!isLoading && assets.length > 0 && (
               <AssetTableHeader
@@ -191,7 +233,8 @@ function AppPageContent() {
                   onCheckedChange={(checked) => toggleChecked(asset.id, checked)}
                   onSelect={() => setSelectedId(asset.id)}
                   onDownload={(asset) => downloadAsset.mutate(asset.id)}
-                  onDelete={(id) => {
+                  onDelete={handleRequestDelete}
+                  onDeleteImmediate={(id) => {
                     deleteAssetMutation.mutate(id, {
                       onSuccess: () => {
                         setCheckedIds((prev) => {
@@ -222,6 +265,13 @@ function AppPageContent() {
         onClear={() => setCheckedIds(new Set())}
         isDownloading={downloadBundle.isPending}
         isDeleting={deleteAssetsMutation.isPending}
+      />
+
+      <ConfirmModal
+        open={deleteConfirm !== null}
+        message={deleteConfirm?.message ?? ''}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteConfirm(null)}
       />
 
       <AssetDrawer

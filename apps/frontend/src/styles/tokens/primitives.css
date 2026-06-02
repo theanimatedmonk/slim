@@ -3,40 +3,37 @@
  * Raw values. Do not reference from components directly.
  */
 :root {
-  /* Brand — sky */
-  --primitive-brand-50: #eef9ff;
-  --primitive-brand-100: #d9f0ff;
-  --primitive-brand-200: #bae6fd;
-  --primitive-brand-300: #7dd3fc;
-  --primitive-brand-400: #38bdf8;
-  --primitive-brand-500: #0ea5e9;
-  --primitive-brand-600: #0284c7;
-  --primitive-brand-700: #0369a1;
-  --primitive-brand-800: #075985;
-  --primitive-brand-900: #0c4a6e;
-
-  /* Neutral — slate */
-  --primitive-neutral-50: #f8fafc;
-  --primitive-neutral-100: #f1f5f9;
-  --primitive-neutral-200: #e2e8f0;
-  --primitive-neutral-300: #cbd5e1;
-  --primitive-neutral-400: #94a3b8;
-  --primitive-neutral-500: #64748b;
-  --primitive-neutral-600: #475569;
-  --primitive-neutral-700: #334155;
-  --primitive-neutral-800: #1e293b;
-  --primitive-neutral-900: #0f172a;
-  --primitive-neutral-950: #0b1220;
+  /* Brand — true grey (no blue tint) */
+  --primitive-brand-50: #fafafa;
+  --primitive-brand-100: #f5f5f5;
+  --primitive-brand-200: #e5e5e5;
+  --primitive-brand-300: #d4d4d4;
+  --primitive-brand-400: #a3a3a3;
+  --primitive-brand-500: #737373;
+  --primitive-brand-600: #525252;
+  --primitive-brand-700: #404040;
+  --primitive-brand-800: #262626;
+  --primitive-brand-900: #171717;
+  --primitive-brand-950: #141414;
 
   /* Success — emerald */
+  --primitive-success-100: #dcfce7;
+  --primitive-success-300: #86efac;
   --primitive-success-400: #34d399;
   --primitive-success-500: #10b981;
   --primitive-success-600: #059669;
+  --primitive-success-700: #15803d;
+  --primitive-success-800: #166534;
+  --primitive-success-900: #15231b;
 
   /* Warning — amber */
+  --primitive-warning-100: #f6edca;
+  --primitive-warning-300: #fcd34d;
   --primitive-warning-400: #fbbf24;
   --primitive-warning-500: #f59e0b;
   --primitive-warning-600: #d97706;
+  --primitive-warning-800: #6a4e1a;
+  --primitive-warning-900: #2d2617;
 
   /* Error — rose */
   --primitive-error-300: #fda4af;
@@ -124,4 +121,6 @@
   --primitive-z-sticky: 40;
   --primitive-z-drawer-overlay: 40;
   --primitive-z-drawer: 50;
+  --primitive-z-modal-overlay: 55;
+  --primitive-z-modal: 60;
 }

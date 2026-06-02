@@ -1,0 +1,198 @@
+.confirm-modal__overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--color-bg-overlay);
+  z-index: var(--primitive-z-modal-overlay);
+  opacity: 1;
+}
+
+.confirm-modal__overlay--open {
+  animation: confirm-modal-overlay-in var(--duration-enter) var(--ease-interaction);
+}
+
+.confirm-modal__overlay--closing {
+  animation: confirm-modal-overlay-out var(--duration-enter) var(--ease-interaction) forwards;
+  pointer-events: none;
+}
+
+.confirm-modal {
+  --modal-width: 28rem;
+  --modal-padding: var(--primitive-space-8);
+  --modal-radius: 1.5rem;
+
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% - var(--space-stack-xl) * 2);
+  max-width: var(--modal-width);
+  background: var(--color-bg-elevated);
+  border: none;
+  border-radius: var(--modal-radius);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--primitive-z-modal);
+  padding: var(--modal-padding);
+  opacity: 1;
+}
+
+.confirm-modal--open {
+  animation: confirm-modal-in var(--duration-enter) var(--ease-interaction);
+}
+
+.confirm-modal--closing {
+  animation: confirm-modal-out var(--duration-enter) var(--ease-interaction) forwards;
+  pointer-events: none;
+}
+
+.confirm-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-inline-md);
+  margin-bottom: var(--space-stack-xs);
+}
+
+.confirm-modal__title {
+  margin: 0;
+  font-size: var(--font-size-heading-sm);
+  font-weight: var(--font-weight-heading);
+  line-height: var(--line-height-tight);
+  color: var(--color-text-primary);
+}
+
+.confirm-modal__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  margin: calc(var(--primitive-space-1) * -1) calc(var(--primitive-space-1) * -1) 0 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  padding: 0;
+  cursor: pointer;
+  transition:
+    background var(--duration-interaction) var(--ease-interaction),
+    color var(--duration-interaction) var(--ease-interaction);
+}
+
+.confirm-modal__close:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+.confirm-modal__close:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.confirm-modal__message {
+  margin: 0 0 var(--space-stack-xl);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-body);
+  line-height: var(--line-height-body);
+  color: var(--color-text-secondary);
+}
+
+.confirm-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-inline-sm);
+}
+
+.confirm-modal__btn {
+  font-family: inherit;
+  font-size: var(--font-size-body-sm);
+  font-weight: var(--font-weight-label);
+  line-height: 1;
+  padding: var(--primitive-space-3) var(--primitive-space-5);
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    background var(--duration-interaction) var(--ease-interaction),
+    color var(--duration-interaction) var(--ease-interaction),
+    border-color var(--duration-interaction) var(--ease-interaction);
+}
+
+.confirm-modal__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.confirm-modal__btn--cancel {
+  background: var(--color-bg-elevated);
+  border-color: var(--color-border-default);
+  color: var(--color-text-primary);
+}
+
+.confirm-modal__btn--cancel:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+}
+
+.confirm-modal__btn--confirm {
+  background: var(--color-bg-inverse);
+  border-color: var(--color-bg-inverse);
+  color: var(--color-text-inverse);
+}
+
+.confirm-modal__btn--confirm:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+@keyframes confirm-modal-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 0.5rem));
+  }
+}
+
+@keyframes confirm-modal-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 0.5rem));
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@keyframes confirm-modal-overlay-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes confirm-modal-overlay-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirm-modal--open,
+  .confirm-modal--closing,
+  .confirm-modal__overlay--open,
+  .confirm-modal__overlay--closing {
+    animation: none;
+  }
+}

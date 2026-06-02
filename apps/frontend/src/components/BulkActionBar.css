@@ -11,7 +11,7 @@
   border: 1px solid var(--color-border-default);
   border-radius: var(--radius-pill);
   background: var(--color-bg-elevated);
-  box-shadow: var(--shadow-md, 0 8px 24px rgb(15 23 42 / 0.12));
+  box-shadow: var(--shadow-md, 0 8px 24px rgb(0 0 0 / 0.12));
   transform: translateX(-50%);
 }
 
@@ -103,5 +103,5 @@
 }
 
 [data-theme='light'] .bulk-action-bar {
-  box-shadow: var(--shadow-md, 0 8px 24px rgb(15 23 42 / 0.1));
+  box-shadow: var(--shadow-md, 0 8px 24px rgb(0 0 0 / 0.1));
 }
