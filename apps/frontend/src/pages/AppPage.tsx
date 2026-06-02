@@ -9,11 +9,12 @@ import GuestLanding from '../components/GuestLanding';
 import { useAuth } from '../context/AuthContext.js';
 import { useUpload } from '../hooks/useUpload';
 import { useUploadSounds } from '../hooks/useUploadSounds';
-import { getPreviewForAsset, useAssetPreviews } from '../hooks/useAssetPreviews';
+import { getPreviewForAsset, getPreviewableAssetIds, useAssetPreviews } from '../hooks/useAssetPreviews';
 import {
   useAssets,
   useAssetDetail,
   useAutoOptimizePending,
+  isAssetProcessing,
   useConvertWebp,
   useDownloadBundle,
   useDownloadAsset,
@@ -31,11 +32,19 @@ function AppPageContent() {
     assetIds: string[];
     message: string;
   } | null>(null);
+  const [pollAssetsWhileUploading, setPollAssetsWhileUploading] = useState(false);
 
-  const { data: assets = [], isLoading, error } = useAssets();
+  const { data: assets = [], isLoading, error } = useAssets({
+    pollWhileBusy: pollAssetsWhileUploading,
+  });
   useAutoOptimizePending(assets);
   const { uploads, uploadFiles, zonePhase, batchTotal, batchProgress, batchLoadedBytes } =
     useUpload(assets);
+
+  useEffect(() => {
+    setPollAssetsWhileUploading(zonePhase === 'uploading');
+  }, [zonePhase]);
+
   useUploadSounds(zonePhase);
 
   const convertWebp = useConvertWebp();
@@ -86,8 +95,14 @@ function AppPageContent() {
     };
   }, [selectedAsset, assetDetail]);
 
-  const assetIds = useMemo(() => assets.map((a) => a.id), [assets]);
-  const { data: previews } = useAssetPreviews(assetIds);
+  const previewAssetIds = useMemo(() => getPreviewableAssetIds(assets), [assets]);
+  const hasProcessingAssets = useMemo(
+    () => assets.some((asset) => isAssetProcessing(asset)),
+    [assets]
+  );
+  const { data: previews } = useAssetPreviews(previewAssetIds, {
+    refetchWhileProcessing: hasProcessingAssets,
+  });
 
   const selectedCompleteIds = useMemo(
     () => [...checkedIds].filter((id) => completeAssetIds.has(id)),

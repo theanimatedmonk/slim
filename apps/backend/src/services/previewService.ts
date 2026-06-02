@@ -14,8 +14,13 @@ async function signPreview(
   kind: AssetPreviewKind
 ): Promise<AssetPreview | null> {
   if (!path) return null;
-  const url = await createSignedDownloadUrl(path, { expiresIn: PREVIEW_URL_TTL_SEC });
-  return { url, kind };
+  try {
+    const url = await createSignedDownloadUrl(path, { expiresIn: PREVIEW_URL_TTL_SEC });
+    return { url, kind };
+  } catch (err) {
+    console.warn(`Preview sign failed for ${path}:`, err);
+    return null;
+  }
 }
 
 export async function buildPreviewSetForAsset(asset: Asset): Promise<AssetPreviewSet> {
@@ -40,9 +45,13 @@ export async function getPreviewSetsForUser(
   const previews: Record<string, AssetPreviewSet> = {};
 
   for (const id of assetIds) {
-    const asset = await getAssetForUser(id, userId);
-    if (!asset) continue;
-    previews[id] = await buildPreviewSetForAsset(asset);
+    try {
+      const asset = await getAssetForUser(id, userId);
+      if (!asset) continue;
+      previews[id] = await buildPreviewSetForAsset(asset);
+    } catch (err) {
+      console.warn(`Preview build failed for asset ${id}:`, err);
+    }
   }
 
   return previews;

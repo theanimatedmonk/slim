@@ -56,18 +56,6 @@ export function useUpload(assets: AssetListItem[] = []) {
     void queryClient.invalidateQueries({ queryKey: ['asset-previews'] });
   }, [queryClient]);
 
-  const previewRefreshTimerRef = useRef<number | null>(null);
-
-  const schedulePreviewRefresh = useCallback(() => {
-    if (previewRefreshTimerRef.current) {
-      window.clearTimeout(previewRefreshTimerRef.current);
-    }
-    previewRefreshTimerRef.current = window.setTimeout(() => {
-      refreshPreviews();
-      previewRefreshTimerRef.current = null;
-    }, 400);
-  }, [refreshPreviews]);
-
   const syncBatchProgress = useCallback((inFlight: UploadItem[]) => {
     const batch = batchRef.current;
     if (!batch) return;
@@ -93,7 +81,7 @@ export function useUpload(assets: AssetListItem[] = []) {
       batchRef.current = null;
       finishingRef.current = false;
       successTimerRef.current = null;
-    }, 3000);
+    }, 2000);
   }, [refreshPreviews]);
 
   const finishWithErrors = useCallback(() => {
@@ -195,11 +183,9 @@ export function useUpload(assets: AssetListItem[] = []) {
         return next;
       });
 
-      refreshAssets();
-      schedulePreviewRefresh();
       return assetId;
     },
-    [queryClient, refreshAssets, schedulePreviewRefresh, syncBatchProgress]
+    [queryClient, syncBatchProgress]
   );
 
   const uploadFiles = useCallback(
@@ -264,13 +250,14 @@ export function useUpload(assets: AssetListItem[] = []) {
             batchRemainingRef.current -= 1;
             if (batchRemainingRef.current === 0 && batchRef.current) {
               batchRef.current.uploadsDone = true;
+              refreshAssets();
               setBatchCheckTick((t) => t + 1);
             }
           }
         })
       );
     },
-    [uploadOne, syncBatchProgress]
+    [uploadOne, syncBatchProgress, refreshAssets]
   );
 
   const clearUploads = useCallback(() => {

@@ -11,7 +11,7 @@
   padding: var(--space-page-y) var(--space-page-x) var(--space-section-y);
   display: flex;
   flex-direction: column;
-  gap: var(--space-stack-xl);
+  gap: var(--space-stack-2xl);
 }
 
 .guest-landing__hero {
@@ -19,7 +19,7 @@
 }
 
 .guest-landing__headline {
-  font-size: clamp(var(--font-size-heading-lg), 4vw, var(--font-size-heading-lg));
+  font-size: clamp(var(--primitive-font-size-xl), 4vw, var(--primitive-font-size-5xl));
   font-weight: var(--font-weight-heading);
   line-height: var(--line-height-tight);
   margin: 0 0 var(--space-stack-md);
@@ -52,7 +52,7 @@
   gap: var(--space-stack-lg);
   padding: var(--space-stack-xl);
   border: 1px solid var(--guest-card-border);
-  border-radius: var(--radius-card);
+  border-radius: 2rem;
   background: var(--guest-card-bg);
   box-shadow: var(--guest-card-shadow);
 }

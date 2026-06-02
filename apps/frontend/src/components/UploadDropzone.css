@@ -70,11 +70,15 @@
   font-size: var(--font-size-body-lg);
   font-weight: var(--font-weight-label);
   color: var(--color-text-primary);
-  margin: 0 0 var(--space-stack-sm);
+  margin: 0;
 }
 
-.upload-dropzone__title--success {
+.upload-dropzone__zone--busy .upload-dropzone__title {
   margin-bottom: var(--space-stack-md);
+}
+
+.upload-dropzone__zone:not(.upload-dropzone__zone--busy) .upload-dropzone__title {
+  margin-bottom: var(--space-stack-sm);
 }
 
 .upload-dropzone__browse {
@@ -95,7 +99,7 @@
 .upload-dropzone__batch-progress {
   width: min(100%, 360px);
   min-height: calc(72px + var(--primitive-space-6));
-  margin-top: var(--space-stack-sm);
+  margin-top: 0;
 }
 
 /* Preload off-screen while idle so the canvas is warm before upload starts */

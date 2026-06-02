@@ -113,9 +113,7 @@ export default function UploadDropzone({
         )}
 
         {isBusy && (
-          <p
-            className={`upload-dropzone__title${zonePhase === 'success' ? ' upload-dropzone__title--success' : ''}`}
-          >
+          <p className="upload-dropzone__title">
             {zonePhase === 'success' ? (
               'Success!'
             ) : (

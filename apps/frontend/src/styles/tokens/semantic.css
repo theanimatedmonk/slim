@@ -10,6 +10,7 @@
   --space-stack-md: var(--primitive-space-4);
   --space-stack-lg: var(--primitive-space-6);
   --space-stack-xl: var(--primitive-space-8);
+  --space-stack-2xl: var(--primitive-space-16);
   --space-inline-sm: var(--primitive-space-2);
   --space-inline-md: var(--primitive-space-4);
 
