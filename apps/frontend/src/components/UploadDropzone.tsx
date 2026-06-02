@@ -1,13 +1,9 @@
 import { useCallback, useId, useRef, useState } from 'react';
 import { formatBytes } from '../utils/format';
 import type { UploadItem, UploadZonePhase } from '../hooks/useUpload';
+import UploadIconRive from './UploadIconRive';
+import UploadProgressRive from './UploadProgressRive';
 import './UploadDropzone.css';
-
-const UPLOAD_ICONS = {
-  idle: '/landing/other/hero image.svg',
-  uploading: '/landing/other/hero image.svg',
-  success: '/landing/other/hero image.svg',
-} as const;
 
 interface Props {
   onFiles: (files: File[]) => void;
@@ -62,13 +58,6 @@ export default function UploadDropzone({
     if (!zoneDisabled) inputRef.current?.click();
   };
 
-  const iconSrc =
-    zonePhase === 'success'
-      ? UPLOAD_ICONS.success
-      : zonePhase === 'uploading'
-        ? UPLOAD_ICONS.uploading
-        : UPLOAD_ICONS.idle;
-
   return (
     <div className="upload-dropzone">
       <div
@@ -103,14 +92,8 @@ export default function UploadDropzone({
           }}
         />
 
-        <div className={`upload-dropzone__icon-wrap${zonePhase === 'success' ? ' upload-dropzone__icon-wrap--success' : ''}`}>
-          {zonePhase === 'success' ? (
-            <span className="upload-dropzone__success-mark" aria-hidden>
-              ✓
-            </span>
-          ) : (
-            <img src={iconSrc} alt="" className="upload-dropzone__icon-img" />
-          )}
+        <div className="upload-dropzone__icon-wrap">
+          <UploadIconRive zonePhase={zonePhase} />
         </div>
 
         {zonePhase === 'idle' && (
@@ -129,43 +112,38 @@ export default function UploadDropzone({
           </>
         )}
 
-        {zonePhase === 'uploading' && (
-          <>
-            <p className="upload-dropzone__title">
-              Uploading <strong>{batchCount}</strong> file(s)
-            </p>
-            <div className="upload-dropzone__batch-progress">
-              <div className="upload-dropzone__batch-track">
-                <div
-                  className="upload-dropzone__batch-fill"
-                  style={{ width: `${overallProgress}%` }}
-                />
-              </div>
-              {overallProgress >= 100 ? (
-                <p className="upload-dropzone__subtext">Processing…</p>
-              ) : (
-                <div className="upload-dropzone__batch-meta">
-                  <span>{loadedLabel}</span>
-                  <span>{overallProgress}%</span>
-                </div>
-              )}
-            </div>
-          </>
+        {isBusy && (
+          <p
+            className={`upload-dropzone__title${zonePhase === 'success' ? ' upload-dropzone__title--success' : ''}`}
+          >
+            {zonePhase === 'success' ? (
+              'Success!'
+            ) : (
+              <>
+                Uploading <strong>{batchCount}</strong> file(s)
+              </>
+            )}
+          </p>
         )}
 
-        {zonePhase === 'success' && (
-          <>
-            <p className="upload-dropzone__title upload-dropzone__title--success">Success!</p>
-            <div className="upload-dropzone__batch-progress">
-              <div className="upload-dropzone__batch-track">
-                <div className="upload-dropzone__batch-fill" style={{ width: '100%' }} />
-              </div>
+        <div
+          className={`upload-dropzone__batch-progress${isBusy ? ' upload-dropzone__batch-progress--visible' : ''}`}
+        >
+          <UploadProgressRive progress={overallProgress} active={isBusy} />
+          {isBusy &&
+            (zonePhase === 'success' ? (
               <p className="upload-dropzone__subtext">
                 {batchCount} file{batchCount === 1 ? '' : 's'} uploaded
               </p>
-            </div>
-          </>
-        )}
+            ) : overallProgress >= 100 ? (
+              <p className="upload-dropzone__subtext">Processing…</p>
+            ) : (
+              <div className="upload-dropzone__batch-meta">
+                <span>{loadedLabel}</span>
+                <span>{overallProgress}%</span>
+              </div>
+            ))}
+        </div>
       </div>
     </div>
   );

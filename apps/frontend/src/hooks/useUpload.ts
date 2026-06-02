@@ -93,7 +93,7 @@ export function useUpload(assets: AssetListItem[] = []) {
       batchRef.current = null;
       finishingRef.current = false;
       successTimerRef.current = null;
-    }, 2000);
+    }, 3000);
   }, [refreshPreviews]);
 
   const finishWithErrors = useCallback(() => {

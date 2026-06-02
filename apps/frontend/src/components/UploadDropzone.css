@@ -7,12 +7,6 @@
   --dropzone-radius: 2rem;
   --dropzone-padding-y: var(--primitive-space-10);
   --dropzone-padding-x: var(--primitive-space-6);
-  --dropzone-progress-gradient: linear-gradient(
-    90deg,
-    var(--primitive-brand-500) 0%,
-    var(--primitive-success-500) 45%,
-    #a855f7 100%
-  );
 
   display: flex;
   flex-direction: column;
@@ -20,6 +14,7 @@
 }
 
 .upload-dropzone__zone {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -54,32 +49,21 @@
 }
 
 .upload-dropzone__icon-wrap {
-  width: 5.5rem;
-  height: 5.5rem;
+  width: 150px;
+  height: 150px;
   margin-bottom: var(--space-stack-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-shrink: 0;
 }
 
-.upload-dropzone__icon-wrap--success {
-  width: 4rem;
-  height: 4rem;
-  border-radius: var(--radius-pill);
-  background: var(--color-primary-active);
-}
-
-.upload-dropzone__icon-img {
+.upload-dropzone__icon-rive-wrap {
   width: 100%;
   height: 100%;
-  object-fit: contain;
 }
 
-.upload-dropzone__success-mark {
-  color: var(--color-text-on-primary);
-  font-size: 1.75rem;
-  font-weight: var(--font-weight-heading);
-  line-height: 1;
+.upload-dropzone__rive {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .upload-dropzone__title {
@@ -109,22 +93,38 @@
 }
 
 .upload-dropzone__batch-progress {
-  width: min(100%, 22rem);
+  width: min(100%, 360px);
+  min-height: calc(72px + var(--primitive-space-6));
   margin-top: var(--space-stack-sm);
 }
 
-.upload-dropzone__batch-track {
-  height: 0.625rem;
-  border-radius: var(--radius-pill);
-  background: var(--color-bg-subtle);
-  overflow: hidden;
+/* Preload off-screen while idle so the canvas is warm before upload starts */
+.upload-dropzone__batch-progress:not(.upload-dropzone__batch-progress--visible) {
+  position: absolute;
+  left: -10000px;
+  top: 0;
+  width: 360px;
+  min-height: 72px;
+  margin: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
-.upload-dropzone__batch-fill {
+.upload-dropzone__batch-progress--visible {
+  position: static;
+  visibility: visible;
+}
+
+.upload-dropzone__progress-wrap {
+  width: 360px;
+  height: 72px;
+  max-width: 100%;
+}
+
+.upload-dropzone__rive-progress {
+  display: block;
+  width: 100%;
   height: 100%;
-  border-radius: inherit;
-  background: var(--dropzone-progress-gradient);
-  transition: width var(--duration-interaction) var(--ease-interaction);
 }
 
 .upload-dropzone__batch-meta {
