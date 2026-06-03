@@ -4,9 +4,8 @@
   --dropzone-border-active: var(--color-primary-border);
   --dropzone-bg: var(--color-bg-below);
   --dropzone-bg-active: var(--color-primary-subtle);
-  --dropzone-radius: 2rem;
-  --dropzone-padding-y: var(--primitive-space-10);
-  --dropzone-padding-x: var(--primitive-space-6);
+  --dropzone-radius: var(--radius-card);
+  --dropzone-padding: var(--primitive-space-10) var(--primitive-space-6) var(--primitive-space-6);
 
   display: flex;
   flex-direction: column;
@@ -22,7 +21,7 @@
   text-align: center;
   border: 1.5px dashed var(--dropzone-border);
   border-radius: var(--dropzone-radius);
-  padding: var(--dropzone-padding-y) var(--dropzone-padding-x);
+  padding: var(--dropzone-padding);
   background: var(--dropzone-bg);
   cursor: pointer;
   transition:
@@ -51,7 +50,7 @@
 .upload-dropzone__icon-wrap {
   width: 150px;
   height: 150px;
-  margin-bottom: var(--space-stack-lg);
+  margin-bottom: var(--space-stack-sm);
   flex-shrink: 0;
 }
 
