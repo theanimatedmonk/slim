@@ -2,7 +2,8 @@
 .app-page__asset-list {
   --row-thumb-size: 3rem;
   --row-icon-btn-size: 2.5rem;
-  --row-checkbox-size: 1.125rem;
+  --row-checkbox-size: 1.25rem;
+  --row-checkbox-hit-size: 2.5rem;
 }
 
 .asset-row {
@@ -10,7 +11,7 @@
   --row-hover-bg: var(--color-bg-hover);
 
   display: grid;
-  grid-template-columns: var(--row-checkbox-size) 2fr 4fr 1fr;
+  grid-template-columns: var(--row-checkbox-hit-size) 2fr 4fr 1fr;
   align-items: center;
   column-gap: var(--space-inline-md);
   padding: var(--space-stack-md) var(--space-page-x);

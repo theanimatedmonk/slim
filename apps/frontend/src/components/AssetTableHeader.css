@@ -1,7 +1,7 @@
 /* Layer 3 — AssetTableHeader (matches AssetRow grid) */
 .asset-table-header {
   display: grid;
-  grid-template-columns: var(--row-checkbox-size) 2fr 4fr 1fr;
+  grid-template-columns: var(--row-checkbox-hit-size) 2fr 4fr 1fr;
   align-items: center;
   column-gap: var(--space-inline-md);
   padding: var(--space-stack-sm) var(--space-page-x);

@@ -1,20 +1,41 @@
 /**
  * Shared custom checkbox — used on asset table header + rows.
- * Native appearance is reset so border-radius and checked states apply consistently.
+ * 20×20 visual box inside a 40×40 tap target (via ::before).
  */
 .app-checkbox {
-  --checkbox-size: var(--row-checkbox-size, 1.125rem);
+  --checkbox-size: var(--row-checkbox-size, 1.25rem);
+  --checkbox-hit-size: var(--row-checkbox-hit-size, 2.5rem);
   --checkbox-radius: var(--primitive-radius-sm);
   --checkbox-mark-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M3.5 8.5 6.5 11.5 12.5 5.5' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --checkbox-mark-indeterminate: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 8h8' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
 
+  position: relative;
   appearance: none;
-  cursor: pointer;
   -webkit-appearance: none;
-  width: var(--checkbox-size);
-  height: var(--checkbox-size);
+  width: var(--checkbox-hit-size);
+  height: var(--checkbox-hit-size);
   margin: 0;
   flex-shrink: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--primitive-radius-lg);
+  transition: background-color var(--duration-interaction) var(--ease-interaction);
+}
+
+.app-checkbox:hover:not(:disabled) {
+  background-color: var(--color-bg-hover);
+}
+
+.app-checkbox::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--checkbox-size);
+  height: var(--checkbox-size);
+  transform: translate(-50%, -50%);
+  box-sizing: border-box;
   border: 1.5px solid var(--color-border-default);
   border-radius: var(--checkbox-radius);
   background-color: var(--color-bg-elevated);
@@ -26,22 +47,23 @@
     border-color var(--duration-interaction) var(--ease-interaction);
 }
 
-.app-checkbox:hover:not(:disabled):not(:checked):not(:indeterminate) {
+.app-checkbox:hover:not(:disabled):not(:checked):not(:indeterminate)::before {
   border-color: var(--color-text-muted);
 }
 
 .app-checkbox:focus-visible {
   outline: 2px solid var(--color-border-focus);
-  outline-offset: 2px;
+  outline-offset: 0;
+  border-radius: var(--checkbox-radius);
 }
 
-.app-checkbox:checked {
+.app-checkbox:checked::before {
   background-color: var(--color-bg-inverse);
   border-color: var(--color-bg-inverse);
   background-image: var(--checkbox-mark-check);
 }
 
-.app-checkbox:indeterminate {
+.app-checkbox:indeterminate::before {
   background-color: var(--color-bg-inverse);
   border-color: var(--color-bg-inverse);
   background-image: var(--checkbox-mark-indeterminate);
