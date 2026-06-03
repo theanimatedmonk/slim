@@ -1,0 +1,30 @@
+/* Layer 3 — Tooltip */
+.tooltip {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.tooltip__label {
+  position: absolute;
+  bottom: calc(100% + var(--space-inline-sm));
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--space-stack-xs) var(--space-inline-sm);
+  border-radius: var(--primitive-radius-sm);
+  background: var(--color-bg-inverse);
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-label);
+  line-height: var(--line-height-tight);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 10;
+  transition: opacity var(--duration-interaction) var(--ease-interaction);
+}
+
+.tooltip:hover .tooltip__label,
+.tooltip:focus-within .tooltip__label {
+  opacity: 1;
+}

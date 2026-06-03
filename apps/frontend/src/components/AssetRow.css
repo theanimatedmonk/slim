@@ -1,7 +1,6 @@
 /* Layer 3 — AssetRow — checkbox + 3-column grid */
 .app-page__asset-list {
   --row-thumb-size: 3rem;
-  --row-icon-btn-size: 2.5rem;
   --row-checkbox-size: 1.25rem;
   --row-checkbox-hit-size: 2.5rem;
 }
@@ -129,6 +128,7 @@
   align-items: center;
   justify-content: flex-end;
   min-width: 0;
+  overflow: visible;
 }
 
 .asset-row__actions {
@@ -183,70 +183,6 @@
 
 .asset-row__feedback--default {
   color: var(--color-text-secondary);
-}
-
-.asset-row__icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--row-icon-btn-size);
-  height: var(--row-icon-btn-size);
-  border-radius: var(--primitive-radius-lg);
-  border: none;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition:
-    background var(--duration-interaction) var(--ease-interaction),
-    opacity var(--duration-interaction) var(--ease-interaction);
-}
-
-.asset-row__icon-btn .icon {
-  flex-shrink: 0;
-}
-
-.asset-row__icon-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.asset-row__icon-btn--download {
-  background: var(--color-bg-inverse);
-  color: var(--color-text-inverse);
-}
-
-.asset-row__icon-btn--download:hover:not(:disabled) {
-  opacity: 0.88;
-}
-
-.asset-row__icon-btn--delete {
-  background: var(--color-bg-elevated);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border-default);
-}
-
-.asset-row__icon-btn--delete:hover:not(:disabled) {
-  background: var(--color-bg-hover);
-}
-
-.asset-row__icon-btn--dismiss {
-  background: var(--color-bg-elevated);
-  color: var(--color-text-muted);
-  border: 1px solid var(--color-border-default);
-}
-
-.asset-row__icon-btn--retry {
-  background: var(--color-bg-elevated);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border-default);
-}
-
-.asset-row__icon-btn--retry:hover:not(:disabled) {
-  background: var(--color-bg-hover);
-}
-
-.asset-row__icon-btn--dismiss:hover:not(:disabled) {
-  background: var(--color-bg-hover);
-  color: var(--color-text-primary);
 }
 
 @media (max-width: 640px) {

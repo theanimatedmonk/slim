@@ -301,6 +301,7 @@ function AppPageContent() {
           drawerAsset ? getPreviewForAsset(previews, drawerAsset.id) : undefined
         }
         onClose={() => setSelectedId(null)}
+        onDownload={(id) => downloadAsset.mutate(id)}
         onConvertWebp={(id) => convertWebp.mutate(id)}
         onDownloadWebp={(id) => downloadWebp.mutate(id)}
         isConverting={

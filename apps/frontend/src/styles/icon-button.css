@@ -1,0 +1,66 @@
+/* Shared icon action buttons — asset table rows, drawer, etc. */
+.icon-btn {
+  --icon-btn-size: 2.5rem;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--icon-btn-size);
+  height: var(--icon-btn-size);
+  border-radius: var(--primitive-radius-lg);
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background var(--duration-interaction) var(--ease-interaction),
+    opacity var(--duration-interaction) var(--ease-interaction);
+}
+
+.icon-btn .icon {
+  flex-shrink: 0;
+}
+
+.icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.icon-btn--download {
+  background: var(--color-bg-inverse);
+  color: var(--color-text-inverse);
+}
+
+.icon-btn--download:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.icon-btn--delete {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-default);
+}
+
+.icon-btn--delete:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+}
+
+.icon-btn--dismiss {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border-default);
+}
+
+.icon-btn--retry {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-default);
+}
+
+.icon-btn--retry:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+}
+
+.icon-btn--dismiss:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}

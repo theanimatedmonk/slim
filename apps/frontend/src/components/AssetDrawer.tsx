@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { AssetListItem, AssetPreviewSet, AssetWithJob } from '@asset-optimiser/shared-types';
 import AssetPreviewImage from './AssetPreviewImage';
 import Icon from './Icon';
+import Tooltip from './Tooltip';
 import { shouldRecommendWebp } from '../hooks/useAssets';
 import { formatBytes, calculateReductionPercent } from '../utils/format';
 import './AssetDrawer.css';
@@ -12,6 +13,7 @@ interface Props {
   asset: DrawerAsset | null;
   previewSet?: AssetPreviewSet;
   onClose: () => void;
+  onDownload: (assetId: string) => void;
   onConvertWebp: (assetId: string) => void;
   onDownloadWebp: (assetId: string) => void;
   isConverting?: boolean;
@@ -21,6 +23,7 @@ export default function AssetDrawer({
   asset,
   previewSet,
   onClose,
+  onDownload,
   onConvertWebp,
   onDownloadWebp,
   isConverting,
@@ -92,6 +95,7 @@ export default function AssetDrawer({
   const isWebpReady = Boolean(displayAsset.webp_path);
   const isWebpConverting =
     !isWebpReady && (displayAsset.status === 'converting' || isConverting);
+  const isComplete = displayAsset.status === 'complete';
 
   const overlayClass = [
     'asset-drawer__overlay',
@@ -184,13 +188,35 @@ export default function AssetDrawer({
                   size="md"
                   priority
                 />
-                <div>
-                  <p className="asset-drawer__compare-label">Optimized</p>
-                  <p className="asset-drawer__compare-value asset-drawer__compare-value--success">
-                    {displayAsset.optimized_size != null
-                      ? formatBytes(displayAsset.optimized_size)
-                      : '—'}
-                  </p>
+                <div className="asset-drawer__compare-meta">
+                  <div>
+                    <p className="asset-drawer__compare-label">Optimized</p>
+                    <p className="asset-drawer__compare-value asset-drawer__compare-value--success">
+                      {displayAsset.optimized_size != null
+                        ? formatBytes(displayAsset.optimized_size)
+                        : '—'}
+                    </p>
+                  </div>
+                  {isComplete && (
+                    <Tooltip label="Download">
+                      <button
+                        type="button"
+                        onClick={() => onDownload(displayAsset.id)}
+                        className="icon-btn icon-btn--download"
+                        aria-label={`Download ${displayAsset.filename}`}
+                      >
+                        <Icon size="sm" viewBox="0 0 16 16" stroke="var(--color-text-inverse)">
+                          <path
+                            d="M8 2.5v7M5 8.5l3 3 3-3"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path d="M3 13.5h10" strokeWidth="1.5" strokeLinecap="round" />
+                        </Icon>
+                      </button>
+                    </Tooltip>
+                  )}
                 </div>
               </div>
             </div>
