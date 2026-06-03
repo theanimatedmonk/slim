@@ -25,6 +25,7 @@ import {
   useDeleteAssets,
   useRetryAsset,
 } from '../hooks/useAssets';
+import { track } from '../lib/analytics';
 import { playDeleteSound } from '../utils/sounds';
 import './AppPage.css';
 
@@ -136,6 +137,7 @@ function AppPageContent() {
 
   const handleBulkDownload = () => {
     if (selectedCompleteIds.length) {
+      track('Bulk Download', { file_count: selectedCompleteIds.length });
       downloadBundle.mutate(selectedCompleteIds);
     }
   };
@@ -166,6 +168,7 @@ function AppPageContent() {
     if (!deleteConfirm) return;
 
     const { assetIds } = deleteConfirm;
+    track('Asset Deleted', { file_count: assetIds.length });
     const idSet = new Set(assetIds);
     setDeleteConfirm(null);
     playDeleteSound();
@@ -255,8 +258,14 @@ function AppPageContent() {
                   selectable={isComplete}
                   checked={isChecked}
                   onCheckedChange={(checked) => toggleChecked(asset.id, checked)}
-                  onSelect={() => setSelectedId(asset.id)}
-                  onDownload={(asset) => downloadAsset.mutate(asset.id)}
+                  onSelect={() => {
+                    track('Asset Opened', { status: asset.status });
+                    setSelectedId(asset.id);
+                  }}
+                  onDownload={() => {
+                    track('Asset Downloaded', { source: 'row' });
+                    downloadAsset.mutate(asset.id);
+                  }}
                   onDelete={handleRequestDelete}
                   onDeleteImmediate={(id) => {
                     playDeleteSound();
@@ -271,7 +280,10 @@ function AppPageContent() {
                       },
                     });
                   }}
-                  onRetry={(id) => retryAssetMutation.mutate(id)}
+                  onRetry={(id) => {
+                    track('Asset Retry');
+                    retryAssetMutation.mutate(id);
+                  }}
                   isDeleting={deleteAssetMutation.isPending || deleteAssetsMutation.isPending}
                   isRetrying={
                     retryAssetMutation.isPending && retryAssetMutation.variables === asset.id
@@ -306,9 +318,18 @@ function AppPageContent() {
         }
         isDetailLoading={Boolean(selectedId && isDetailLoading)}
         onClose={() => setSelectedId(null)}
-        onDownload={(id) => downloadAsset.mutate(id)}
-        onConvertWebp={(id) => convertWebp.mutate(id)}
-        onDownloadWebp={(id) => downloadWebp.mutate(id)}
+        onDownload={(id) => {
+          track('Asset Downloaded', { source: 'drawer' });
+          downloadAsset.mutate(id);
+        }}
+        onConvertWebp={(id) => {
+          track('WebP Convert Started');
+          convertWebp.mutate(id);
+        }}
+        onDownloadWebp={(id) => {
+          track('WebP Downloaded');
+          downloadWebp.mutate(id);
+        }}
         isConverting={
           convertWebp.isPending && convertWebp.variables === selectedId
         }

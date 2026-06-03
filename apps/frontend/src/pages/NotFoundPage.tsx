@@ -1,7 +1,12 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { track } from '../lib/analytics';
 import './NotFoundPage.css';
 
 export default function NotFoundPage() {
+  useEffect(() => {
+    track('404 Viewed');
+  }, []);
   return (
     <div className="not-found">
       <section className="not-found__hero">

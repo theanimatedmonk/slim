@@ -1,4 +1,5 @@
 import { useTheme } from '../context/ThemeContext.js';
+import { track } from '../lib/analytics';
 import Icon from './Icon';
 import './ThemeToggle.css';
 
@@ -36,7 +37,10 @@ export default function ThemeToggle() {
         className={`theme-toggle__option${theme === 'light' ? ' theme-toggle__option--active' : ''}`}
         aria-pressed={theme === 'light'}
         aria-label="Light theme"
-        onClick={() => setTheme('light')}
+        onClick={() => {
+          if (theme !== 'light') track('Theme Changed', { theme: 'light' });
+          setTheme('light');
+        }}
       >
         <LightThemeIcon />
       </button>
@@ -45,7 +49,10 @@ export default function ThemeToggle() {
         className={`theme-toggle__option${theme === 'dark' ? ' theme-toggle__option--active' : ''}`}
         aria-pressed={theme === 'dark'}
         aria-label="Dark theme"
-        onClick={() => setTheme('dark')}
+        onClick={() => {
+          if (theme !== 'dark') track('Theme Changed', { theme: 'dark' });
+          setTheme('dark');
+        }}
       >
         <DarkThemeIcon />
       </button>

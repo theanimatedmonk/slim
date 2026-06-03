@@ -5,7 +5,10 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { initAnalytics } from './lib/analytics';
 import './index.css';
+
+initAnalytics();
 
 // Warm up the Supabase origin (auth + storage previews) as early as possible.
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;

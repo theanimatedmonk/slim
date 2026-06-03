@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { AssetListItem } from '@asset-optimiser/shared-types';
 import { MAX_UPLOAD_FILE_SIZE_BYTES } from '@asset-optimiser/shared-utils';
+import { track } from '../lib/analytics';
 import { getUploadUrl, registerAsset, uploadToStorage } from '../services/api';
 
 export type UploadZonePhase = 'idle' | 'uploading' | 'success';
@@ -74,6 +75,13 @@ export function useUpload(assets: AssetListItem[] = []) {
   }, []);
 
   const finishSuccess = useCallback(() => {
+    const batch = batchRef.current;
+    if (batch) {
+      track('Upload Completed', {
+        file_count: batch.total,
+        error_count: batch.errorCount,
+      });
+    }
     setZonePhase('success');
     setBatchProgress(100);
     refreshPreviews();
@@ -93,6 +101,14 @@ export function useUpload(assets: AssetListItem[] = []) {
   }, [refreshPreviews]);
 
   const finishWithErrors = useCallback(() => {
+    const batch = batchRef.current;
+    if (batch) {
+      track('Upload Completed', {
+        file_count: batch.total,
+        error_count: batch.errorCount,
+        had_errors: true,
+      });
+    }
     setZonePhase('idle');
     setBatchTotal(0);
     setBatchProgress(0);
@@ -205,9 +221,21 @@ export function useUpload(assets: AssetListItem[] = []) {
 
       const oversizedMessages = oversizedUploadMessages(svgFiles);
       setRejectionMessages(oversizedMessages);
+      if (oversizedMessages.length) {
+        track('File Rejected', {
+          reason: 'size_limit',
+          file_count: oversizedMessages.length,
+        });
+      }
 
       const validFiles = svgFiles.filter((file) => file.size <= MAX_UPLOAD_FILE_SIZE_BYTES);
       if (!validFiles.length) return;
+
+      const totalBytes = validFiles.reduce((sum, file) => sum + file.size, 0);
+      track('Upload Started', {
+        file_count: validFiles.length,
+        total_bytes: totalBytes,
+      });
 
       if (successTimerRef.current) {
         window.clearTimeout(successTimerRef.current);
@@ -220,8 +248,6 @@ export function useUpload(assets: AssetListItem[] = []) {
         progress: 0,
         status: 'pending',
       }));
-
-      const totalBytes = items.reduce((sum, item) => sum + item.file.size, 0);
 
       batchRef.current = {
         total: items.length,
@@ -246,6 +272,9 @@ export function useUpload(assets: AssetListItem[] = []) {
           try {
             await uploadOne(item);
           } catch (err) {
+            track('Upload Failed', {
+              error: err instanceof Error ? err.message : 'unknown',
+            });
             if (batchRef.current) {
               batchRef.current.errorCount += 1;
             }
