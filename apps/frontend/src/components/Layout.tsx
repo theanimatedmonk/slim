@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useAuth } from '../context/AuthContext.js';
 import GoogleSignInButton from './GoogleSignInButton';
 import ThemeToggle from './ThemeToggle';
+import CreatedByChip from './CreatedByChip';
 import UserMenu from './UserMenu';
 import './Layout.css';
 
@@ -34,6 +35,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       </header>
       <main className="layout__main">{children}</main>
       <ThemeToggle />
+      <CreatedByChip />
     </div>
   );
 }
