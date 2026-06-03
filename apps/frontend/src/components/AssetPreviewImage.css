@@ -16,6 +16,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  position: relative;
 }
 
 .asset-preview--md {
@@ -44,6 +45,13 @@
   height: 100%;
   object-fit: contain;
   padding: var(--primitive-space-1);
+}
+
+.asset-preview__image--pending {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .asset-preview--constrained {

@@ -23,6 +23,7 @@ import {
   useDeleteAssets,
   useRetryAsset,
 } from '../hooks/useAssets';
+import { playDeleteSound } from '../utils/sounds';
 import './AppPage.css';
 
 function AppPageContent() {
@@ -96,12 +97,14 @@ function AppPageContent() {
   }, [selectedAsset, assetDetail]);
 
   const previewAssetIds = useMemo(() => getPreviewableAssetIds(assets), [assets]);
-  const hasProcessingAssets = useMemo(
-    () => assets.some((asset) => isAssetProcessing(asset)),
+  const processingAssetIds = useMemo(
+    () => assets.filter((asset) => isAssetProcessing(asset)).map((asset) => asset.id),
     [assets]
   );
+  const hasProcessingAssets = processingAssetIds.length > 0;
   const { data: previews } = useAssetPreviews(previewAssetIds, {
     refetchWhileProcessing: hasProcessingAssets,
+    processingAssetIds,
   });
 
   const selectedCompleteIds = useMemo(
@@ -159,6 +162,7 @@ function AppPageContent() {
     const { assetIds } = deleteConfirm;
     const idSet = new Set(assetIds);
     setDeleteConfirm(null);
+    playDeleteSound();
 
     if (assetIds.length === 1) {
       const id = assetIds[0];
@@ -250,6 +254,7 @@ function AppPageContent() {
                   onDownload={(asset) => downloadAsset.mutate(asset.id)}
                   onDelete={handleRequestDelete}
                   onDeleteImmediate={(id) => {
+                    playDeleteSound();
                     deleteAssetMutation.mutate(id, {
                       onSuccess: () => {
                         setCheckedIds((prev) => {
