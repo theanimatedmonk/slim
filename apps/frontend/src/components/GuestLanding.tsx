@@ -1,4 +1,5 @@
 import GoogleSignInButton from '../components/GoogleSignInButton';
+import GuestLandingRive from './GuestLandingRive';
 import './GuestLanding.css';
 
 const FEATURE_IMAGES = {
@@ -49,7 +50,7 @@ export default function GuestLanding({ onSignIn }: Props) {
       <section className="guest-landing__sign-in-section">
         <div className="guest-landing__sign-in-card">
           <div className="guest-landing__cta-icon" aria-hidden>
-            <img src="/landing/other/hero image.svg" alt="" className="guest-landing__cta-icon-img" />
+            <GuestLandingRive />
           </div>
           <p className="guest-landing__sign-in-text">
             Sign in with Google to upload your SVG assets privately

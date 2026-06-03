@@ -58,14 +58,19 @@
 }
 
 .guest-landing__cta-icon {
-  width: 5rem;
-  height: 5rem;
+  width: 9.375rem;
+  height: 9.375rem;
 }
 
-.guest-landing__cta-icon-img {
+.guest-landing__cta-rive-wrap {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+}
+
+.guest-landing__cta-rive {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .guest-landing__sign-in-text {
