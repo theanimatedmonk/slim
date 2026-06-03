@@ -11,6 +11,8 @@ interface Options {
   /** Poll only assets still processing (not the whole library). */
   refetchWhileProcessing?: boolean;
   processingAssetIds?: string[];
+  /** Warm previews for the asset detail drawer. */
+  selectedAssetId?: string | null;
 }
 
 export function useAssetPreviews(previewAssetIds: string[], options?: Options) {
@@ -20,6 +22,9 @@ export function useAssetPreviews(previewAssetIds: string[], options?: Options) {
 
   const processingIdsRef = useRef(options?.processingAssetIds ?? []);
   processingIdsRef.current = options?.processingAssetIds ?? [];
+
+  const selectedIdRef = useRef(options?.selectedAssetId ?? null);
+  selectedIdRef.current = options?.selectedAssetId ?? null;
 
   const forceRefreshIdsRef = useRef<Set<string>>(new Set());
   const prevProcessingIdsRef = useRef<Set<string>>(new Set());
@@ -52,7 +57,20 @@ export function useAssetPreviews(previewAssetIds: string[], options?: Options) {
       const forceRefresh = [...forceRefreshIdsRef.current].filter((id) => ids.includes(id));
       forceRefreshIdsRef.current.clear();
 
-      const toFetch = [...new Set([...missing, ...processing, ...forceRefresh])];
+      const selectedId = selectedIdRef.current;
+      const selectedNeedsFetch =
+        selectedId &&
+        ids.includes(selectedId) &&
+        !prev[selectedId]?.thumbnail?.url;
+
+      const toFetch = [
+        ...new Set([
+          ...missing,
+          ...processing,
+          ...forceRefresh,
+          ...(selectedNeedsFetch ? [selectedId] : []),
+        ]),
+      ];
 
       if (toFetch.length === 0) return prev;
 
@@ -73,6 +91,11 @@ export function useAssetPreviews(previewAssetIds: string[], options?: Options) {
     refetchOnWindowFocus: false,
     refetchInterval: options?.refetchWhileProcessing ? PREVIEW_POLL_MS : false,
   });
+
+  useEffect(() => {
+    if (!options?.selectedAssetId) return;
+    void queryClient.invalidateQueries({ queryKey: PREVIEWS_QUERY_KEY });
+  }, [options?.selectedAssetId, queryClient]);
 
   // Fetch previews for newly added assets without refetching the whole library.
   useEffect(() => {

@@ -1,5 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { AssetPreview } from '@asset-optimiser/shared-types';
+import {
+  isPreviewSourceLoaded,
+  markPreviewSourceLoaded,
+  previewSourceKey,
+} from '../utils/previewLoadCache';
 import './AssetPreviewImage.css';
 
 interface Props {
@@ -7,15 +12,8 @@ interface Props {
   alt: string;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
-}
-
-/** Signed URLs rotate tokens; pathname is stable for the same stored file. */
-function previewSourceKey(url: string): string {
-  try {
-    return new URL(url).pathname;
-  } catch {
-    return url.split('?')[0] ?? url;
-  }
+  /** Eager load for above-the-fold previews (e.g. drawer). */
+  priority?: boolean;
 }
 
 function Placeholder({ sizeClass, className }: { sizeClass: string; className: string }) {
@@ -31,19 +29,38 @@ export default function AssetPreviewImage({
   alt,
   className = '',
   size = 'sm',
+  priority = false,
 }: Props) {
   const url = preview?.url;
   const sourceKey = url ? previewSourceKey(url) : null;
-  const [loaded, setLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [loaded, setLoaded] = useState(
+    () => (sourceKey ? isPreviewSourceLoaded(sourceKey) : false)
+  );
   const [failed, setFailed] = useState(false);
 
   const sizeClass =
     size === 'md' ? 'asset-preview--md' : size === 'lg' ? 'asset-preview--lg' : '';
 
   useEffect(() => {
-    setLoaded(false);
     setFailed(false);
+    setLoaded(sourceKey ? isPreviewSourceLoaded(sourceKey) : false);
   }, [sourceKey]);
+
+  useLayoutEffect(() => {
+    const img = imgRef.current;
+    if (!img || !sourceKey || failed) return;
+
+    if (img.complete && img.naturalWidth > 0) {
+      markPreviewSourceLoaded(sourceKey);
+      setLoaded(true);
+    }
+  }, [url, sourceKey, failed]);
+
+  const handleLoad = () => {
+    if (sourceKey) markPreviewSourceLoaded(sourceKey);
+    setLoaded(true);
+  };
 
   if (!url || failed) {
     return <Placeholder sizeClass={sizeClass} className={className} />;
@@ -53,12 +70,14 @@ export default function AssetPreviewImage({
     <div className={`asset-preview ${sizeClass} ${className}`.trim()}>
       {!loaded && <span className="asset-preview__placeholder">svg</span>}
       <img
+        ref={imgRef}
         src={url}
         alt={alt}
         className={`asset-preview__image${loaded ? '' : ' asset-preview__image--pending'}`}
-        loading="lazy"
+        loading={priority ? 'eager' : 'lazy'}
         draggable={false}
-        onLoad={() => setLoaded(true)}
+        decoding="async"
+        onLoad={handleLoad}
         onError={() => setFailed(true)}
       />
     </div>

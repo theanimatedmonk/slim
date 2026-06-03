@@ -75,6 +75,8 @@ export default function AssetDrawer({
 
   if (!displayAsset) return null;
 
+  const shownPreview = isClosing ? displayPreview : (previewSet ?? displayPreview);
+
   const finalReduction =
     displayAsset.optimized_size != null
       ? calculateReductionPercent(displayAsset.original_size, displayAsset.optimized_size)
@@ -144,12 +146,15 @@ export default function AssetDrawer({
             </button>
           </div>
 
-          {displayPreview?.thumbnail && (
+          {(shownPreview?.thumbnail ?? shownPreview?.optimized ?? shownPreview?.original) && (
             <div className="asset-drawer__hero-preview">
               <AssetPreviewImage
-                preview={displayPreview.thumbnail}
+                preview={
+                  shownPreview.thumbnail ?? shownPreview.optimized ?? shownPreview.original
+                }
                 alt={displayAsset.filename}
                 size="lg"
+                priority
                 className="asset-preview--constrained"
               />
             </div>
@@ -160,9 +165,10 @@ export default function AssetDrawer({
             <div className="asset-drawer__compare-grid">
               <div className="asset-drawer__compare-card">
                 <AssetPreviewImage
-                  preview={displayPreview?.original ?? displayPreview?.thumbnail}
+                  preview={shownPreview?.original ?? shownPreview?.thumbnail}
                   alt={`${displayAsset.filename} original`}
                   size="md"
+                  priority
                 />
                 <div>
                   <p className="asset-drawer__compare-label">Original</p>
@@ -173,9 +179,10 @@ export default function AssetDrawer({
               </div>
               <div className="asset-drawer__compare-card">
                 <AssetPreviewImage
-                  preview={displayPreview?.optimized ?? displayPreview?.webp}
+                  preview={shownPreview?.optimized ?? shownPreview?.webp}
                   alt={`${displayAsset.filename} optimized`}
                   size="md"
+                  priority
                 />
                 <div>
                   <p className="asset-drawer__compare-label">Optimized</p>

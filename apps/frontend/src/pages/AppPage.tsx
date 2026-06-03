@@ -105,6 +105,7 @@ function AppPageContent() {
   const { data: previews } = useAssetPreviews(previewAssetIds, {
     refetchWhileProcessing: hasProcessingAssets,
     processingAssetIds,
+    selectedAssetId: selectedId,
   });
 
   const selectedCompleteIds = useMemo(
