@@ -70,15 +70,21 @@
   font-size: var(--font-size-body-lg);
   font-weight: var(--font-weight-label);
   color: var(--color-text-primary);
-  margin: 0;
-}
-
-.upload-dropzone__zone--busy .upload-dropzone__title {
-  margin-bottom: var(--space-stack-md);
+  margin: 0 0 var(--space-stack-xs);
 }
 
 .upload-dropzone__zone:not(.upload-dropzone__zone--busy) .upload-dropzone__title {
   margin-bottom: var(--space-stack-sm);
+}
+
+.upload-dropzone__footer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: min(100%, 360px);
+  min-height: calc(72px + var(--primitive-space-6));
 }
 
 .upload-dropzone__browse {
@@ -97,19 +103,14 @@
 }
 
 .upload-dropzone__batch-progress {
-  width: min(100%, 360px);
-  min-height: calc(72px + var(--primitive-space-6));
+  width: 100%;
   margin-top: 0;
 }
 
-/* Preload off-screen while idle so the canvas is warm before upload starts */
+/* Preload in the footer slot while idle so the canvas is warm before upload starts */
 .upload-dropzone__batch-progress:not(.upload-dropzone__batch-progress--visible) {
   position: absolute;
-  left: -10000px;
-  top: 0;
-  width: 360px;
-  min-height: 72px;
-  margin: 0;
+  inset: 0;
   visibility: hidden;
   pointer-events: none;
 }
@@ -129,14 +130,6 @@
   display: block;
   width: 100%;
   height: 100%;
-}
-
-.upload-dropzone__batch-meta {
-  display: flex;
-  justify-content: space-between;
-  margin-top: var(--primitive-space-2);
-  font-size: var(--font-size-caption);
-  color: var(--color-text-muted);
 }
 
 .upload-dropzone__subtext {

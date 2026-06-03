@@ -1,5 +1,4 @@
 import { useCallback, useId, useRef, useState } from 'react';
-import { formatBytes } from '../utils/format';
 import type { UploadItem, UploadZonePhase } from '../hooks/useUpload';
 import UploadIconRive from './UploadIconRive';
 import UploadProgressRive from './UploadProgressRive';
@@ -15,21 +14,13 @@ interface Props {
   disabled?: boolean;
 }
 
-function aggregateLoadedBytes(items: UploadItem[], batchLoadedBytes: number): number {
-  const inFlight = items.filter((u) => u.status === 'pending' || u.status === 'uploading');
-  if (inFlight.length > 0) {
-    return inFlight.reduce((sum, u) => sum + u.file.size * (u.progress / 100), 0);
-  }
-  return batchLoadedBytes;
-}
-
 export default function UploadDropzone({
   onFiles,
-  uploads = [],
+  uploads: _uploads = [],
   zonePhase = 'idle',
   batchTotal = 0,
   batchProgress = 0,
-  batchLoadedBytes = 0,
+  batchLoadedBytes: _batchLoadedBytes = 0,
   disabled = false,
 }: Props) {
   const inputId = useId();
@@ -39,7 +30,6 @@ export default function UploadDropzone({
   const batchCount = batchTotal;
   const overallProgress =
     zonePhase === 'success' ? 100 : zonePhase === 'uploading' ? batchProgress : 0;
-  const loadedLabel = formatBytes(Math.max(aggregateLoadedBytes(uploads, batchLoadedBytes), 0));
 
   const isBusy = zonePhase === 'uploading' || zonePhase === 'success';
   const zoneDisabled = disabled || isBusy;
@@ -96,9 +86,18 @@ export default function UploadDropzone({
           <UploadIconRive zonePhase={zonePhase} />
         </div>
 
-        {zonePhase === 'idle' && (
-          <>
-            <p className="upload-dropzone__title">Drag and drop SVG files here</p>
+        <p className="upload-dropzone__title">
+          {zonePhase === 'idle' && 'Drag and drop SVG files here'}
+          {zonePhase === 'success' && 'Success!'}
+          {zonePhase === 'uploading' && (
+            <>
+              Uploading <strong>{batchCount}</strong> file(s)
+            </>
+          )}
+        </p>
+
+        <div className="upload-dropzone__footer">
+          {zonePhase === 'idle' && (
             <button
               type="button"
               className="upload-dropzone__browse"
@@ -109,38 +108,23 @@ export default function UploadDropzone({
             >
               Or choose a file
             </button>
-          </>
-        )}
+          )}
 
-        {isBusy && (
-          <p className="upload-dropzone__title">
-            {zonePhase === 'success' ? (
-              'Success!'
-            ) : (
-              <>
-                Uploading <strong>{batchCount}</strong> file(s)
-              </>
-            )}
-          </p>
-        )}
-
-        <div
-          className={`upload-dropzone__batch-progress${isBusy ? ' upload-dropzone__batch-progress--visible' : ''}`}
-        >
-          <UploadProgressRive progress={overallProgress} active={isBusy} />
-          {isBusy &&
-            (zonePhase === 'success' ? (
-              <p className="upload-dropzone__subtext">
-                {batchCount} file{batchCount === 1 ? '' : 's'} uploaded
-              </p>
-            ) : overallProgress >= 100 ? (
-              <p className="upload-dropzone__subtext">Processing…</p>
-            ) : (
-              <div className="upload-dropzone__batch-meta">
-                <span>{loadedLabel}</span>
-                <span>{Math.round(overallProgress)}%</span>
-              </div>
-            ))}
+          <div
+            className={`upload-dropzone__batch-progress${isBusy ? ' upload-dropzone__batch-progress--visible' : ''}`}
+          >
+            <UploadProgressRive progress={overallProgress} active={isBusy} />
+            {isBusy &&
+              (zonePhase === 'success' ? (
+                <p className="upload-dropzone__subtext">
+                  {batchCount} file{batchCount === 1 ? '' : 's'} uploaded
+                </p>
+              ) : overallProgress >= 100 ? (
+                <p className="upload-dropzone__subtext">Processing…</p>
+              ) : (
+                <p className="upload-dropzone__subtext">{Math.round(overallProgress)}%</p>
+              ))}
+          </div>
         </div>
       </div>
     </div>
