@@ -304,3 +304,31 @@
 .asset-drawer__report-value {
   margin: 0;
 }
+
+.asset-drawer-skeleton__section-title {
+  width: 10rem;
+  height: 1rem;
+  margin-bottom: var(--space-stack-md);
+}
+
+.asset-drawer-skeleton__iteration-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-stack-sm);
+}
+
+.asset-drawer-skeleton__iteration-row {
+  height: 3.25rem;
+  border-radius: var(--radius-control);
+}
+
+.asset-drawer-skeleton__report-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-stack-sm);
+}
+
+.asset-drawer-skeleton__report-row {
+  height: 1rem;
+  width: 100%;
+}

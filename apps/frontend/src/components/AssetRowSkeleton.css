@@ -1,0 +1,67 @@
+/* Layer 3 — AssetRowSkeleton */
+.asset-row--skeleton {
+  pointer-events: none;
+  cursor: default;
+}
+
+.asset-row--skeleton:hover {
+  background: transparent;
+}
+
+.asset-row-skeleton__checkbox {
+  width: var(--row-checkbox-size);
+  height: var(--row-checkbox-size);
+  margin: auto;
+}
+
+.asset-row-skeleton__thumb {
+  width: var(--row-thumb-size);
+  height: var(--row-thumb-size);
+  border-radius: var(--primitive-radius-lg);
+  flex-shrink: 0;
+}
+
+.asset-row-skeleton__name {
+  flex: 1;
+  min-width: 0;
+  max-width: 12rem;
+  height: 1rem;
+}
+
+.asset-row-skeleton__meta {
+  width: 8rem;
+  height: 0.875rem;
+}
+
+.asset-row-skeleton__action {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-pill);
+  margin-left: auto;
+}
+
+.asset-table-header--skeleton {
+  pointer-events: none;
+}
+
+.asset-table-header-skeleton__checkbox {
+  width: var(--row-checkbox-size);
+  height: var(--row-checkbox-size);
+}
+
+.asset-table-header-skeleton__label {
+  height: 0.75rem;
+}
+
+.asset-table-header-skeleton__label--file {
+  width: 2rem;
+}
+
+.asset-table-header-skeleton__label--size {
+  width: 2.25rem;
+}
+
+.asset-table-header-skeleton__label--actions {
+  width: 3rem;
+  margin-left: auto;
+}

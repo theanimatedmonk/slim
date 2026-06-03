@@ -114,6 +114,8 @@
   --color-error-border: rgb(244 63 94 / 0.25);
   --color-error-text: var(--primitive-error-600);
 
+  --color-skeleton-shine: var(--primitive-white);
+
   --shadow-sm: var(--primitive-shadow-sm);
   --shadow-md: var(--primitive-shadow-md);
   --shadow-lg: var(--primitive-shadow-lg);
@@ -180,6 +182,8 @@
   --color-error-subtle: rgb(251 113 133 / 0.1);
   --color-error-border: rgb(251 113 133 / 0.3);
   --color-error-text: var(--primitive-error-300);
+
+  --color-skeleton-shine: var(--primitive-brand-700);
 
   --shadow-sm: var(--primitive-shadow-sm);
   --shadow-md: var(--primitive-shadow-md);

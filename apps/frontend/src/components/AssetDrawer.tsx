@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { AssetListItem, AssetPreviewSet, AssetWithJob } from '@asset-optimiser/shared-types';
 import AssetPreviewImage from './AssetPreviewImage';
 import Icon from './Icon';
+import Skeleton from './Skeleton';
 import Tooltip from './Tooltip';
 import { shouldRecommendWebp } from '../hooks/useAssets';
 import { formatBytes, calculateReductionPercent } from '../utils/format';
@@ -17,6 +18,7 @@ interface Props {
   onConvertWebp: (assetId: string) => void;
   onDownloadWebp: (assetId: string) => void;
   isConverting?: boolean;
+  isDetailLoading?: boolean;
 }
 
 export default function AssetDrawer({
@@ -27,6 +29,7 @@ export default function AssetDrawer({
   onConvertWebp,
   onDownloadWebp,
   isConverting,
+  isDetailLoading = false,
 }: Props) {
   const [displayAsset, setDisplayAsset] = useState<DrawerAsset | null>(null);
   const [displayPreview, setDisplayPreview] = useState<AssetPreviewSet | undefined>();
@@ -96,6 +99,7 @@ export default function AssetDrawer({
   const isWebpConverting =
     !isWebpReady && (displayAsset.status === 'converting' || isConverting);
   const isComplete = displayAsset.status === 'complete';
+  const showDetailSkeleton = isDetailLoading && isComplete;
 
   const overlayClass = [
     'asset-drawer__overlay',
@@ -250,6 +254,17 @@ export default function AssetDrawer({
             </section>
           )}
 
+          {showDetailSkeleton && !displayAsset.iterations?.length && (
+            <section className="asset-drawer__section" aria-hidden>
+              <Skeleton className="asset-drawer-skeleton__section-title" />
+              <div className="asset-drawer-skeleton__iteration-list">
+                {Array.from({ length: 3 }, (_, index) => (
+                  <Skeleton key={index} className="asset-drawer-skeleton__iteration-row" />
+                ))}
+              </div>
+            </section>
+          )}
+
           {showWebpCallout && (
             <section className="asset-drawer__section asset-drawer__webp-callout">
               <h3 className="asset-drawer__webp-title">Complex SVG</h3>
@@ -302,6 +317,17 @@ export default function AssetDrawer({
                   {displayAsset.report.base64_detected ? 'Yes' : 'No'}
                 </dd>
               </dl>
+            </section>
+          )}
+
+          {showDetailSkeleton && !displayAsset.report && (
+            <section className="asset-drawer__section" aria-hidden>
+              <Skeleton className="asset-drawer-skeleton__section-title" />
+              <div className="asset-drawer-skeleton__report-grid">
+                {Array.from({ length: 4 }, (_, index) => (
+                  <Skeleton key={index} className="asset-drawer-skeleton__report-row" />
+                ))}
+              </div>
             </section>
           )}
         </div>

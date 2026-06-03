@@ -6,6 +6,8 @@ import AssetTableHeader from '../components/AssetTableHeader';
 import BulkActionBar from '../components/BulkActionBar';
 import ConfirmModal from '../components/ConfirmModal';
 import GuestLanding from '../components/GuestLanding';
+import AppPageSkeleton from '../components/AppPageSkeleton';
+import AssetRowSkeleton from '../components/AssetRowSkeleton';
 import { useAuth } from '../context/AuthContext.js';
 import { useUpload } from '../hooks/useUpload';
 import { useUploadSounds } from '../hooks/useUploadSounds';
@@ -39,7 +41,7 @@ function AppPageContent() {
     pollWhileBusy: pollAssetsWhileUploading,
   });
   useAutoOptimizePending(assets);
-  const { uploads, uploadFiles, zonePhase, batchTotal, batchProgress, batchLoadedBytes } =
+  const { uploads, uploadFiles, zonePhase, batchTotal, batchProgress, batchLoadedBytes, rejectionMessages } =
     useUpload(assets);
 
   useEffect(() => {
@@ -80,7 +82,10 @@ function AppPageContent() {
     [assets, selectedId]
   );
 
-  const { data: assetDetail } = useAssetDetail(selectedId, selectedAsset?.status);
+  const { data: assetDetail, isLoading: isDetailLoading } = useAssetDetail(
+    selectedId,
+    selectedAsset?.status
+  );
 
   const drawerAsset = useMemo(() => {
     if (!selectedAsset) return null;
@@ -200,6 +205,7 @@ function AppPageContent() {
           batchTotal={batchTotal}
           batchProgress={batchProgress}
           batchLoadedBytes={batchLoadedBytes}
+          rejectionMessages={rejectionMessages}
         />
       </div>
 
@@ -220,7 +226,7 @@ function AppPageContent() {
 
       <section className="app-page__assets">
         <div
-          className={`app-page__list-wrap${assets.length === 0 ? ' app-page__list-wrap--empty' : ''}`}
+          className={`app-page__list-wrap${!isLoading && assets.length === 0 ? ' app-page__list-wrap--empty' : ''}`}
         >
           <ul className="app-page__asset-list">
             {!isLoading && assets.length > 0 && (
@@ -231,9 +237,7 @@ function AppPageContent() {
                 onSelectAll={handleSelectAll}
               />
             )}
-            {isLoading && (
-              <li className="app-page__list-empty">Loading assets…</li>
-            )}
+            {isLoading && <AssetRowSkeleton count={4} />}
             {!isLoading && assets.length === 0 && (
               <li className="app-page__list-empty">
                 No assets yet. Upload SVGs above to get started.
@@ -300,6 +304,7 @@ function AppPageContent() {
         previewSet={
           drawerAsset ? getPreviewForAsset(previews, drawerAsset.id) : undefined
         }
+        isDetailLoading={Boolean(selectedId && isDetailLoading)}
         onClose={() => setSelectedId(null)}
         onDownload={(id) => downloadAsset.mutate(id)}
         onConvertWebp={(id) => convertWebp.mutate(id)}
@@ -316,11 +321,7 @@ export default function AppPage() {
   const { user, loading, signInWithGoogle } = useAuth();
 
   if (loading) {
-    return (
-      <div className="app-page">
-        <p className="app-page__loading">Loading…</p>
-      </div>
-    );
+    return <AppPageSkeleton />;
   }
 
   if (!user) {

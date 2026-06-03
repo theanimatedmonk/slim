@@ -1,6 +1,7 @@
 import type { ComplexityLevel } from '@asset-optimiser/shared-types';
 
 export const MAX_OPTIMIZATION_PASSES = 8;
+export const MAX_UPLOAD_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 export const STABILIZATION_THRESHOLD_PERCENT = 1;
 export const COMPLEXITY_SIZE_THRESHOLD_BYTES = 250 * 1024;
 export const LONG_PATH_CHAR_THRESHOLD = 5000;

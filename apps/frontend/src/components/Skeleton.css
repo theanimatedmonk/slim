@@ -1,0 +1,50 @@
+/* Layer 3 — Skeleton shimmer */
+.skeleton {
+  --skeleton-base: var(--color-bg-subtle);
+  --skeleton-shine: var(--color-skeleton-shine);
+
+  position: relative;
+  overflow: hidden;
+  display: block;
+  background-color: var(--skeleton-base);
+  border-radius: var(--radius-control);
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(
+    300deg,
+    rgb(from var(--skeleton-shine) r g b / 0) 20%,
+    rgb(from var(--skeleton-shine) r g b / 0.8) 50%,
+    rgb(from var(--skeleton-shine) r g b / 0) 80%
+  );
+  transform: translateX(-100%);
+  animation: skeleton-shimmer 1.6s linear infinite;
+}
+
+.skeleton--pill {
+  border-radius: var(--radius-pill);
+}
+
+.skeleton--circle {
+  border-radius: var(--radius-pill);
+  aspect-ratio: 1;
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+    content: none;
+  }
+}

@@ -1,5 +1,6 @@
 import type { Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import { MAX_UPLOAD_FILE_SIZE_BYTES } from '@asset-optimiser/shared-utils';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 import { createAssetRecord, getAssetForUser } from '../services/assetService.js';
 import { queueOptimizationForAsset } from '../services/optimizationService.js';
@@ -46,6 +47,11 @@ export async function registerAsset(req: AuthenticatedRequest, res: Response) {
 
     if (!assetId || !filename || !path || size === undefined) {
       res.status(400).json({ error: 'assetId, filename, path, and size are required' });
+      return;
+    }
+
+    if (size > MAX_UPLOAD_FILE_SIZE_BYTES) {
+      res.status(400).json({ error: 'File exceeds the 5 MB size limit' });
       return;
     }
 

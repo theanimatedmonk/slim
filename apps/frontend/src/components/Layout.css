@@ -94,6 +94,11 @@
   font-size: var(--font-size-body-sm);
 }
 
+.layout__auth-skeleton {
+  width: 7.5rem;
+  height: 2.25rem;
+}
+
 .layout__main {
   flex: 1;
 }

@@ -33,11 +33,10 @@
   max-height: var(--preview-max-height-lg);
 }
 
-.asset-preview__placeholder {
-  font-size: 0.625rem;
-  font-family: var(--font-family-mono);
-  color: var(--preview-placeholder-color);
-  text-transform: uppercase;
+.asset-preview__skeleton {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
 }
 
 .asset-preview__image {

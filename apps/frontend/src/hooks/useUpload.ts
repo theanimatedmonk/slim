@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { AssetListItem } from '@asset-optimiser/shared-types';
+import { MAX_UPLOAD_FILE_SIZE_BYTES } from '@asset-optimiser/shared-utils';
 import { getUploadUrl, registerAsset, uploadToStorage } from '../services/api';
 
 export type UploadZonePhase = 'idle' | 'uploading' | 'success';
@@ -34,6 +35,12 @@ function batchPercent(batch: BatchTracker, inFlight: UploadItem[]): number {
   return Math.min(100, (loaded / batch.totalBytes) * 100);
 }
 
+function oversizedUploadMessages(files: File[]): string[] {
+  return files
+    .filter((file) => file.size > MAX_UPLOAD_FILE_SIZE_BYTES)
+    .map((file) => `${file.name} exceeds the 5MB limit`);
+}
+
 export function useUpload(assets: AssetListItem[] = []) {
   const queryClient = useQueryClient();
   const [uploads, setUploads] = useState<UploadItem[]>([]);
@@ -42,6 +49,7 @@ export function useUpload(assets: AssetListItem[] = []) {
   const [batchProgress, setBatchProgress] = useState(0);
   const [batchTotalBytes, setBatchTotalBytes] = useState(0);
   const [batchLoadedBytes, setBatchLoadedBytes] = useState(0);
+  const [rejectionMessages, setRejectionMessages] = useState<string[]>([]);
   const batchRef = useRef<BatchTracker | null>(null);
   const batchRemainingRef = useRef(0);
   const successTimerRef = useRef<number | null>(null);
@@ -193,12 +201,18 @@ export function useUpload(assets: AssetListItem[] = []) {
       const svgFiles = files.filter((f) => f.name.toLowerCase().endsWith('.svg'));
       if (!svgFiles.length) return;
 
+      const oversizedMessages = oversizedUploadMessages(svgFiles);
+      setRejectionMessages(oversizedMessages);
+
+      const validFiles = svgFiles.filter((file) => file.size <= MAX_UPLOAD_FILE_SIZE_BYTES);
+      if (!validFiles.length) return;
+
       if (successTimerRef.current) {
         window.clearTimeout(successTimerRef.current);
         successTimerRef.current = null;
       }
 
-      const items: UploadItem[] = svgFiles.map((file) => ({
+      const items: UploadItem[] = validFiles.map((file) => ({
         id: crypto.randomUUID(),
         file,
         progress: 0,
@@ -267,6 +281,7 @@ export function useUpload(assets: AssetListItem[] = []) {
     setBatchProgress(0);
     setBatchTotalBytes(0);
     setBatchLoadedBytes(0);
+    setRejectionMessages([]);
     batchRef.current = null;
   }, []);
 
@@ -274,6 +289,7 @@ export function useUpload(assets: AssetListItem[] = []) {
     uploads,
     uploadFiles,
     clearUploads,
+    rejectionMessages,
     zonePhase,
     batchTotal,
     batchProgress,

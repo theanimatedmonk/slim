@@ -5,6 +5,7 @@ import GoogleSignInButton from './GoogleSignInButton';
 import ThemeToggle from './ThemeToggle';
 import CreatedByChip from './CreatedByChip';
 import UserMenu from './UserMenu';
+import Skeleton from './Skeleton';
 import './Layout.css';
 
 const HEADER_LOGO = '/landing/other/header-logo.svg';
@@ -21,7 +22,9 @@ export default function Layout({ children }: { children: ReactNode }) {
             <span className="layout__brand-name">Slim</span>
           </Link>
           <div className="layout__actions">
-            {!loading && (
+            {loading ? (
+              <Skeleton className="layout__auth-skeleton" variant="pill" />
+            ) : (
               <div className="layout__auth">
                 {user ? (
                   <UserMenu user={user} onSignOut={signOut} />

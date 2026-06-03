@@ -1,0 +1,43 @@
+/* Layer 3 — AppPageSkeleton */
+.app-page-skeleton__upload {
+  max-width: var(--app-page-upload-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: var(--space-stack-xl);
+}
+
+.upload-dropzone-skeleton__zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border: 1.5px dashed var(--color-border-default);
+  border-radius: var(--radius-card);
+  padding: var(--primitive-space-10) var(--primitive-space-6) var(--primitive-space-6);
+  background: var(--color-bg-below);
+}
+
+.upload-dropzone-skeleton__icon {
+  width: 150px;
+  height: 150px;
+  border-radius: var(--radius-card);
+  margin-bottom: var(--space-stack-sm);
+}
+
+.upload-dropzone-skeleton__title {
+  width: min(100%, 16rem);
+  height: 1.25rem;
+  margin-bottom: var(--space-stack-sm);
+}
+
+.upload-dropzone-skeleton__browse {
+  width: 6.5rem;
+  height: 0.875rem;
+}
+
+.app-page-skeleton__assets {
+  width: 100%;
+  max-width: var(--app-page-table-max-width);
+  margin-left: auto;
+  margin-right: auto;
+}

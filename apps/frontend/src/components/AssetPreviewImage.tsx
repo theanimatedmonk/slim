@@ -5,6 +5,7 @@ import {
   markPreviewSourceLoaded,
   previewSourceKey,
 } from '../utils/previewLoadCache';
+import Skeleton from './Skeleton';
 import './AssetPreviewImage.css';
 
 interface Props {
@@ -16,10 +17,10 @@ interface Props {
   priority?: boolean;
 }
 
-function Placeholder({ sizeClass, className }: { sizeClass: string; className: string }) {
+function PreviewSkeleton({ sizeClass, className }: { sizeClass: string; className: string }) {
   return (
     <div className={`asset-preview ${sizeClass} ${className}`.trim()} aria-hidden>
-      <span className="asset-preview__placeholder">svg</span>
+      <Skeleton className="asset-preview__skeleton" />
     </div>
   );
 }
@@ -63,12 +64,12 @@ export default function AssetPreviewImage({
   };
 
   if (!url || failed) {
-    return <Placeholder sizeClass={sizeClass} className={className} />;
+    return <PreviewSkeleton sizeClass={sizeClass} className={className} />;
   }
 
   return (
     <div className={`asset-preview ${sizeClass} ${className}`.trim()}>
-      {!loaded && <span className="asset-preview__placeholder">svg</span>}
+      {!loaded && <Skeleton className="asset-preview__skeleton" />}
       <img
         ref={imgRef}
         src={url}
