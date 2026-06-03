@@ -1,16 +1,16 @@
 <svg width="296" height="210" viewBox="0 0 296 210" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g clip-path="url(#clip0_4283_12120)">
 <rect width="296" height="210" rx="20" fill="url(#paint0_linear_4283_12120)"/>
-<rect x="10.9824" y="11.0508" width="179.829" height="241.942" rx="11" fill="url(#pattern0_4283_12120)"/>
+<rect x="9.11133" y="8.7666" width="229.581" height="308.878" rx="11" fill="url(#pattern0_4283_12120)"/>
 <g filter="url(#filter0_d_4283_12120)">
-<rect x="108.879" y="135.338" width="176.987" height="98.4022" rx="14" fill="url(#pattern1_4283_12120)" shape-rendering="crispEdges"/>
+<rect x="87.7959" y="128.112" width="200.079" height="111.241" rx="14" fill="url(#pattern1_4283_12120)" shape-rendering="crispEdges"/>
 </g>
 </g>
 <defs>
 <pattern id="pattern0_4283_12120" patternContentUnits="objectBoundingBox" width="1" height="1">
 <use xlink:href="#image0_4283_12120" transform="scale(0.0015083 0.00112108)"/>
 </pattern>
-<filter id="filter0_d_4283_12120" x="91.3789" y="117.838" width="211.987" height="133.402" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<filter id="filter0_d_4283_12120" x="70.2959" y="110.612" width="235.079" height="146.241" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
 <feFlood flood-opacity="0" result="BackgroundImageFix"/>
 <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
 <feOffset/>

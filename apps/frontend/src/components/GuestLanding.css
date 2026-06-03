@@ -3,7 +3,7 @@
   --guest-max-width: var(--layout-max-width-md);
   --guest-card-bg: var(--color-bg-elevated);
   --guest-card-border: var(--color-border-default);
-  --guest-card-shadow: var(--shadow-md);
+  --guest-card-shadow: var(--shadow-lg);
   --guest-accent: var(--color-success);
 
   max-width: var(--guest-max-width);
@@ -19,7 +19,7 @@
 }
 
 .guest-landing__headline {
-  font-size: clamp(var(--primitive-font-size-xl), 4vw, var(--primitive-font-size-5xl));
+  font-size: clamp(var(--font-size-heading-lg), 4vw, var(--font-size-heading-lg));
   font-weight: var(--font-weight-heading);
   line-height: var(--line-height-tight);
   margin: 0 0 var(--space-stack-md);
@@ -83,19 +83,23 @@
 .guest-landing__features {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--space-stack-lg);
+  gap: var(--space-stack-md);
+  width: 100%;
+  max-width: 56rem;
+  margin-inline: auto;
 }
 
 @media (min-width: 768px) {
   .guest-landing__features {
     grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-stack-md);
   }
 }
 
 .guest-landing__feature-card {
-  --feature-card-padding: var(--primitive-space-6);
-  --feature-card-radius: 2rem;
-  --feature-image-radius: 1rem;
+  --feature-card-padding: var(--primitive-space-4);
+  --feature-card-radius: var(--radius-card);
+  --feature-image-radius: var(--primitive-radius-lg);
 
   border: 1px solid var(--guest-card-border);
   background: var(--guest-card-bg);
@@ -103,7 +107,7 @@
   padding: var(--feature-card-padding);
   display: flex;
   flex-direction: column;
-  gap: var(--space-stack-md);
+  gap: var(--space-stack-lg);
 }
 
 .guest-landing__feature-media {
@@ -129,7 +133,7 @@
 
 .guest-landing__feature-title {
   margin: 0;
-  font-size: var(--font-size-body-lg);
+  font-size: var(--font-size-body);
   font-weight: var(--font-weight-heading);
   color: var(--color-text-primary);
   line-height: var(--line-height-tight);
@@ -142,19 +146,12 @@
   color: var(--color-text-secondary);
 }
 
-[data-theme='light'] .guest-landing__feature-card,
-[data-theme='light'] .guest-landing__sign-in-card {
+[data-theme='light'] .guest-landing__feature-card {
   box-shadow: var(--shadow-sm);
 }
 
 @media (min-width: 900px) {
   .guest-landing {
     --guest-max-width: var(--layout-max-width-lg);
-  }
-}
-
-@media (max-width: 767px) {
-  .guest-landing__features {
-    gap: var(--space-stack-md);
   }
 }

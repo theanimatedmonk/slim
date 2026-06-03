@@ -114,10 +114,10 @@
   --color-error-border: rgb(244 63 94 / 0.25);
   --color-error-text: var(--primitive-error-600);
 
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.08);
-  --shadow-lg: 0 12px 24px rgb(0 0 0 / 0.1);
-  --shadow-drawer: 0 20px 40px rgb(0 0 0 / 0.12);
+  --shadow-sm: var(--primitive-shadow-sm);
+  --shadow-md: var(--primitive-shadow-md);
+  --shadow-lg: var(--primitive-shadow-lg);
+  --shadow-drawer: var(--primitive-shadow-2xl);
 }
 
 /**
