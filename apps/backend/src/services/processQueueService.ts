@@ -18,6 +18,12 @@ interface ZipBundleRow {
 
 const MAX_JOBS_PER_RUN = 3;
 const MAX_RUN_MS = 25_000;
+/** A claimed job/bundle older than this is presumed dead and may be reclaimed. */
+const STALE_LEASE_MS = 5 * 60_000;
+
+function staleCutoffIso(): string {
+  return new Date(Date.now() - STALE_LEASE_MS).toISOString();
+}
 
 export async function processQueue(): Promise<{
   processedJobs: number;
@@ -64,6 +70,7 @@ export async function processQueue(): Promise<{
 }
 
 async function claimNextJob(): Promise<QueuedJobRow | null> {
+  // 1. Prefer a freshly queued job.
   const { data: queued } = await supabase
     .from('jobs')
     .select('id, asset_id, job_type')
@@ -72,20 +79,44 @@ async function claimNextJob(): Promise<QueuedJobRow | null> {
     .limit(1);
 
   const candidate = queued?.[0] as QueuedJobRow | undefined;
-  if (!candidate) return null;
+  if (candidate) {
+    const { data: claimed } = await supabase
+      .from('jobs')
+      .update({ status: 'optimizing', claimed_at: new Date().toISOString() })
+      .eq('id', candidate.id)
+      .eq('status', 'queued')
+      .select('id, asset_id, job_type')
+      .single();
 
-  const { data: claimed } = await supabase
+    if (claimed) return claimed as QueuedJobRow;
+  }
+
+  // 2. Otherwise reclaim a job whose worker died mid-run (stuck 'optimizing').
+  const { data: stale } = await supabase
     .from('jobs')
-    .update({ status: 'optimizing' })
-    .eq('id', candidate.id)
-    .eq('status', 'queued')
+    .select('id, asset_id, job_type')
+    .eq('status', 'optimizing')
+    .lt('claimed_at', staleCutoffIso())
+    .order('claimed_at', { ascending: true })
+    .limit(1);
+
+  const staleCandidate = stale?.[0] as QueuedJobRow | undefined;
+  if (!staleCandidate) return null;
+
+  const { data: reclaimed } = await supabase
+    .from('jobs')
+    .update({ claimed_at: new Date().toISOString() })
+    .eq('id', staleCandidate.id)
+    .eq('status', 'optimizing')
+    .lt('claimed_at', staleCutoffIso())
     .select('id, asset_id, job_type')
     .single();
 
-  return (claimed as QueuedJobRow) ?? null;
+  return (reclaimed as QueuedJobRow) ?? null;
 }
 
 async function claimNextZipBundle(): Promise<ZipBundleRow | null> {
+  // 1. Prefer a freshly queued bundle.
   const { data: rows } = await supabase
     .from('zip_bundles')
     .select('id, asset_ids')
@@ -94,17 +125,40 @@ async function claimNextZipBundle(): Promise<ZipBundleRow | null> {
     .limit(1);
 
   const candidate = rows?.[0] as ZipBundleRow | undefined;
-  if (!candidate) return null;
+  if (candidate) {
+    const { data: claimed } = await supabase
+      .from('zip_bundles')
+      .update({ status: 'active', claimed_at: new Date().toISOString() })
+      .eq('id', candidate.id)
+      .eq('status', 'processing')
+      .select('id, asset_ids')
+      .single();
 
-  const { data: claimed } = await supabase
+    if (claimed) return claimed as ZipBundleRow;
+  }
+
+  // 2. Reclaim a bundle whose worker died mid-run (stuck 'active').
+  const { data: stale } = await supabase
     .from('zip_bundles')
-    .update({ status: 'active' })
-    .eq('id', candidate.id)
-    .eq('status', 'processing')
+    .select('id, asset_ids')
+    .eq('status', 'active')
+    .lt('claimed_at', staleCutoffIso())
+    .order('claimed_at', { ascending: true })
+    .limit(1);
+
+  const staleCandidate = stale?.[0] as ZipBundleRow | undefined;
+  if (!staleCandidate) return null;
+
+  const { data: reclaimed } = await supabase
+    .from('zip_bundles')
+    .update({ claimed_at: new Date().toISOString() })
+    .eq('id', staleCandidate.id)
+    .eq('status', 'active')
+    .lt('claimed_at', staleCutoffIso())
     .select('id, asset_ids')
     .single();
 
-  return (claimed as ZipBundleRow) ?? null;
+  return (reclaimed as ZipBundleRow) ?? null;
 }
 
 async function runJob(job: QueuedJobRow): Promise<void> {

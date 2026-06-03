@@ -1,6 +1,7 @@
 import type { Response } from 'express';
+import { MAX_BATCH_ASSETS } from '@asset-optimiser/shared-utils';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
-import { getAssetForUser } from '../services/assetService.js';
+import { countAssetsOwnedByUser } from '../services/assetService.js';
 import { getJobStatus } from '../services/jobService.js';
 import { createSignedDownloadUrl } from '../services/storageService.js';
 import { supabase } from '../db/supabase.js';
@@ -54,12 +55,11 @@ export async function downloadBundle(req: AuthenticatedRequest, res: Response) {
     }
 
     const assetIds = (zipRow.asset_ids as string[]) ?? [];
-    for (const assetId of assetIds) {
-      const owned = await getAssetForUser(assetId, req.userId);
-      if (!owned) {
-        res.status(403).json({ error: 'Access denied' });
-        return;
-      }
+    const uniqueIds = [...new Set(assetIds)];
+    const ownedCount = await countAssetsOwnedByUser(uniqueIds, req.userId);
+    if (ownedCount !== uniqueIds.length) {
+      res.status(403).json({ error: 'Access denied' });
+      return;
     }
 
     const signedUrl = await createSignedDownloadUrl(zipRow.storage_path);
@@ -81,12 +81,16 @@ export async function requestBundleDownload(req: AuthenticatedRequest, res: Resp
       return;
     }
 
-    for (const assetId of assetIds) {
-      const owned = await getAssetForUser(assetId, req.userId);
-      if (!owned) {
-        res.status(404).json({ error: `Asset not found: ${assetId}` });
-        return;
-      }
+    if (assetIds.length > MAX_BATCH_ASSETS) {
+      res.status(400).json({ error: `Maximum ${MAX_BATCH_ASSETS} assets per request` });
+      return;
+    }
+
+    const uniqueIds = [...new Set(assetIds)];
+    const ownedCount = await countAssetsOwnedByUser(uniqueIds, req.userId);
+    if (ownedCount !== uniqueIds.length) {
+      res.status(404).json({ error: 'One or more assets were not found' });
+      return;
     }
 
     const bundleJobId = crypto.randomUUID();

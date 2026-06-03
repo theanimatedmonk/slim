@@ -138,7 +138,10 @@ export function useUpload(assets: AssetListItem[] = []) {
         return next;
       });
 
-      const { signedUrl, path, assetId } = await getUploadUrl(item.file.name);
+      const { signedUrl, path, assetId } = await getUploadUrl(
+        item.file.name,
+        item.file.size
+      );
 
       await uploadToStorage(signedUrl, item.file, (progress) => {
         setUploads((prev) => {
@@ -199,7 +202,6 @@ export function useUpload(assets: AssetListItem[] = []) {
   const uploadFiles = useCallback(
     async (files: File[]) => {
       const svgFiles = files.filter((f) => f.name.toLowerCase().endsWith('.svg'));
-      if (!svgFiles.length) return;
 
       const oversizedMessages = oversizedUploadMessages(svgFiles);
       setRejectionMessages(oversizedMessages);

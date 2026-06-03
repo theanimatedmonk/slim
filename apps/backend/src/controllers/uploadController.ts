@@ -1,6 +1,6 @@
 import type { Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { MAX_UPLOAD_FILE_SIZE_BYTES } from '@asset-optimiser/shared-utils';
+import { MAX_UPLOAD_FILE_SIZE_BYTES, formatBytes } from '@asset-optimiser/shared-utils';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 import { createAssetRecord, getAssetForUser } from '../services/assetService.js';
 import { queueOptimizationForAsset } from '../services/optimizationService.js';
@@ -9,13 +9,21 @@ import { createSignedUploadUrl } from '../services/storageService.js';
 
 export async function getUploadUrl(req: AuthenticatedRequest, res: Response) {
   try {
-    const { filename, contentType } = req.body as {
+    const { filename, contentType, size } = req.body as {
       filename?: string;
       contentType?: string;
+      size?: number;
     };
 
     if (!filename || !filename.toLowerCase().endsWith('.svg')) {
       res.status(400).json({ error: 'Only SVG files are supported' });
+      return;
+    }
+
+    if (typeof size === 'number' && size > MAX_UPLOAD_FILE_SIZE_BYTES) {
+      res.status(413).json({
+        error: `File exceeds the ${formatBytes(MAX_UPLOAD_FILE_SIZE_BYTES)} upload limit`,
+      });
       return;
     }
 
@@ -50,8 +58,15 @@ export async function registerAsset(req: AuthenticatedRequest, res: Response) {
       return;
     }
 
+    if (typeof size !== 'number' || !Number.isFinite(size) || size <= 0) {
+      res.status(400).json({ error: 'A valid file size is required' });
+      return;
+    }
+
     if (size > MAX_UPLOAD_FILE_SIZE_BYTES) {
-      res.status(400).json({ error: 'File exceeds the 5 MB size limit' });
+      res.status(413).json({
+        error: `File exceeds the ${formatBytes(MAX_UPLOAD_FILE_SIZE_BYTES)} upload limit`,
+      });
       return;
     }
 

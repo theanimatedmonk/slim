@@ -1,8 +1,14 @@
 import type { ComplexityLevel } from '@asset-optimiser/shared-types';
 
 export const MAX_OPTIMIZATION_PASSES = 8;
+/** Largest SVG we accept for upload/optimization. Guards against OOM/DoS. */
 export const MAX_UPLOAD_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 export const STABILIZATION_THRESHOLD_PERCENT = 1;
+
+/** Max number of asset ids accepted in a single batch request (optimize/preview/bundle). */
+export const MAX_BATCH_ASSETS = 100;
+/** Hard cap on raster dimensions when converting SVG → WebP (guards against decompression bombs). */
+export const MAX_RASTER_DIMENSION = 4096;
 export const COMPLEXITY_SIZE_THRESHOLD_BYTES = 250 * 1024;
 export const LONG_PATH_CHAR_THRESHOLD = 5000;
 export const NODE_COUNT_THRESHOLD = 150;

@@ -25,6 +25,19 @@ export default defineConfig({
       ),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split heavy, independently-cacheable vendors out of the main chunk.
+          react: ['react', 'react-dom', 'react-router-dom'],
+          rive: ['@rive-app/react-webgl2'],
+          supabase: ['@supabase/supabase-js'],
+          query: ['@tanstack/react-query'],
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
     proxy: {

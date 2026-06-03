@@ -1,4 +1,5 @@
 import type { Response } from 'express';
+import { MAX_BATCH_ASSETS } from '@asset-optimiser/shared-utils';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 import { listAssetsForUser } from '../services/assetService.js';
 import { queueOptimizationForAsset } from '../services/optimizationService.js';
@@ -10,6 +11,11 @@ export async function startOptimization(req: AuthenticatedRequest, res: Response
 
     if (!assetIds?.length) {
       res.status(400).json({ error: 'assetIds array is required' });
+      return;
+    }
+
+    if (assetIds.length > MAX_BATCH_ASSETS) {
+      res.status(400).json({ error: `Maximum ${MAX_BATCH_ASSETS} assets per request` });
       return;
     }
 

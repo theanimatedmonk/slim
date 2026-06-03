@@ -45,16 +45,46 @@ export async function getAssetForUser(
   return mapAsset(data);
 }
 
-/** @deprecated use getAssetForUser */
-export async function getAsset(id: string): Promise<Asset | null> {
+/**
+ * Returns how many of the given asset ids are owned by the user, in a single
+ * query. Use to authorize batch operations without N round-trips.
+ */
+export async function countAssetsOwnedByUser(
+  assetIds: string[],
+  userId: string
+): Promise<number> {
+  if (!assetIds.length) return 0;
+  const uniqueIds = [...new Set(assetIds)];
+
+  const { count, error } = await supabase
+    .from('assets')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .in('id', uniqueIds);
+
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+/** Fetch many of a user's assets in a single query (order not guaranteed). */
+export async function getAssetsForUser(
+  assetIds: string[],
+  userId: string
+): Promise<Asset[]> {
+  if (!assetIds.length) return [];
+  const uniqueIds = [...new Set(assetIds)];
+
   const { data, error } = await supabase
     .from('assets')
     .select()
-    .eq('id', id)
-    .single();
+    .eq('user_id', userId)
+    .in('id', uniqueIds);
 
-  if (error || !data) return null;
-  return mapAsset(data);
+  if (error || !data) {
+    throw new Error(error?.message ?? 'Failed to fetch assets');
+  }
+
+  return data.map(mapAsset);
 }
 
 export async function listAssetsForUser(userId: string): Promise<AssetListItem[]> {
@@ -115,21 +145,24 @@ export async function getAssetWithDetailsForUser(
   let report: OptimizationReport | null = null;
 
   if (job) {
-    const { data: passRows } = await supabase
-      .from('job_passes')
-      .select()
-      .eq('job_id', job.id)
-      .order('pass_number', { ascending: true });
-    iterations = (passRows ?? []).map(mapJobIteration);
+    // Passes and the report are independent — fetch them concurrently.
+    const [passesResult, reportResult] = await Promise.all([
+      supabase
+        .from('job_passes')
+        .select()
+        .eq('job_id', job.id)
+        .order('pass_number', { ascending: true }),
+      supabase
+        .from('optimization_reports')
+        .select()
+        .eq('asset_id', asset.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single(),
+    ]);
 
-    const { data: reportRow } = await supabase
-      .from('optimization_reports')
-      .select()
-      .eq('asset_id', asset.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-    report = reportRow ? mapReport(reportRow) : null;
+    iterations = (passesResult.data ?? []).map(mapJobIteration);
+    report = reportResult.data ? mapReport(reportResult.data) : null;
   }
 
   return { ...asset, job, iterations, report };

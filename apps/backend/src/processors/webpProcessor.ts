@@ -1,4 +1,5 @@
 import sharp from 'sharp';
+import { MAX_RASTER_DIMENSION } from '@asset-optimiser/shared-utils';
 import { supabase } from '../db/supabase.js';
 import { downloadFile, uploadFile, webpPath } from '../services/storageService.js';
 
@@ -26,7 +27,18 @@ export async function processWebpConversion(
   }
   const svgBuffer = await downloadFile(svgPath);
 
-  const webpBuffer = await sharp(svgBuffer, { density: 150 })
+  // density:150 rasterizes the SVG; cap output dimensions and input pixels so a
+  // crafted SVG (huge viewBox / decompression bomb) cannot exhaust memory.
+  const webpBuffer = await sharp(svgBuffer, {
+    density: 150,
+    limitInputPixels: MAX_RASTER_DIMENSION * MAX_RASTER_DIMENSION,
+  })
+    .resize({
+      width: MAX_RASTER_DIMENSION,
+      height: MAX_RASTER_DIMENSION,
+      fit: 'inside',
+      withoutEnlargement: true,
+    })
     .webp({ quality: WEBP_QUALITY })
     .toBuffer();
 

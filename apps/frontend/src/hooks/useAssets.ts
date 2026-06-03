@@ -14,7 +14,7 @@ import {
   startOptimization,
 } from '../services/api';
 
-const POLL_MS = 1000;
+const POLL_MS = 2000;
 
 function hasProcessingAssets(assets: AssetListItem[] | undefined): boolean {
   return assets?.some((a) => isAssetProcessing(a)) ?? false;

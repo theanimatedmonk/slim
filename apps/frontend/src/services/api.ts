@@ -61,10 +61,13 @@ export async function retryAsset(assetId: string): Promise<RetryAssetResponse> {
   return request<RetryAssetResponse>(`/assets/${assetId}/retry`, { method: 'POST' });
 }
 
-export async function getUploadUrl(filename: string): Promise<UploadUrlResponse> {
+export async function getUploadUrl(
+  filename: string,
+  size?: number
+): Promise<UploadUrlResponse> {
   return request<UploadUrlResponse>('/upload-url', {
     method: 'POST',
-    body: JSON.stringify({ filename, contentType: 'image/svg+xml' }),
+    body: JSON.stringify({ filename, contentType: 'image/svg+xml', size }),
   });
 }
 

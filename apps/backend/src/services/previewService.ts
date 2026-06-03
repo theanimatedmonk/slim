@@ -4,7 +4,7 @@ import type {
   AssetPreviewKind,
   AssetPreviewSet,
 } from '@asset-optimiser/shared-types';
-import { getAssetForUser } from './assetService.js';
+import { getAssetsForUser } from './assetService.js';
 import { createSignedDownloadUrl } from './storageService.js';
 
 const PREVIEW_URL_TTL_SEC = 3600;
@@ -42,17 +42,23 @@ export async function getPreviewSetsForUser(
   assetIds: string[],
   userId: string
 ): Promise<Record<string, AssetPreviewSet>> {
+  const assets = await getAssetsForUser(assetIds, userId);
+
+  // Sign all assets' previews concurrently instead of one round-trip per asset.
+  const entries = await Promise.all(
+    assets.map(async (asset) => {
+      try {
+        return [asset.id, await buildPreviewSetForAsset(asset)] as const;
+      } catch (err) {
+        console.warn(`Preview build failed for asset ${asset.id}:`, err);
+        return null;
+      }
+    })
+  );
+
   const previews: Record<string, AssetPreviewSet> = {};
-
-  for (const id of assetIds) {
-    try {
-      const asset = await getAssetForUser(id, userId);
-      if (!asset) continue;
-      previews[id] = await buildPreviewSetForAsset(asset);
-    } catch (err) {
-      console.warn(`Preview build failed for asset ${id}:`, err);
-    }
+  for (const entry of entries) {
+    if (entry) previews[entry[0]] = entry[1];
   }
-
   return previews;
 }
