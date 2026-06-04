@@ -45,6 +45,9 @@ export async function processOptimization(
   await supabase.from('assets').update({ status: 'optimizing' }).eq('id', assetId);
   await supabase.from('jobs').update({ status: 'optimizing' }).eq('id', jobId);
 
+  // Re-runs (stale reclaim / retry) must not append to existing passes — that duplicates rows in the UI.
+  await supabase.from('job_passes').delete().eq('job_id', jobId);
+
   if (!asset.original_path) {
     throw new Error('Original SVG no longer available');
   }
@@ -83,6 +86,12 @@ export async function processOptimization(
       size_bytes: currentSize,
       reduction_percent: passReduction,
     });
+
+    // Keep the lease fresh so another worker does not reclaim mid-run and duplicate passes.
+    await supabase
+      .from('jobs')
+      .update({ claimed_at: new Date().toISOString() })
+      .eq('id', jobId);
 
     if (isStabilized(previousSize, currentSize)) {
       stabilized = true;

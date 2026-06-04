@@ -1,5 +1,6 @@
 import type { Job, JobIteration, JobStatusResponse, OptimizationReport } from '@asset-optimiser/shared-types';
 import { supabase } from '../db/supabase.js';
+import { dedupeJobIterations } from '../utils/dedupeJobIterations.js';
 import { getAssetForUser } from './assetService.js';
 
 export async function createJob(
@@ -59,7 +60,7 @@ export async function getJobStatus(
   return {
     job,
     asset,
-    iterations: (passRows ?? []).map(mapJobIteration),
+    iterations: dedupeJobIterations((passRows ?? []).map(mapJobIteration)),
     report: reportRow ? mapReport(reportRow) : null,
   };
 }

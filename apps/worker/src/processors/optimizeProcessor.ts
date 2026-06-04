@@ -40,6 +40,8 @@ export async function processOptimization(
   await supabase.from('assets').update({ status: 'optimizing' }).eq('id', assetId);
   await supabase.from('jobs').update({ status: 'optimizing' }).eq('id', jobId);
 
+  await supabase.from('job_passes').delete().eq('job_id', jobId);
+
   const originalBuffer = await downloadFile(asset.original_path);
   let currentSvg = originalBuffer.toString('utf-8');
   let previousValidSvg: string | null = null;
@@ -73,6 +75,11 @@ export async function processOptimization(
       size_bytes: currentSize,
       reduction_percent: passReduction,
     });
+
+    await supabase
+      .from('jobs')
+      .update({ claimed_at: new Date().toISOString() })
+      .eq('id', jobId);
 
     if (isStabilized(previousSize, currentSize)) {
       stabilized = true;

@@ -1,5 +1,6 @@
 import type { Asset, AssetListItem, AssetWithJob, JobIteration, OptimizationReport } from '@asset-optimiser/shared-types';
 import { supabase } from '../db/supabase.js';
+import { dedupeJobIterations } from '../utils/dedupeJobIterations.js';
 import { deleteFiles } from './storageService.js';
 
 export async function createAssetRecord(params: {
@@ -161,7 +162,7 @@ export async function getAssetWithDetailsForUser(
         .single(),
     ]);
 
-    iterations = (passesResult.data ?? []).map(mapJobIteration);
+    iterations = dedupeJobIterations((passesResult.data ?? []).map(mapJobIteration));
     report = reportResult.data ? mapReport(reportResult.data) : null;
   }
 
