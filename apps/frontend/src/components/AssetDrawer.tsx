@@ -110,10 +110,8 @@ export default function AssetDrawer({
     !['uploaded', 'queued', 'optimizing'].includes(displayAsset.status);
   const isWebpReady = Boolean(displayAsset.webp_path);
   const isPngReady = Boolean(displayAsset.png_path);
-  const isWebpConverting =
-    !isWebpReady && (displayAsset.status === 'converting' || isConvertingWebp);
-  const isPngConverting =
-    !isPngReady && (displayAsset.status === 'converting' || isConvertingPng);
+  const isWebpConverting = !isWebpReady && Boolean(isConvertingWebp);
+  const isPngConverting = !isPngReady && Boolean(isConvertingPng);
   const isComplete = displayAsset.status === 'complete';
   const showDetailSkeleton = isDetailLoading && isComplete;
 

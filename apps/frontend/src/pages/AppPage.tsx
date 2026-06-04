@@ -39,6 +39,7 @@ function AppPageContent() {
     message: string;
   } | null>(null);
   const [pollAssetsWhileUploading, setPollAssetsWhileUploading] = useState(false);
+  const [rasterConverting, setRasterConverting] = useState<'webp' | 'png' | null>(null);
 
   const { data: assets = [], isLoading, error } = useAssets({
     pollWhileBusy: pollAssetsWhileUploading,
@@ -106,6 +107,22 @@ function AppPageContent() {
       base64_detected: selectedAsset.base64_detected ?? assetDetail.report?.base64_detected ?? null,
     };
   }, [selectedAsset, assetDetail]);
+
+  useEffect(() => {
+    if (!selectedId) {
+      setRasterConverting(null);
+      return;
+    }
+    if (rasterConverting === 'webp' && drawerAsset?.webp_path) {
+      setRasterConverting(null);
+    }
+    if (rasterConverting === 'png' && drawerAsset?.png_path) {
+      setRasterConverting(null);
+    }
+    if (rasterConverting && selectedAsset?.status === 'failed') {
+      setRasterConverting(null);
+    }
+  }, [selectedId, drawerAsset?.webp_path, drawerAsset?.png_path, rasterConverting, selectedAsset?.status]);
 
   const previewAssetIds = useMemo(() => getPreviewableAssetIds(assets), [assets]);
   const processingAssetIds = useMemo(
@@ -328,12 +345,14 @@ function AppPageContent() {
           downloadAsset.mutate(id);
         }}
         onConvertWebp={(id) => {
+          setRasterConverting('webp');
           track('WebP Convert Started');
-          convertWebp.mutate(id);
+          convertWebp.mutate(id, { onError: () => setRasterConverting(null) });
         }}
         onConvertPng={(id) => {
+          setRasterConverting('png');
           track('PNG Convert Started');
-          convertPng.mutate(id);
+          convertPng.mutate(id, { onError: () => setRasterConverting(null) });
         }}
         onDownloadWebp={(id) => {
           track('WebP Downloaded');
@@ -344,11 +363,9 @@ function AppPageContent() {
           downloadPng.mutate(id);
         }}
         isConvertingWebp={
-          convertWebp.isPending && convertWebp.variables === selectedId
+          rasterConverting === 'webp' && selectedId !== null
         }
-        isConvertingPng={
-          convertPng.isPending && convertPng.variables === selectedId
-        }
+        isConvertingPng={rasterConverting === 'png' && selectedId !== null}
       />
     </div>
   );
