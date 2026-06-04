@@ -38,6 +38,11 @@ export function webpPath(assetId: string, filename: string): string {
   return buildStoragePath('webp', assetId, base);
 }
 
+export function pngPath(assetId: string, filename: string): string {
+  const base = filename.replace(/\.svg$/i, '.png');
+  return buildStoragePath('png', assetId, base);
+}
+
 export function zipPath(bundleId: string): string {
   return `zips/${bundleId}/optimized-assets.zip`;
 }

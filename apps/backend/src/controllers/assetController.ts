@@ -67,6 +67,37 @@ export async function downloadAsset(req: AuthenticatedRequest, res: Response) {
   }
 }
 
+export async function downloadAssetPng(req: AuthenticatedRequest, res: Response) {
+  try {
+    const id = routeParam(req.params.id);
+    if (!id) {
+      res.status(400).json({ error: 'Asset id is required' });
+      return;
+    }
+
+    const asset = await getAssetForUser(id, req.userId);
+    if (!asset) {
+      res.status(404).json({ error: 'Asset not found' });
+      return;
+    }
+
+    if (!asset.png_path) {
+      res.status(400).json({ error: 'PNG is not available yet' });
+      return;
+    }
+
+    const filename = asset.filename.replace(/\.svg$/i, '.png');
+    const downloadUrl = await createSignedDownloadUrl(asset.png_path, { download: filename });
+
+    res.json({ downloadUrl, filename });
+  } catch (err) {
+    console.error('asset png download error:', err);
+    res.status(500).json({
+      error: err instanceof Error ? err.message : 'Failed to generate PNG download',
+    });
+  }
+}
+
 export async function downloadAssetWebp(req: AuthenticatedRequest, res: Response) {
   try {
     const id = routeParam(req.params.id);

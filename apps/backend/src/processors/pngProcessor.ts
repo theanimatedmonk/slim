@@ -1,8 +1,8 @@
 import { supabase } from '../db/supabase.js';
-import { downloadFile, uploadFile, webpPath } from '../services/storageService.js';
+import { downloadFile, uploadFile, pngPath } from '../services/storageService.js';
 import { rasterizeSvgBuffer } from './svgRasterizer.js';
 
-export async function processWebpConversion(
+export async function processPngConversion(
   assetId: string,
   jobId: string
 ): Promise<void> {
@@ -20,18 +20,18 @@ export async function processWebpConversion(
 
   const svgPath = asset.optimized_path ?? asset.original_path;
   if (!svgPath) {
-    throw new Error('No SVG file available for WebP conversion');
+    throw new Error('No SVG file available for PNG conversion');
   }
   const svgBuffer = await downloadFile(svgPath);
-  const webpBuffer = await rasterizeSvgBuffer(svgBuffer, 'webp');
+  const pngBuffer = await rasterizeSvgBuffer(svgBuffer, 'png');
 
-  const outPath = webpPath(assetId, asset.filename);
-  await uploadFile(outPath, webpBuffer, 'image/webp');
+  const outPath = pngPath(assetId, asset.filename);
+  await uploadFile(outPath, pngBuffer, 'image/png');
 
   await supabase
     .from('assets')
     .update({
-      webp_path: outPath,
+      png_path: outPath,
       status: 'complete',
     })
     .eq('id', assetId);

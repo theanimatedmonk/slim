@@ -13,6 +13,7 @@ interface AssetRow {
   original_path: string | null;
   optimized_path: string | null;
   webp_path: string | null;
+  png_path: string | null;
   original_size: number;
   optimized_size: number | null;
   complexity: string;
@@ -55,10 +56,12 @@ export async function processZipBundle(
     optimized_size: number | null;
     complexity: string;
     webp_path: string | null;
+    png_path?: string | null;
     base64_detected?: boolean;
   }> = [];
 
   let includeWebpsFolder = false;
+  let includePngsFolder = false;
 
   for (const asset of assets as AssetRow[]) {
     const svgPath = asset.optimized_path ?? asset.original_path;
@@ -81,6 +84,7 @@ export async function processZipBundle(
 
     if (webpRecommended) {
       includeWebpsFolder = true;
+      includePngsFolder = true;
     }
 
     if (asset.webp_path) {
@@ -90,12 +94,20 @@ export async function processZipBundle(
       archive.append(webpBuffer, { name: `webps/${webpName}` });
     }
 
+    if (asset.png_path) {
+      includePngsFolder = true;
+      const pngBuffer = await downloadFile(asset.png_path);
+      const pngName = asset.filename.replace(/\.svg$/i, '.png');
+      archive.append(pngBuffer, { name: `pngs/${pngName}` });
+    }
+
     reportInputs.push({
       filename: asset.filename,
       original_size: asset.original_size,
       optimized_size: asset.optimized_size,
       complexity: asset.complexity,
       webp_path: asset.webp_path,
+      png_path: asset.png_path,
       base64_detected: base64Detected,
     });
   }
@@ -108,6 +120,13 @@ export async function processZipBundle(
     archive.append(
       'These assets are recommended for WebP conversion. Convert them in the workspace, then download the bundle again to include WebP files.\n',
       { name: 'webps/README.txt' }
+    );
+  }
+
+  if (includePngsFolder && summary.pngIncludedCount === 0) {
+    archive.append(
+      'These assets are recommended for PNG conversion. Convert them in the workspace, then download the bundle again to include PNG files.\n',
+      { name: 'pngs/README.txt' }
     );
   }
 

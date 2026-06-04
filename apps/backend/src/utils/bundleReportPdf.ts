@@ -21,6 +21,7 @@ export interface BundleReportSummary {
   totalReductionPercent: number;
   webpRecommendedCount: number;
   webpIncludedCount: number;
+  pngIncludedCount: number;
 }
 
 export function buildBundleReportPdf(
@@ -137,6 +138,7 @@ export function buildReportRows(
     optimized_size: number | null;
     complexity: string;
     webp_path: string | null;
+    png_path?: string | null;
     base64_detected?: boolean;
   }>
 ): { rows: BundleReportRow[]; summary: BundleReportSummary } {
@@ -178,6 +180,7 @@ export function buildReportRows(
       ),
       webpRecommendedCount: rows.filter((r) => r.webpRecommended).length,
       webpIncludedCount: rows.filter((r) => r.webpIncluded).length,
+      pngIncludedCount: assets.filter((a) => Boolean(a.png_path)).length,
     },
   };
 }

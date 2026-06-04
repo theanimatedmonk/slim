@@ -23,6 +23,7 @@ export interface Asset {
   original_path: string | null;
   optimized_path: string | null;
   webp_path: string | null;
+  png_path: string | null;
   original_size: number;
   optimized_size: number | null;
   complexity: ComplexityLevel;
@@ -98,9 +99,17 @@ export interface ConvertWebpResponse {
   jobId: string;
 }
 
+export interface ConvertPngRequest {
+  assetId: string;
+}
+
+export interface ConvertPngResponse {
+  jobId: string;
+}
+
 export interface RetryAssetResponse {
   jobId: string;
-  jobType: 'optimize' | 'convert-webp';
+  jobType: 'optimize' | 'convert-webp' | 'convert-png';
   status: 'queued' | 'converting';
 }
 
@@ -118,7 +127,7 @@ export interface RegisterAssetRequest {
   size: number;
 }
 
-export type AssetPreviewKind = 'svg' | 'webp';
+export type AssetPreviewKind = 'svg' | 'webp' | 'png';
 
 export interface AssetPreview {
   url: string;
@@ -131,6 +140,7 @@ export interface AssetPreviewSet {
   original: AssetPreview | null;
   optimized: AssetPreview | null;
   webp: AssetPreview | null;
+  png: AssetPreview | null;
 }
 
 export interface AssetPreviewsRequest {
@@ -142,7 +152,7 @@ export interface AssetPreviewsResponse {
 }
 
 export interface QueueJobPayload {
-  type: 'optimize' | 'convert-webp' | 'generate-zip';
+  type: 'optimize' | 'convert-webp' | 'convert-png' | 'generate-zip';
   assetId: string;
   jobId: string;
   bundleJobId?: string;

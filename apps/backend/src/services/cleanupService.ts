@@ -10,7 +10,7 @@ export async function cleanupExpiredAssets(): Promise<{
 
   const { data: expired, error } = await supabase
     .from('assets')
-    .select('id, original_path, optimized_path, webp_path')
+    .select('id, original_path, optimized_path, webp_path, png_path')
     .lt('created_at', cutoff.toISOString());
 
   if (error) {
@@ -26,6 +26,7 @@ export async function cleanupExpiredAssets(): Promise<{
     if (row.original_path) paths.push(row.original_path);
     if (row.optimized_path) paths.push(row.optimized_path);
     if (row.webp_path) paths.push(row.webp_path);
+    if (row.png_path) paths.push(row.png_path);
   }
 
   await deleteFiles(paths);

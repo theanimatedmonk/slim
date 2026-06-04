@@ -121,13 +121,16 @@ export function getPreviewableAssetIds(
     original_path?: string | null;
     optimized_path?: string | null;
     webp_path?: string | null;
+    png_path?: string | null;
   }[]
 ): string[] {
   return assets
     .filter(
       (asset) =>
         asset.status !== 'failed' &&
-        Boolean(asset.original_path || asset.optimized_path || asset.webp_path)
+        Boolean(
+          asset.original_path || asset.optimized_path || asset.webp_path || asset.png_path
+        )
     )
     .map((asset) => asset.id);
 }

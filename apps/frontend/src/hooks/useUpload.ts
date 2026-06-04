@@ -183,6 +183,7 @@ export function useUpload(assets: AssetListItem[] = []) {
           original_path: path,
           optimized_path: null,
           webp_path: null,
+          png_path: null,
           original_size: item.file.size,
           optimized_size: null,
           complexity: 'unknown',

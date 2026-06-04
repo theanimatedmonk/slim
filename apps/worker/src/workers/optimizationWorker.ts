@@ -2,6 +2,7 @@ import { Worker } from 'bullmq';
 import type { QueueJobPayload } from '@asset-optimiser/shared-types';
 import { config } from '../config.js';
 import { processOptimization } from '../processors/optimizeProcessor.js';
+import { processPngConversion } from '../processors/pngProcessor.js';
 import { processWebpConversion } from '../processors/webpProcessor.js';
 import { processZipBundle } from '../processors/zipProcessor.js';
 import { supabase } from '../db/supabase.js';
@@ -20,6 +21,9 @@ export function startOptimizationWorker(): Worker<QueueJobPayload> {
           break;
         case 'convert-webp':
           await processWebpConversion(payload.assetId, payload.jobId);
+          break;
+        case 'convert-png':
+          await processPngConversion(payload.assetId, payload.jobId);
           break;
         case 'generate-zip':
           if (!payload.bundleJobId || !payload.assetIds?.length) {
@@ -46,7 +50,7 @@ export function startOptimizationWorker(): Worker<QueueJobPayload> {
 
     const { assetId, jobId, type } = job.data;
 
-    if (type === 'optimize' || type === 'convert-webp') {
+    if (type === 'optimize' || type === 'convert-webp' || type === 'convert-png') {
       await supabase.from('jobs').update({ status: 'failed' }).eq('id', jobId);
       await supabase.from('assets').update({ status: 'failed' }).eq('id', assetId);
     } else if (type === 'generate-zip' && job.data.bundleJobId) {

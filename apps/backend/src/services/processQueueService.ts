@@ -1,9 +1,10 @@
 import { supabase } from '../db/supabase.js';
 import { processOptimization } from '../processors/optimizeProcessor.js';
+import { processPngConversion } from '../processors/pngProcessor.js';
 import { processWebpConversion } from '../processors/webpProcessor.js';
 import { processZipBundle } from '../processors/zipProcessor.js';
 
-export type JobType = 'optimize' | 'convert-webp';
+export type JobType = 'optimize' | 'convert-webp' | 'convert-png';
 
 interface QueuedJobRow {
   id: string;
@@ -166,6 +167,11 @@ async function runJob(job: QueuedJobRow): Promise<void> {
 
   if (jobType === 'convert-webp') {
     await processWebpConversion(job.asset_id, job.id);
+    return;
+  }
+
+  if (jobType === 'convert-png') {
+    await processPngConversion(job.asset_id, job.id);
     return;
   }
 

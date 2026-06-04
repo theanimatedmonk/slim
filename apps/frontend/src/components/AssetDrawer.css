@@ -314,6 +314,12 @@
 }
 
 
+.asset-drawer__raster-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-stack-sm);
+}
+
 .asset-drawer__webp-btn {
   width: 100%;
   padding: var(--space-stack-sm) 0;
@@ -333,6 +339,16 @@
 .asset-drawer__webp-btn:disabled {
   opacity: 0.65;
   cursor: not-allowed;
+}
+
+.asset-drawer__webp-btn--outline {
+  background: transparent;
+  color: var(--color-badge-warning-text);
+  border: 1.5px solid var(--color-badge-warning-text);
+}
+
+.asset-drawer__webp-btn--outline:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-badge-warning-text) 8%, transparent);
 }
 
 .asset-drawer__report-grid {

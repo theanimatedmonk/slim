@@ -2,10 +2,12 @@ import { useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AssetListItem, AssetStatus, AssetWithJob } from '@asset-optimiser/shared-types';
 import {
+  convertToPng,
   convertToWebp,
   deleteAsset,
   getAssetDetail,
   getAssetDownloadUrl,
+  getAssetPngDownloadUrl,
   getAssetWebpDownloadUrl,
   getBundleDownloadUrl,
   listAssets,
@@ -188,6 +190,34 @@ export function useRetryAsset() {
   });
 }
 
+export function useConvertPng() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (assetId: string) => convertToPng(assetId),
+    onMutate: async (assetId) => {
+      await queryClient.cancelQueries({ queryKey: ['assets'] });
+      const previous = queryClient.getQueryData<AssetListItem[]>(['assets']);
+      queryClient.setQueryData<AssetListItem[]>(['assets'], (old) =>
+        (old ?? []).map((a) =>
+          a.id === assetId ? { ...a, status: 'converting' as const } : a
+        )
+      );
+      return { previous };
+    },
+    onError: (_err, _assetId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['assets'], context.previous);
+      }
+    },
+    onSettled: (_data, _err, assetId) => {
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ['asset-previews'] });
+      queryClient.invalidateQueries({ queryKey: ['asset', assetId] });
+    },
+  });
+}
+
 export function useConvertWebp() {
   const queryClient = useQueryClient();
 
@@ -229,6 +259,15 @@ export function useDownloadWebp() {
   return useMutation({
     mutationFn: async (assetId: string) => {
       const { downloadUrl, filename } = await getAssetWebpDownloadUrl(assetId);
+      triggerFileDownload(downloadUrl, filename);
+    },
+  });
+}
+
+export function useDownloadPng() {
+  return useMutation({
+    mutationFn: async (assetId: string) => {
+      const { downloadUrl, filename } = await getAssetPngDownloadUrl(assetId);
       triggerFileDownload(downloadUrl, filename);
     },
   });

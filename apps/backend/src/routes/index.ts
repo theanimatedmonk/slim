@@ -6,9 +6,10 @@ import {
   downloadBundle,
   requestBundleDownload,
 } from '../controllers/jobController.js';
+import { convertToPng } from '../controllers/pngController.js';
 import { convertToWebp } from '../controllers/webpController.js';
 import { processJobsCron } from '../controllers/cronController.js';
-import { deleteAsset, downloadAsset, downloadAssetWebp, getAssetDetail, getAssetPreviews, retryAsset } from '../controllers/assetController.js';
+import { deleteAsset, downloadAsset, downloadAssetPng, downloadAssetWebp, getAssetDetail, getAssetPreviews, retryAsset } from '../controllers/assetController.js';
 import { requireAuth } from '../middleware/auth.js';
 import { authed } from '../utils/authedHandler.js';
 
@@ -25,11 +26,13 @@ router.post('/assets/previews', authed(getAssetPreviews));
 router.get('/assets/:id', authed(getAssetDetail));
 router.get('/assets/:id/download', authed(downloadAsset));
 router.get('/assets/:id/download-webp', authed(downloadAssetWebp));
+router.get('/assets/:id/download-png', authed(downloadAssetPng));
 router.post('/assets/:id/retry', authed(retryAsset));
 router.delete('/assets/:id', authed(deleteAsset));
 router.post('/optimize', authed(startOptimization));
 router.get('/job/:id', authed(getJob));
 router.post('/convert-webp', authed(convertToWebp));
+router.post('/convert-png', authed(convertToPng));
 router.post('/download', authed(requestBundleDownload));
 router.get('/download/:jobId', authed(downloadBundle));
 

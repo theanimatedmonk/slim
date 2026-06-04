@@ -3,6 +3,7 @@ import type {
   AssetListItem,
   AssetPreviewsResponse,
   AssetWithJob,
+  ConvertPngResponse,
   ConvertWebpResponse,
   JobStatusResponse,
   OptimizeResponse,
@@ -145,6 +146,13 @@ export async function convertToWebp(
   });
 }
 
+export async function convertToPng(assetId: string): Promise<ConvertPngResponse> {
+  return request<ConvertPngResponse>('/convert-png', {
+    method: 'POST',
+    body: JSON.stringify({ assetId }),
+  });
+}
+
 export async function getAssetDownloadUrl(
   assetId: string
 ): Promise<{ downloadUrl: string; filename: string }> {
@@ -155,6 +163,12 @@ export async function getAssetWebpDownloadUrl(
   assetId: string
 ): Promise<{ downloadUrl: string; filename: string }> {
   return request<{ downloadUrl: string; filename: string }>(`/assets/${assetId}/download-webp`);
+}
+
+export async function getAssetPngDownloadUrl(
+  assetId: string
+): Promise<{ downloadUrl: string; filename: string }> {
+  return request<{ downloadUrl: string; filename: string }>(`/assets/${assetId}/download-png`);
 }
 
 export async function requestBundle(assetIds: string[]): Promise<{ jobId: string }> {

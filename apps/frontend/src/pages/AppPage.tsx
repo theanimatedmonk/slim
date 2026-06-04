@@ -17,9 +17,11 @@ import {
   useAssetDetail,
   useAutoOptimizePending,
   isAssetProcessing,
+  useConvertPng,
   useConvertWebp,
   useDownloadBundle,
   useDownloadAsset,
+  useDownloadPng,
   useDownloadWebp,
   useDeleteAsset,
   useDeleteAssets,
@@ -52,9 +54,11 @@ function AppPageContent() {
   useUploadSounds(zonePhase);
 
   const convertWebp = useConvertWebp();
+  const convertPng = useConvertPng();
   const downloadBundle = useDownloadBundle();
   const downloadAsset = useDownloadAsset();
   const downloadWebp = useDownloadWebp();
+  const downloadPng = useDownloadPng();
   const deleteAssetMutation = useDeleteAsset();
   const deleteAssetsMutation = useDeleteAssets();
   const retryAssetMutation = useRetryAsset();
@@ -95,6 +99,7 @@ function AppPageContent() {
       ...assetDetail,
       status: selectedAsset.status,
       webp_path: selectedAsset.webp_path ?? assetDetail.webp_path,
+      png_path: selectedAsset.png_path ?? assetDetail.png_path,
       optimized_size: selectedAsset.optimized_size ?? assetDetail.optimized_size,
       complexity:
         selectedAsset.complexity !== 'unknown' ? selectedAsset.complexity : assetDetail.complexity,
@@ -326,12 +331,23 @@ function AppPageContent() {
           track('WebP Convert Started');
           convertWebp.mutate(id);
         }}
+        onConvertPng={(id) => {
+          track('PNG Convert Started');
+          convertPng.mutate(id);
+        }}
         onDownloadWebp={(id) => {
           track('WebP Downloaded');
           downloadWebp.mutate(id);
         }}
-        isConverting={
+        onDownloadPng={(id) => {
+          track('PNG Downloaded');
+          downloadPng.mutate(id);
+        }}
+        isConvertingWebp={
           convertWebp.isPending && convertWebp.variables === selectedId
+        }
+        isConvertingPng={
+          convertPng.isPending && convertPng.variables === selectedId
         }
       />
     </div>

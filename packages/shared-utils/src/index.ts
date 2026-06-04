@@ -7,7 +7,7 @@ export const STABILIZATION_THRESHOLD_PERCENT = 1;
 
 /** Max number of asset ids accepted in a single batch request (optimize/preview/bundle). */
 export const MAX_BATCH_ASSETS = 100;
-/** Hard cap on raster dimensions when converting SVG → WebP (guards against decompression bombs). */
+/** Hard cap on raster dimensions when converting SVG → WebP/PNG (guards against decompression bombs). */
 export const MAX_RASTER_DIMENSION = 4096;
 export const COMPLEXITY_SIZE_THRESHOLD_BYTES = 250 * 1024;
 export const LONG_PATH_CHAR_THRESHOLD = 5000;
@@ -18,6 +18,7 @@ export const STORAGE_BUCKETS = {
   originals: 'originals',
   optimized: 'optimized',
   webp: 'webp',
+  png: 'png',
   zips: 'zips',
   temp: 'temp',
 } as const;

@@ -9,6 +9,7 @@ interface AssetRow {
   original_path: string;
   optimized_path: string | null;
   webp_path: string | null;
+  png_path: string | null;
   original_size: number;
   optimized_size: number | null;
   complexity: string;
@@ -55,6 +56,12 @@ export async function processZipBundle(
       const webpBuffer = await downloadFile(asset.webp_path);
       const webpName = asset.filename.replace(/\.svg$/i, '.webp');
       archive.append(webpBuffer, { name: `webp/${webpName}` });
+    }
+
+    if (asset.png_path) {
+      const pngBuffer = await downloadFile(asset.png_path);
+      const pngName = asset.filename.replace(/\.svg$/i, '.png');
+      archive.append(pngBuffer, { name: `png/${pngName}` });
     }
 
     const { data: optReport } = await supabase

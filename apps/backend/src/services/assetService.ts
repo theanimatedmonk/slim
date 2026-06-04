@@ -192,7 +192,7 @@ export async function deleteAssetForUser(
     throw new Error('Asset not found');
   }
 
-  const paths = [asset.original_path, asset.optimized_path, asset.webp_path].filter(
+  const paths = [asset.original_path, asset.optimized_path, asset.webp_path, asset.png_path].filter(
     (p): p is string => Boolean(p)
   );
 
@@ -219,6 +219,7 @@ function mapAsset(row: Record<string, unknown>): Asset {
     original_path: (row.original_path as string) ?? null,
     optimized_path: (row.optimized_path as string) ?? null,
     webp_path: (row.webp_path as string) ?? null,
+    png_path: (row.png_path as string) ?? null,
     original_size: row.original_size as number,
     optimized_size: (row.optimized_size as number) ?? null,
     complexity: row.complexity as Asset['complexity'],

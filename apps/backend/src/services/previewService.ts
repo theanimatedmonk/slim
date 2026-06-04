@@ -24,17 +24,19 @@ async function signPreview(
 }
 
 export async function buildPreviewSetForAsset(asset: Asset): Promise<AssetPreviewSet> {
-  const [original, optimized, webp] = await Promise.all([
+  const [original, optimized, webp, png] = await Promise.all([
     signPreview(asset.original_path, 'svg'),
     signPreview(asset.optimized_path, 'svg'),
     signPreview(asset.webp_path, 'webp'),
+    signPreview(asset.png_path, 'png'),
   ]);
 
   return {
-    thumbnail: optimized ?? original ?? webp,
+    thumbnail: optimized ?? original ?? webp ?? png,
     original,
     optimized,
     webp,
+    png,
   };
 }
 

@@ -5,7 +5,7 @@ import { getAssetForUser } from './assetService.js';
 
 export async function createJob(
   assetId: string,
-  jobType: 'optimize' | 'convert-webp' = 'optimize'
+  jobType: 'optimize' | 'convert-webp' | 'convert-png' = 'optimize'
 ): Promise<Job> {
   const { data, error } = await supabase
     .from('jobs')

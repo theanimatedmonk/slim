@@ -1,8 +1,6 @@
-import sharp from 'sharp';
 import { supabase } from '../db/supabase.js';
 import { downloadFile, uploadFile, webpPath } from '../services/storageService.js';
-
-const WEBP_QUALITY = 80;
+import { rasterizeSvgBuffer } from './svgRasterizer.js';
 
 export async function processWebpConversion(
   assetId: string,
@@ -23,9 +21,7 @@ export async function processWebpConversion(
   const svgPath = asset.optimized_path ?? asset.original_path;
   const svgBuffer = await downloadFile(svgPath);
 
-  const webpBuffer = await sharp(svgBuffer, { density: 150 })
-    .webp({ quality: WEBP_QUALITY })
-    .toBuffer();
+  const webpBuffer = await rasterizeSvgBuffer(svgBuffer, 'webp');
 
   const outPath = webpPath(assetId, asset.filename);
   await uploadFile(outPath, webpBuffer, 'image/webp');

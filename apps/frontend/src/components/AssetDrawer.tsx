@@ -16,8 +16,11 @@ interface Props {
   onClose: () => void;
   onDownload: (assetId: string) => void;
   onConvertWebp: (assetId: string) => void;
+  onConvertPng: (assetId: string) => void;
   onDownloadWebp: (assetId: string) => void;
-  isConverting?: boolean;
+  onDownloadPng: (assetId: string) => void;
+  isConvertingWebp?: boolean;
+  isConvertingPng?: boolean;
   isDetailLoading?: boolean;
 }
 
@@ -27,8 +30,11 @@ export default function AssetDrawer({
   onClose,
   onDownload,
   onConvertWebp,
+  onConvertPng,
   onDownloadWebp,
-  isConverting,
+  onDownloadPng,
+  isConvertingWebp,
+  isConvertingPng,
   isDetailLoading = false,
 }: Props) {
   const [displayAsset, setDisplayAsset] = useState<DrawerAsset | null>(null);
@@ -103,8 +109,11 @@ export default function AssetDrawer({
     isComplexAsset &&
     !['uploaded', 'queued', 'optimizing'].includes(displayAsset.status);
   const isWebpReady = Boolean(displayAsset.webp_path);
+  const isPngReady = Boolean(displayAsset.png_path);
   const isWebpConverting =
-    !isWebpReady && (displayAsset.status === 'converting' || isConverting);
+    !isWebpReady && (displayAsset.status === 'converting' || isConvertingWebp);
+  const isPngConverting =
+    !isPngReady && (displayAsset.status === 'converting' || isConvertingPng);
   const isComplete = displayAsset.status === 'complete';
   const showDetailSkeleton = isDetailLoading && isComplete;
 
@@ -276,8 +285,8 @@ export default function AssetDrawer({
             <section className="asset-drawer__section asset-drawer__webp-callout">
               <h3 className="asset-drawer__webp-title">Complex SVG</h3>
               <p className="asset-drawer__webp-desc">
-                This asset still contains characteristics that may impact Android rendering
-                performance. WebP conversion is recommended.
+                This asset still contains characteristics that may impact rendering
+                performance. WebP or PNG conversion is recommended.
               </p>
               {displayAsset.report?.operations && displayAsset.report.operations.length > 0 && (
                 <ul className="asset-drawer__webp-ops">
@@ -286,24 +295,44 @@ export default function AssetDrawer({
                   ))}
                 </ul>
               )}
-              {isWebpReady ? (
-                <button
-                  type="button"
-                  onClick={() => onDownloadWebp(displayAsset.id)}
-                  className="asset-drawer__webp-btn"
-                >
-                  Download WebP
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  disabled={isWebpConverting}
-                  onClick={() => onConvertWebp(displayAsset.id)}
-                  className="asset-drawer__webp-btn"
-                >
-                  {isWebpConverting ? 'Converting…' : 'Convert to WebP'}
-                </button>
-              )}
+              <div className="asset-drawer__raster-actions">
+                {isWebpReady ? (
+                  <button
+                    type="button"
+                    onClick={() => onDownloadWebp(displayAsset.id)}
+                    className="asset-drawer__webp-btn"
+                  >
+                    Download WebP
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={isWebpConverting}
+                    onClick={() => onConvertWebp(displayAsset.id)}
+                    className="asset-drawer__webp-btn"
+                  >
+                    {isWebpConverting ? 'Converting…' : 'Convert to WebP'}
+                  </button>
+                )}
+                {isPngReady ? (
+                  <button
+                    type="button"
+                    onClick={() => onDownloadPng(displayAsset.id)}
+                    className="asset-drawer__webp-btn asset-drawer__webp-btn--outline"
+                  >
+                    Download PNG
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={isPngConverting}
+                    onClick={() => onConvertPng(displayAsset.id)}
+                    className="asset-drawer__webp-btn asset-drawer__webp-btn--outline"
+                  >
+                    {isPngConverting ? 'Converting…' : 'Convert to PNG'}
+                  </button>
+                )}
+              </div>
             </section>
           )}
 
