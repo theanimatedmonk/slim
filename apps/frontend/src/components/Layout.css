@@ -154,10 +154,29 @@
 
 @media (min-width: 640px) {
   .layout__footer {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    justify-content: space-between;
+    border-top: none;
+    padding: 0;
+    margin: 0;
+    max-width: none;
+    height: 0;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .layout__footer-left {
+    position: fixed;
+    bottom: var(--space-stack-lg);
+    left: var(--space-page-x);
+    z-index: var(--primitive-z-dropdown);
+    pointer-events: auto;
+  }
+
+  .layout__footer .created-by-chip {
+    position: fixed;
+    right: var(--space-page-x);
+    bottom: var(--space-stack-lg);
+    z-index: var(--primitive-z-dropdown);
+    pointer-events: auto;
   }
 
   .layout__footer .theme-toggle,
