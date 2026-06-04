@@ -12,10 +12,6 @@
   --toggle-option-active-color: var(--primitive-white);
   --toggle-option-hover-bg: rgb(0 0 0 / 0.04);
 
-  position: fixed;
-  bottom: var(--space-stack-lg);
-  left: var(--space-page-x);
-  z-index: var(--toggle-z);
   display: inline-flex;
   align-items: center;
   gap: var(--toggle-gap);
