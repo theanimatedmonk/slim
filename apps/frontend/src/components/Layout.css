@@ -103,13 +103,66 @@
   flex: 1;
 }
 
-.layout__bottom-left {
-  position: fixed;
-  bottom: var(--space-stack-lg);
-  left: var(--space-page-x);
-  z-index: var(--primitive-z-dropdown);
+.layout__footer {
+  max-width: var(--layout-max-width);
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--space-stack-lg) var(--space-page-x);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-stack-md);
+  border-top: 1px solid var(--layout-header-border);
+}
+
+.layout__footer-left {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-stack-sm);
+}
+
+@media (max-width: 639px) {
+  .layout__footer {
+    align-items: center;
+    gap: var(--space-stack-lg);
+    padding-top: var(--space-stack-xl);
+    padding-bottom: var(--space-stack-xl);
+  }
+
+  /* Flatten left group so we can stack: theme → creator → Product Hunt */
+  .layout__footer-left {
+    display: contents;
+  }
+
+  .layout__footer .theme-toggle {
+    order: 1;
+  }
+
+  .layout__footer .created-by-chip {
+    order: 2;
+  }
+
+  .layout__footer .product-hunt-badge {
+    order: 3;
+  }
+
+  .layout__footer .product-hunt-badge__img {
+    margin-inline: auto;
+  }
+}
+
+@media (min-width: 640px) {
+  .layout__footer {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .layout__footer .theme-toggle,
+  .layout__footer .created-by-chip,
+  .layout__footer .product-hunt-badge {
+    order: unset;
+  }
 }

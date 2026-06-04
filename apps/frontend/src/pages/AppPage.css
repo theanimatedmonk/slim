@@ -186,6 +186,25 @@
   border-bottom-right-radius: var(--app-page-table-radius);
 }
 
+@media (max-width: 640px) {
+  .app-page__list-wrap:not(.app-page__list-wrap--empty) {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .app-page__asset-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-stack-md);
+  }
+
+  .app-page__asset-list > .asset-row,
+  .app-page__asset-list > .asset-row:last-child {
+    border-radius: var(--radius-card);
+  }
+}
+
 .app-page__list-empty {
   padding: var(--primitive-space-12) var(--space-page-x);
   text-align: center;

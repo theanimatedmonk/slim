@@ -127,58 +127,79 @@ export default function AssetRow({
       : null;
   const isComplexSvg = isComplete && shouldRecommendWebp(asset);
 
+  const downloadIcon = (
+    <Icon size="sm" viewBox="0 0 16 16" stroke="currentColor">
+      <path
+        d="M8 2.5v7M5 8.5l3 3 3-3"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M3 13.5h10" strokeWidth="1.5" strokeLinecap="round" />
+    </Icon>
+  );
+
+  const deleteIcon = (
+    <Icon size="md" viewBox="0 0 20 20" fill="currentColor" stroke="none">
+      <path d="M8.33366 5.00033H11.667C11.667 4.5583 11.4914 4.13437 11.1788 3.82181C10.8663 3.50925 10.4424 3.33366 10.0003 3.33366C9.5583 3.33366 9.13437 3.50925 8.82181 3.82181C8.50925 4.13437 8.33366 4.5583 8.33366 5.00033ZM6.66699 5.00033C6.66699 4.11627 7.01818 3.26842 7.6433 2.6433C8.26842 2.01818 9.11627 1.66699 10.0003 1.66699C10.8844 1.66699 11.7322 2.01818 12.3573 2.6433C12.9825 3.26842 13.3337 4.11627 13.3337 5.00033H17.5003C17.7213 5.00033 17.9333 5.08812 18.0896 5.2444C18.2459 5.40068 18.3337 5.61265 18.3337 5.83366C18.3337 6.05467 18.2459 6.26663 18.0896 6.42291C17.9333 6.57919 17.7213 6.66699 17.5003 6.66699H16.7653L16.027 15.2837C15.956 16.1157 15.5753 16.8908 14.9602 17.4556C14.3451 18.0204 13.5404 18.3338 12.7053 18.3337H7.29533C6.46025 18.3338 5.65555 18.0204 5.04045 17.4556C4.42534 16.8908 4.04464 16.1157 3.97366 15.2837L3.23533 6.66699H2.50033C2.27931 6.66699 2.06735 6.57919 1.91107 6.42291C1.75479 6.26663 1.66699 6.05467 1.66699 5.83366C1.66699 5.61265 1.75479 5.40068 1.91107 5.2444C2.06735 5.08812 2.27931 5.00033 2.50033 5.00033H6.66699ZM12.5003 10.0003C12.5003 9.77931 12.4125 9.56735 12.2562 9.41107C12.1 9.25479 11.888 9.16699 11.667 9.16699C11.446 9.16699 11.234 9.25479 11.0777 9.41107C10.9215 9.56735 10.8337 9.77931 10.8337 10.0003V13.3337C10.8337 13.5547 10.9215 13.7666 11.0777 13.9229C11.234 14.0792 11.446 14.167 11.667 14.167C11.888 14.167 12.1 14.0792 12.2562 13.9229C12.4125 13.7666 12.5003 13.5547 12.5003 13.3337V10.0003ZM8.33366 9.16699C8.55467 9.16699 8.76663 9.25479 8.92291 9.41107C9.07919 9.56735 9.16699 9.77931 9.16699 10.0003V13.3337C9.16699 13.5547 9.07919 13.7666 8.92291 13.9229C8.76663 14.0792 8.55467 14.167 8.33366 14.167C8.11264 14.167 7.90068 14.0792 7.7444 13.9229C7.58812 13.7666 7.50033 13.5547 7.50033 13.3337V10.0003C7.50033 9.77931 7.58812 9.56735 7.7444 9.41107C7.90068 9.25479 8.11264 9.16699 8.33366 9.16699ZM5.63366 15.142C5.66916 15.5582 5.85963 15.9458 6.16736 16.2283C6.47509 16.5107 6.87764 16.6673 7.29533 16.667H12.7053C13.1227 16.6668 13.5249 16.5101 13.8322 16.2277C14.1396 15.9453 14.3298 15.5579 14.3653 15.142L15.092 6.66699H4.90866L5.63366 15.142Z" />
+    </Icon>
+  );
+
   return (
     <li
       className={`asset-row${selectable ? ' asset-row--selectable' : ''}${checked ? ' asset-row--selected' : ''}`}
       onClick={() => onSelect(asset)}
     >
-      <div
-        className="asset-row__col asset-row__col--select"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {selectable && (
-          <input
-            type="checkbox"
-            className="app-checkbox"
-            checked={checked}
-            onChange={(e) => onCheckedChange?.(e.target.checked)}
-            aria-label={`Select ${asset.filename}`}
-          />
-        )}
-      </div>
+      <div className="asset-row__header">
+        <div className="asset-row__col asset-row__col--name">
+          <AssetPreviewImage preview={thumbnail} alt={asset.filename} size="sm" />
+          <span className="asset-row__name" title={asset.filename}>
+            {asset.filename}
+          </span>
+        </div>
 
-      {/* C1 — asset name */}
-      <div className="asset-row__col asset-row__col--name">
-        <AssetPreviewImage preview={thumbnail} alt={asset.filename} size="sm" />
-        <span className="asset-row__name" title={asset.filename}>
-          {asset.filename}
-        </span>
+        <div
+          className="asset-row__col asset-row__col--select"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {selectable && (
+            <input
+              type="checkbox"
+              className="app-checkbox"
+              checked={checked}
+              onChange={(e) => onCheckedChange?.(e.target.checked)}
+              aria-label={`Select ${asset.filename}`}
+            />
+          )}
+        </div>
       </div>
 
       {/* C2 — size / optimised meta */}
       <div className="asset-row__col asset-row__col--meta">
         {isComplete && asset.optimized_size != null ? (
           <>
-            <span className="asset-row__size-compare">
-              {formatBytes(asset.original_size)}
-              <span className="asset-row__arrow" aria-hidden>
-                →
+            <div className="asset-row__meta-primary">
+              <span className="asset-row__size-compare">
+                {formatBytes(asset.original_size)}
+                <span className="asset-row__arrow" aria-hidden>
+                  →
+                </span>
+                <strong>{formatBytes(asset.optimized_size)}</strong>
               </span>
-              <strong>{formatBytes(asset.optimized_size)}</strong>
-            </span>
-            {reduction != null && (
-              <span className="asset-row__savings">
-                <Icon size="sm" viewBox="0 0 16 16" stroke="currentColor">
-                  <path
-                    d="M3.5 8.375L8 12.875L12.5 8.375M8 12.25V3.125"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </Icon>
-                {reduction}%
-              </span>
-            )}
+              {reduction != null && (
+                <span className="asset-row__savings">
+                  <Icon size="sm" viewBox="0 0 16 16" stroke="currentColor">
+                    <path
+                      d="M3.5 8.375L8 12.875L12.5 8.375M8 12.25V3.125"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </Icon>
+                  {reduction}%
+                </span>
+              )}
+            </div>
             {isComplexSvg && <ComplexSvgPill />}
           </>
         ) : (
@@ -193,42 +214,63 @@ export default function AssetRow({
       >
         {isComplete ? (
           <div className="asset-row__actions">
-            <Tooltip label="Download">
+            <div className="asset-row__actions-mobile">
               <button
                 type="button"
                 onClick={() => onDownload(asset)}
-                className="icon-btn icon-btn--download"
-                aria-label={`Download ${asset.filename}`}
+                className="asset-row__pill-btn asset-row__pill-btn--download"
               >
-                <Icon size="sm" viewBox="0 0 16 16" stroke="var(--color-text-inverse)">
-                  <path
-                    d="M8 2.5v7M5 8.5l3 3 3-3"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path d="M3 13.5h10" strokeWidth="1.5" strokeLinecap="round" />
-                </Icon>
+                {downloadIcon}
+                <span>Download</span>
               </button>
-            </Tooltip>
-            <Tooltip label="Delete">
               <button
                 type="button"
                 disabled={isDeleting}
                 onClick={() => onDelete(asset.id)}
-                className="icon-btn icon-btn--delete"
-                aria-label={`Delete ${asset.filename}`}
+                className="asset-row__pill-btn asset-row__pill-btn--delete"
               >
-                <Icon
-                  size="md"
-                  viewBox="0 0 20 20"
-                  fill="var(--color-text-primary)"
-                  stroke="none"
-                >
-                  <path d="M8.33366 5.00033H11.667C11.667 4.5583 11.4914 4.13437 11.1788 3.82181C10.8663 3.50925 10.4424 3.33366 10.0003 3.33366C9.5583 3.33366 9.13437 3.50925 8.82181 3.82181C8.50925 4.13437 8.33366 4.5583 8.33366 5.00033ZM6.66699 5.00033C6.66699 4.11627 7.01818 3.26842 7.6433 2.6433C8.26842 2.01818 9.11627 1.66699 10.0003 1.66699C10.8844 1.66699 11.7322 2.01818 12.3573 2.6433C12.9825 3.26842 13.3337 4.11627 13.3337 5.00033H17.5003C17.7213 5.00033 17.9333 5.08812 18.0896 5.2444C18.2459 5.40068 18.3337 5.61265 18.3337 5.83366C18.3337 6.05467 18.2459 6.26663 18.0896 6.42291C17.9333 6.57919 17.7213 6.66699 17.5003 6.66699H16.7653L16.027 15.2837C15.956 16.1157 15.5753 16.8908 14.9602 17.4556C14.3451 18.0204 13.5404 18.3338 12.7053 18.3337H7.29533C6.46025 18.3338 5.65555 18.0204 5.04045 17.4556C4.42534 16.8908 4.04464 16.1157 3.97366 15.2837L3.23533 6.66699H2.50033C2.27931 6.66699 2.06735 6.57919 1.91107 6.42291C1.75479 6.26663 1.66699 6.05467 1.66699 5.83366C1.66699 5.61265 1.75479 5.40068 1.91107 5.2444C2.06735 5.08812 2.27931 5.00033 2.50033 5.00033H6.66699ZM12.5003 10.0003C12.5003 9.77931 12.4125 9.56735 12.2562 9.41107C12.1 9.25479 11.888 9.16699 11.667 9.16699C11.446 9.16699 11.234 9.25479 11.0777 9.41107C10.9215 9.56735 10.8337 9.77931 10.8337 10.0003V13.3337C10.8337 13.5547 10.9215 13.7666 11.0777 13.9229C11.234 14.0792 11.446 14.167 11.667 14.167C11.888 14.167 12.1 14.0792 12.2562 13.9229C12.4125 13.7666 12.5003 13.5547 12.5003 13.3337V10.0003ZM8.33366 9.16699C8.55467 9.16699 8.76663 9.25479 8.92291 9.41107C9.07919 9.56735 9.16699 9.77931 9.16699 10.0003V13.3337C9.16699 13.5547 9.07919 13.7666 8.92291 13.9229C8.76663 14.0792 8.55467 14.167 8.33366 14.167C8.11264 14.167 7.90068 14.0792 7.7444 13.9229C7.58812 13.7666 7.50033 13.5547 7.50033 13.3337V10.0003C7.50033 9.77931 7.58812 9.56735 7.7444 9.41107C7.90068 9.25479 8.11264 9.16699 8.33366 9.16699ZM5.63366 15.142C5.66916 15.5582 5.85963 15.9458 6.16736 16.2283C6.47509 16.5107 6.87764 16.6673 7.29533 16.667H12.7053C13.1227 16.6668 13.5249 16.5101 13.8322 16.2277C14.1396 15.9453 14.3298 15.5579 14.3653 15.142L15.092 6.66699H4.90866L5.63366 15.142Z" />
-                </Icon>
+                {deleteIcon}
+                <span>Delete</span>
               </button>
-            </Tooltip>
+            </div>
+            <div className="asset-row__actions-desktop">
+              <Tooltip label="Download">
+                <button
+                  type="button"
+                  onClick={() => onDownload(asset)}
+                  className="icon-btn icon-btn--download"
+                  aria-label={`Download ${asset.filename}`}
+                >
+                  <Icon size="sm" viewBox="0 0 16 16" stroke="var(--color-text-inverse)">
+                    <path
+                      d="M8 2.5v7M5 8.5l3 3 3-3"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path d="M3 13.5h10" strokeWidth="1.5" strokeLinecap="round" />
+                  </Icon>
+                </button>
+              </Tooltip>
+              <Tooltip label="Delete">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => onDelete(asset.id)}
+                  className="icon-btn icon-btn--delete"
+                  aria-label={`Delete ${asset.filename}`}
+                >
+                  <Icon
+                    size="md"
+                    viewBox="0 0 20 20"
+                    fill="var(--color-text-primary)"
+                    stroke="none"
+                  >
+                    <path d="M8.33366 5.00033H11.667C11.667 4.5583 11.4914 4.13437 11.1788 3.82181C10.8663 3.50925 10.4424 3.33366 10.0003 3.33366C9.5583 3.33366 9.13437 3.50925 8.82181 3.82181C8.50925 4.13437 8.33366 4.5583 8.33366 5.00033ZM6.66699 5.00033C6.66699 4.11627 7.01818 3.26842 7.6433 2.6433C8.26842 2.01818 9.11627 1.66699 10.0003 1.66699C10.8844 1.66699 11.7322 2.01818 12.3573 2.6433C12.9825 3.26842 13.3337 4.11627 13.3337 5.00033H17.5003C17.7213 5.00033 17.9333 5.08812 18.0896 5.2444C18.2459 5.40068 18.3337 5.61265 18.3337 5.83366C18.3337 6.05467 18.2459 6.26663 18.0896 6.42291C17.9333 6.57919 17.7213 6.66699 17.5003 6.66699H16.7653L16.027 15.2837C15.956 16.1157 15.5753 16.8908 14.9602 17.4556C14.3451 18.0204 13.5404 18.3338 12.7053 18.3337H7.29533C6.46025 18.3338 5.65555 18.0204 5.04045 17.4556C4.42534 16.8908 4.04464 16.1157 3.97366 15.2837L3.23533 6.66699H2.50033C2.27931 6.66699 2.06735 6.57919 1.91107 6.42291C1.75479 6.26663 1.66699 6.05467 1.66699 5.83366C1.66699 5.61265 1.75479 5.40068 1.91107 5.2444C2.06735 5.08812 2.27931 5.00033 2.50033 5.00033H6.66699ZM12.5003 10.0003C12.5003 9.77931 12.4125 9.56735 12.2562 9.41107C12.1 9.25479 11.888 9.16699 11.667 9.16699C11.446 9.16699 11.234 9.25479 11.0777 9.41107C10.9215 9.56735 10.8337 9.77931 10.8337 10.0003V13.3337C10.8337 13.5547 10.9215 13.7666 11.0777 13.9229C11.234 14.0792 11.446 14.167 11.667 14.167C11.888 14.167 12.1 14.0792 12.2562 13.9229C12.4125 13.7666 12.5003 13.5547 12.5003 13.3337V10.0003ZM8.33366 9.16699C8.55467 9.16699 8.76663 9.25479 8.92291 9.41107C9.07919 9.56735 9.16699 9.77931 9.16699 10.0003V13.3337C9.16699 13.5547 9.07919 13.7666 8.92291 13.9229C8.76663 14.0792 8.55467 14.167 8.33366 14.167C8.11264 14.167 7.90068 14.0792 7.7444 13.9229C7.58812 13.7666 7.50033 13.5547 7.50033 13.3337V10.0003C7.50033 9.77931 7.58812 9.56735 7.7444 9.41107C7.90068 9.25479 8.11264 9.16699 8.33366 9.16699ZM5.63366 15.142C5.66916 15.5582 5.85963 15.9458 6.16736 16.2283C6.47509 16.5107 6.87764 16.6673 7.29533 16.667H12.7053C13.1227 16.6668 13.5249 16.5101 13.8322 16.2277C14.1396 15.9453 14.3298 15.5579 14.3653 15.142L15.092 6.66699H4.90866L5.63366 15.142Z" />
+                  </Icon>
+                </button>
+              </Tooltip>
+            </div>
           </div>
         ) : asset.status === 'failed' ? (
           <div className="asset-row__trail-failed">

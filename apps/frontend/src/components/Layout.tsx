@@ -38,11 +38,13 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main className="layout__main">{children}</main>
-      <div className="layout__bottom-left">
-        <ProductHuntBadge />
-        <ThemeToggle />
-      </div>
-      <CreatedByChip />
+      <footer className="layout__footer">
+        <div className="layout__footer-left">
+          <ProductHuntBadge />
+          <ThemeToggle />
+        </div>
+        <CreatedByChip />
+      </footer>
     </div>
   );
 }

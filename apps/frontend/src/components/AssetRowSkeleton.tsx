@@ -4,18 +4,23 @@ import './AssetRowSkeleton.css';
 function AssetRowSkeletonItem() {
   return (
     <li className="asset-row asset-row--skeleton">
-      <div className="asset-row__col asset-row__col--select">
-        <Skeleton className="asset-row-skeleton__checkbox" />
-      </div>
-      <div className="asset-row__col asset-row__col--name">
-        <Skeleton className="asset-row-skeleton__thumb" />
-        <Skeleton className="asset-row-skeleton__name" />
+      <div className="asset-row__header">
+        <div className="asset-row__col asset-row__col--name">
+          <Skeleton className="asset-row-skeleton__thumb" />
+          <Skeleton className="asset-row-skeleton__name" />
+        </div>
+        <div className="asset-row__col asset-row__col--select">
+          <Skeleton className="asset-row-skeleton__checkbox" />
+        </div>
       </div>
       <div className="asset-row__col asset-row__col--meta">
         <Skeleton className="asset-row-skeleton__meta" />
       </div>
       <div className="asset-row__col asset-row__col--trail">
-        <Skeleton className="asset-row-skeleton__action" variant="circle" />
+        <div className="asset-row-skeleton__actions">
+          <Skeleton className="asset-row-skeleton__action" />
+          <Skeleton className="asset-row-skeleton__action" />
+        </div>
       </div>
     </li>
   );

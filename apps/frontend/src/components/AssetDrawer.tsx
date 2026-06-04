@@ -62,12 +62,19 @@ export default function AssetDrawer({
   const handlePanelAnimationEnd = (e: React.AnimationEvent<HTMLElement>) => {
     if (e.target !== e.currentTarget) return;
 
-    if (isClosing && e.animationName === 'asset-drawer-slide-out') {
+    const closeAnimation =
+      e.animationName === 'asset-drawer-slide-out' ||
+      e.animationName === 'asset-drawer-sheet-out';
+    const openAnimation =
+      e.animationName === 'asset-drawer-slide-in' ||
+      e.animationName === 'asset-drawer-sheet-in';
+
+    if (isClosing && closeAnimation) {
       finishClose();
       return;
     }
 
-    if (isEntering && e.animationName === 'asset-drawer-slide-in') {
+    if (isEntering && openAnimation) {
       setIsEntering(false);
     }
   };

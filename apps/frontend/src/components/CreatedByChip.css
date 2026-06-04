@@ -3,12 +3,6 @@
   --chip-bg: var(--color-bg-elevated);
   --chip-border: var(--color-border-default);
   --chip-shadow: var(--shadow-md);
-  --chip-z: var(--primitive-z-dropdown);
-
-  position: fixed;
-  right: var(--space-page-x);
-  bottom: var(--space-stack-lg);
-  z-index: var(--chip-z);
   display: inline-flex;
   align-items: center;
   gap: var(--space-inline-sm);
