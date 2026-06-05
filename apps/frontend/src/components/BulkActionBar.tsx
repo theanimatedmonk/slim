@@ -1,3 +1,4 @@
+import BulkZipRive from './BulkZipRive';
 import Icon from './Icon';
 import './BulkActionBar.css';
 
@@ -8,6 +9,7 @@ interface Props {
   onClear: () => void;
   isDownloading?: boolean;
   isDeleting?: boolean;
+  zipSuccessSignal?: number;
 }
 
 export default function BulkActionBar({
@@ -17,6 +19,7 @@ export default function BulkActionBar({
   onClear,
   isDownloading,
   isDeleting,
+  zipSuccessSignal = 0,
 }: Props) {
   if (count === 0) return null;
 
@@ -38,25 +41,7 @@ export default function BulkActionBar({
             : `Download ${count} selected file${count === 1 ? '' : 's'} as ZIP`
         }
       >
-        {isDownloading ? (
-          <span
-            className="bulk-action-bar__pie"
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuetext="Preparing download"
-          />
-        ) : (
-          <Icon size="sm" viewBox="0 0 16 16" stroke="currentColor">
-            <path
-              d="M8 2.5v7M5 8.5l3 3 3-3"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path d="M3 13.5h10" strokeWidth="1.5" strokeLinecap="round" />
-          </Icon>
-        )}
+        <BulkZipRive successSignal={zipSuccessSignal} />
       </button>
       <button
         type="button"
@@ -77,7 +62,7 @@ export default function BulkActionBar({
         disabled={isDownloading || isDeleting}
         aria-label="Clear selection"
       >
-        <Icon size="sm" viewBox="0 0 16 16" stroke="currentColor">
+        <Icon size="md" viewBox="0 0 16 16" stroke="currentColor">
           <path d="M4 4l8 8M12 4l-8 8" strokeWidth="1.5" strokeLinecap="round" />
         </Icon>
       </button>

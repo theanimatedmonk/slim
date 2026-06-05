@@ -40,6 +40,7 @@ function AppPageContent() {
   } | null>(null);
   const [pollAssetsWhileUploading, setPollAssetsWhileUploading] = useState(false);
   const [rasterConverting, setRasterConverting] = useState<'webp' | 'png' | null>(null);
+  const [zipSuccessSignal, setZipSuccessSignal] = useState(0);
 
   const { data: assets = [], isLoading, error } = useAssets({
     pollWhileBusy: pollAssetsWhileUploading,
@@ -160,7 +161,9 @@ function AppPageContent() {
   const handleBulkDownload = () => {
     if (selectedCompleteIds.length) {
       track('Bulk Download', { file_count: selectedCompleteIds.length });
-      downloadBundle.mutate(selectedCompleteIds);
+      downloadBundle.mutate(selectedCompleteIds, {
+        onSuccess: () => setZipSuccessSignal((n) => n + 1),
+      });
     }
   };
 
@@ -324,6 +327,7 @@ function AppPageContent() {
         onClear={() => setCheckedIds(new Set())}
         isDownloading={downloadBundle.isPending}
         isDeleting={deleteAssetsMutation.isPending}
+        zipSuccessSignal={zipSuccessSignal}
       />
 
       <ConfirmModal
