@@ -6,12 +6,16 @@ import {
   useRive,
   useViewModel,
   useViewModelInstance,
+  useViewModelInstanceColor,
   useViewModelInstanceTrigger,
 } from '@rive-app/react-webgl2';
+import { useTheme } from '../context/ThemeContext.js';
 import {
+  ZIP_ICON_COLOR_HEX_BY_THEME,
   ZIP_INSTANCE_NAME,
   ZIP_RIVE_SRC,
   ZIP_VIEW_MODEL,
+  hexToRgb,
 } from './bulkZipRiveBinding';
 
 const ARTBOARD = 'download zip';
@@ -24,6 +28,7 @@ interface Props {
 
 export default function BulkZipRive({ successSignal = 0 }: Props) {
   const prevSuccessSignalRef = useRef(successSignal);
+  const { theme } = useTheme();
 
   const { rive, RiveComponent, setContainerRef } = useRive(
     {
@@ -43,6 +48,16 @@ export default function BulkZipRive({ successSignal = 0 }: Props) {
     rive,
   });
   const { trigger: fireSuccess } = useViewModelInstanceTrigger('success', viewModelInstance);
+  const { setRgb: setIconColor } = useViewModelInstanceColor('iconColor', viewModelInstance);
+
+  useEffect(() => {
+    if (!setIconColor || !viewModelInstance) return;
+
+    const rgb = hexToRgb(ZIP_ICON_COLOR_HEX_BY_THEME[theme]);
+    if (rgb) {
+      setIconColor(...rgb);
+    }
+  }, [theme, setIconColor, viewModelInstance]);
 
   useEffect(() => {
     if (successSignal === prevSuccessSignalRef.current) return;
