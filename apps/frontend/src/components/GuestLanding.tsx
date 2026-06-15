@@ -38,7 +38,7 @@ export default function GuestLanding({ onSignIn }: Props) {
     <div className="guest-landing">
       <section className="guest-landing__hero">
         <h1 className="guest-landing__headline">
-          Stop <span aria-hidden>✋</span> shipping SVGs that hate{' '}
+          Stop <span aria-hidden>✋</span> shipping SVGs that <br></br>hate{' '}
           <span className="guest-landing__headline-accent">Android.</span>
         </h1>
         <p className="guest-landing__subhead">

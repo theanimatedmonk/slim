@@ -19,6 +19,7 @@
 }
 
 .guest-landing__headline {
+  font-family: var(--font-family-serif);
   font-size: clamp(var(--font-size-heading-lg), 4vw, var(--font-size-heading-lg));
   font-weight: var(--font-weight-heading);
   line-height: var(--line-height-tight);

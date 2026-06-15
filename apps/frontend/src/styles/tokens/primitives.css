@@ -68,6 +68,7 @@
 
   /* Typography */
   --primitive-font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --primitive-font-serif: 'Lora', Georgia, 'Times New Roman', serif;
   --primitive-font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
 
   --primitive-font-size-xs: 0.75rem;
