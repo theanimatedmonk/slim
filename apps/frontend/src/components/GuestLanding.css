@@ -83,7 +83,7 @@
 .guest-landing__features {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--space-stack-md);
+  gap: var(--space-stack-lg);
   width: 100%;
   max-width: 56rem;
   margin-inline: auto;
@@ -97,11 +97,10 @@
 }
 
 .guest-landing__feature-card {
-  --feature-card-padding: var(--primitive-space-4);
-  --feature-card-radius: var(--radius-card);
+  --feature-card-padding: var(--primitive-space-8);
+  --feature-card-radius: var(--primitive-radius-xl);
   --feature-image-radius: var(--primitive-radius-lg);
-
-  border: 1px solid var(--guest-card-border);
+border: 1px solid var(--guest-card-border);
   background: var(--guest-card-bg);
   border-radius: var(--feature-card-radius);
   padding: var(--feature-card-padding);
