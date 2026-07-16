@@ -11,10 +11,15 @@
     "dev:backend": "npm run dev -w @asset-optimiser/backend",
     "dev:frontend": "npm run dev -w @asset-optimiser/frontend",
     "build": "npm run build -w @asset-optimiser/shared-types && npm run build -w @asset-optimiser/shared-utils && npm run build -w @asset-optimiser/backend && npm run build -w @asset-optimiser/frontend",
-    "typecheck": "npm run typecheck -w @asset-optimiser/backend && npm run typecheck -w @asset-optimiser/frontend"
+    "typecheck": "npm run typecheck -w @asset-optimiser/backend && npm run typecheck -w @asset-optimiser/frontend",
+    "audit:tokens": "node scripts/audit-design-tokens.mjs",
+    "audit:tokens:strict": "node scripts/audit-design-tokens.mjs --strict",
+    "sync:token-audit": "node scripts/sync-token-audit-core.mjs",
+    "prepare:token-audit": "npm run sync:token-audit"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
+    "esbuild": "^0.25.0",
     "typescript": "^5.8.3"
   }
 }

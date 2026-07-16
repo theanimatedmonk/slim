@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "SlimVG Token Audit",
+  "version": "1.0.1",
+  "description": "Highlight design-token violations and naked hex codes on the page.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": [
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "action": {
+    "default_title": "Token Audit",
+    "default_popup": "popup.html"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
+      "js": ["content.bundle.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

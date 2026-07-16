@@ -1,0 +1,95 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 16px;
+  width: 280px;
+  font: 13px/1.4 system-ui, -apple-system, sans-serif;
+  color: #171717;
+  background: #fafafa;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  color: #525252;
+  font-size: 12px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.stat {
+  padding: 10px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  text-align: center;
+}
+
+.stat .count {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.stat.error .count {
+  color: #e11d48;
+}
+
+.stat.warn .count {
+  color: #d97706;
+}
+
+.stat .label {
+  font-size: 11px;
+  color: #737373;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.actions {
+  display: grid;
+  gap: 8px;
+}
+
+button {
+  border: 1px solid #d4d4d4;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font: inherit;
+  cursor: pointer;
+  background: #fff;
+}
+
+button.primary {
+  background: #171717;
+  color: #fff;
+  border-color: #171717;
+}
+
+button.primary.active {
+  background: #e11d48;
+  border-color: #e11d48;
+}
+
+button:hover {
+  filter: brightness(0.97);
+}
+
+.hint {
+  margin: 12px 0 0;
+  font-size: 11px;
+  color: #737373;
+}
