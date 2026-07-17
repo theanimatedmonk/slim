@@ -40,16 +40,17 @@ header h1 {
 
 .stat .count {
   display: block;
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
 }
 
-.stat.error .count {
-  color: #e11d48;
+.stat .count.status {
+  font-size: 16px;
+  color: #737373;
 }
 
-.stat.warn .count {
-  color: #d97706;
+.stat .count.status.on {
+  color: #2563eb;
 }
 
 .stat .label {
@@ -80,8 +81,8 @@ button.primary {
 }
 
 button.primary.active {
-  background: #e11d48;
-  border-color: #e11d48;
+  background: #2563eb;
+  border-color: #2563eb;
 }
 
 button:hover {

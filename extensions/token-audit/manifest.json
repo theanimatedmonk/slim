@@ -1,15 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "SlimVG Token Audit",
-  "version": "1.0.1",
-  "description": "Highlight design-token violations and naked hex codes on the page.",
+  "name": "SlimVG Token Inspect",
+  "version": "2.0.0",
+  "description": "Inspect page elements and expand design-token trees (component → semantic → primitive).",
   "permissions": ["storage", "activeTab", "scripting"],
   "host_permissions": [
     "http://localhost/*",
     "http://127.0.0.1/*"
   ],
   "action": {
-    "default_title": "Token Audit",
+    "default_title": "Token Inspect",
     "default_popup": "popup.html"
   },
   "icons": {

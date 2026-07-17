@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'tokenAuditEnabled';
+const STORAGE_KEY = 'tokenInspectEnabled';
 
 function isLocalDevUrl(url) {
   try {
@@ -24,7 +24,7 @@ async function ensureContentScript(tab) {
     const pong = await chrome.tabs.sendMessage(tab.id, { type: 'PING' });
     if (pong?.ok) return true;
   } catch {
-    // Content script not loaded yet — inject below.
+    // inject below
   }
 
   try {
@@ -35,7 +35,7 @@ async function ensureContentScript(tab) {
     await new Promise((resolve) => setTimeout(resolve, 200));
     return true;
   } catch (err) {
-    console.error('[Token Audit] inject failed', err);
+    console.error('[Token Inspect] inject failed', err);
     return false;
   }
 }
@@ -43,7 +43,6 @@ async function ensureContentScript(tab) {
 async function sendToTab(message) {
   const tab = await getActiveTab();
   if (!tab?.id) return { error: 'no-tab' };
-
   if (!isLocalDevUrl(tab.url ?? '')) {
     return { error: 'not-localhost', url: tab.url ?? '' };
   }
@@ -54,7 +53,7 @@ async function sendToTab(message) {
   try {
     return await chrome.tabs.sendMessage(tab.id, message);
   } catch (err) {
-    console.error('[Token Audit] message failed', err);
+    console.error('[Token Inspect] message failed', err);
     return { error: 'message-failed' };
   }
 }
@@ -63,41 +62,37 @@ function setStatus(text) {
   document.getElementById('status').textContent = text;
 }
 
-function setCounts(errors, warnings) {
-  document.getElementById('error-count').textContent = String(errors);
-  document.getElementById('warn-count').textContent = String(warnings);
-}
-
 async function refresh() {
   const { [STORAGE_KEY]: enabled = false } = await chrome.storage.local.get(STORAGE_KEY);
   const toggleBtn = document.getElementById('toggle-btn');
-  toggleBtn.textContent = enabled ? 'Disable overlay' : 'Enable overlay';
+  toggleBtn.textContent = enabled ? 'Stop inspect' : 'Start inspect';
   toggleBtn.classList.toggle('active', enabled);
+
+  const mode = document.getElementById('mode-status');
+  mode.textContent = enabled ? 'On' : 'Off';
+  mode.classList.toggle('on', enabled);
 
   const tab = await getActiveTab();
   if (!tab?.url || !isLocalDevUrl(tab.url)) {
-    setCounts('—', '—');
-    setStatus('Open http://localhost:5173 (your dev app), then click the extension again.');
+    document.getElementById('token-count').textContent = '—';
+    setStatus('Open http://localhost:5173, then start inspect.');
     return;
   }
 
-  const result = await sendToTab({ type: enabled ? 'SCAN' : 'GET_SUMMARY' });
-
+  const result = await sendToTab({ type: 'GET_STATUS' });
   if (!result || result.error) {
-    setCounts('—', '—');
-    if (result?.error === 'inject-failed') {
-      setStatus('Could not inject on this page — refresh the tab and try again.');
-    } else {
-      setStatus('Refresh the dev page, then click Rescan page.');
-    }
+    document.getElementById('token-count').textContent = '—';
+    setStatus('Refresh the dev page, then try again.');
     return;
   }
 
-  setCounts(result.errors ?? 0, result.warnings ?? 0);
+  document.getElementById('token-count').textContent = String(result.tokens ?? '—');
   setStatus(
     enabled
-      ? `${result.total ?? 0} finding(s) — use ← → on page to step through`
-      : 'Overlay off — enable to walk through violations'
+      ? result.selected
+        ? `Selected ${result.selected} — expand tokens in the panel`
+        : 'Crosshair on — click any element on the page'
+      : 'Start inspect, then click an element to see its token tree'
   );
 }
 
@@ -106,11 +101,7 @@ document.getElementById('toggle-btn').addEventListener('click', async () => {
   const next = !enabled;
   await chrome.storage.local.set({ [STORAGE_KEY]: next });
   await sendToTab({ type: next ? 'ENABLE' : 'DISABLE' });
-  await refresh();
-});
-
-document.getElementById('rescan-btn').addEventListener('click', async () => {
-  await sendToTab({ type: 'SCAN' });
+  // Popup closes often after click; refresh if still open
   await refresh();
 });
 

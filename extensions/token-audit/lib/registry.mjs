@@ -89,6 +89,81 @@ export function traceToken(name, tokenRegistry, seen = new Set()) {
 }
 
 /**
+ * Structured token resolution tree for UI (component → semantic → primitive → raw).
+ * @param {string} name
+ * @param {Map<string, { value: string, file: string, layer: string }>} tokenRegistry
+ * @param {Set<string>} [seen]
+ * @returns {{ name: string, layer: string, value: string, file?: string, children: Array<ReturnType<typeof resolveTokenTree>>, terminal?: boolean }}
+ */
+export function resolveTokenTree(name, tokenRegistry, seen = new Set()) {
+  if (seen.has(name)) {
+    return {
+      name,
+      layer: 'unknown',
+      value: '(cycle)',
+      children: [],
+      terminal: true,
+    };
+  }
+  seen.add(name);
+
+  const entry = tokenRegistry.get(name);
+  const layer = entry?.layer ?? classifyToken(name, tokenRegistry);
+  const value = entry?.value ?? '';
+
+  if (!entry) {
+    return {
+      name,
+      layer,
+      value: '(unknown)',
+      children: [],
+      terminal: true,
+    };
+  }
+
+  const refs = extractVarRefs(value);
+  if (refs.length === 0) {
+    return {
+      name,
+      layer,
+      value,
+      file: entry.file,
+      children: [],
+      terminal: true,
+    };
+  }
+
+  return {
+    name,
+    layer,
+    value,
+    file: entry.file,
+    children: refs.map((ref) => resolveTokenTree(ref, tokenRegistry, new Set(seen))),
+    terminal: false,
+  };
+}
+
+/**
+ * Resolve a CSS value that may contain var() into a forest of token trees.
+ * @param {string} cssValue
+ * @param {Map<string, { value: string, file: string, layer: string }>} tokenRegistry
+ */
+export function resolveValueTrees(cssValue, tokenRegistry) {
+  const refs = extractVarRefs(cssValue);
+  return refs.map((ref) => resolveTokenTree(ref, tokenRegistry));
+}
+
+/**
+ * Walk a tree to the first terminal raw value (e.g. #262626).
+ * @param {{ value: string, children: any[], terminal?: boolean }} node
+ */
+export function terminalValue(node) {
+  if (!node) return '';
+  if (node.terminal || !node.children?.length) return node.value;
+  return terminalValue(node.children[0]);
+}
+
+/**
  * Resolve all token names to terminal color values for palette checks.
  * @param {Map<string, { value: string }>} tokenRegistry
  */

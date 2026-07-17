@@ -2,32 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Token Audit</title>
+    <title>Token Inspect</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
     <header>
-      <h1>Token Audit</h1>
-      <p class="subtitle">Design token compliance overlay</p>
+      <h1>Token Inspect</h1>
+      <p class="subtitle">Click elements to see token trees</p>
     </header>
 
     <section class="stats" id="stats">
-      <div class="stat error">
-        <span class="count" id="error-count">—</span>
-        <span class="label">Errors</span>
+      <div class="stat">
+        <span class="count" id="token-count">—</span>
+        <span class="label">Tokens</span>
       </div>
-      <div class="stat warn">
-        <span class="count" id="warn-count">—</span>
-        <span class="label">Warnings</span>
+      <div class="stat">
+        <span class="count status" id="mode-status">Off</span>
+        <span class="label">Inspect</span>
       </div>
     </section>
 
     <div class="actions">
-      <button type="button" id="toggle-btn" class="primary">Enable overlay</button>
-      <button type="button" id="rescan-btn">Rescan page</button>
+      <button type="button" id="toggle-btn" class="primary">Start inspect</button>
     </div>
 
-    <p class="hint" id="status">Open your local dev app, then enable the overlay.</p>
+    <p class="hint" id="status">
+      Open localhost, start inspect, then click any element — expand tokens to see semantic → primitive → value.
+    </p>
 
     <script src="popup.js" type="module"></script>
   </body>

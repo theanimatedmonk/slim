@@ -1,65 +1,51 @@
-# SlimVG Token Audit — Chrome Extension
+# SlimVG Token Inspect — Chrome Extension
 
-Visual design-token audit overlay for local development. Highlights naked hex codes, primitive token leaks, hardcoded lengths, and off-palette colors directly on the page.
+Click-to-inspect for design tokens — like DevTools, but for your token tree.
 
-Works alongside `npm run audit:tokens` (CI / pre-commit). The extension is for **in-browser review** while you build UI.
+```
+Component CSS  →  Semantic token  →  Primitive token  →  raw value
+.icon-btn--download
+  background: var(--color-bg-inverse)
+    → --color-bg-inverse
+      → --primitive-brand-800 = #262626
+```
 
-## Install (unpacked)
+The **npm audit** (`npm run audit:tokens`) stays separate for CI. This extension no longer audits; it only inspects.
 
-1. Sync shared audit rules and bundle the content script:
+## Install
+
+1. Bundle:
 
    ```bash
    npm run sync:token-audit
    ```
 
-2. Open Chrome → **Extensions** → enable **Developer mode**.
+2. Chrome → **Extensions** → **Developer mode** → **Load unpacked** (or **Reload**)
 
-3. Click **Load unpacked** (or **Reload** if already loaded) and select:
+   Select: `extensions/token-audit`
 
-   ```
-   extensions/token-audit
-   ```
+3. Run the app: `npm run dev:frontend` → open `http://localhost:5173`
 
-4. Start the frontend dev server:
+4. Click the extension → **Start inspect**
 
-   ```bash
-   npm run dev:frontend
-   ```
+5. Click any element on the page. Expand a token chip to see the full chain.
 
-5. Open `http://localhost:5173`, **refresh the tab**, then click the **Token Audit** extension icon → **Enable overlay**.
+**Esc** or the panel **×** exits inspect mode.
 
-> If the popup shows dashes for counts, refresh the dev page once after loading the extension, then click **Rescan page**.
+## What you see
 
-## What it shows
+| UI | Meaning |
+|----|---------|
+| Blue dashed box | Hover target |
+| Blue solid box | Selected element |
+| Panel header | Primary selector (e.g. `.icon-btn--download`) |
+| Property row | Declared CSS value |
+| Token chip + ▸ | Click to expand semantic → primitive → hex/rem |
+| Layer badges | `component` / `semantic` / `primitive` |
 
-| Rule | Severity | On-page signal |
-|------|----------|----------------|
-| `no-naked-color` | error | Red outline — `#hex` / `rgb()` outside `var()` |
-| `no-primitive-in-component` | error | Red outline — `var(--primitive-*)` in component CSS |
-| `no-naked-length` | warn | Amber outline — raw `rem`/`px` on spacing props |
-| `no-naked-z-index` | warn | Amber outline — numeric `z-index` |
-| `unknown-color` | error | Red outline — computed color not in token palette |
+## Shared core
 
-- **Highlights** — one element at a time with a dimmed backdrop
-- **Callout** — anchored tooltip showing value + violation type (e.g. "Color is #000" / "Hard coded HEX value")
-- **Step through** — use **← →** buttons on the callout (or keyboard arrow keys) to move between findings
-
-## Popup controls
-
-- **Enable overlay** — toggle highlights on/off (state persists)
-- **Rescan page** — re-run audit after HMR / navigation
-
-## Shared audit core
-
-Rules live in `packages/token-audit-core/`. Both the npm script and extension use the same logic:
-
-```
-packages/token-audit-core/src/   ← source of truth
-scripts/audit-design-tokens.mjs  ← CI / terminal
-extensions/token-audit/lib/      ← copied for Chrome (run sync:token-audit after core changes)
-```
-
-After editing `token-audit-core`, run:
+Token resolution lives in `packages/token-audit-core/`. After editing it:
 
 ```bash
 npm run sync:token-audit
@@ -69,13 +55,6 @@ Then reload the extension in Chrome.
 
 ## Limitations
 
-- **localhost only** — manifest matches `http://localhost/*` and `http://127.0.0.1/*`
-- **Same-origin CSS** — cross-origin stylesheets cannot be read from CSSOM
-- **Computed vs source** — `unknown-color` uses resolved values; token-backed colors that resolve to hex are OK if they're in the palette
-- **Complex selectors** — pseudo-selectors (`:hover`, `::before`) are skipped for element matching
-
-## Regenerate icons
-
-```bash
-node scripts/generate-token-audit-icons.mjs
-```
+- **localhost only**
+- Pseudo-states (`:hover`) are matched in a simplified way — hover styles may not always appear
+- Cross-origin stylesheets cannot be read
