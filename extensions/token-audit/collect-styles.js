@@ -22,11 +22,13 @@ export function collectMatchedStyles(el, tokenRegistry) {
       const selector = rule.selectorText;
       if (!selector || !matchesElement(el, selector)) continue;
 
+      // Prefer authored declarations from cssText. Iterating style.length expands
+      // shorthands (border/background) into longhands and often drops the
+      // shorthand entirely — which is why border/background were missing.
+      const declarations = getRuleDeclarations(rule);
       const properties = [];
-      const style = rule.style;
-      for (let i = 0; i < style.length; i++) {
-        const property = style[i];
-        const value = style.getPropertyValue(property).trim();
+
+      for (const { property, value } of declarations) {
         if (!value) continue;
 
         const trees = resolveValueTrees(value, tokenRegistry);
@@ -93,6 +95,120 @@ function prioritizeGroups(groups, el) {
     };
     return score(a) - score(b);
   });
+}
+
+/**
+ * Read declarations as written on the rule (keeps border/background shorthands).
+ * Falls back to CSSOM longhands when cssText is unavailable.
+ * @param {CSSStyleRule} rule
+ * @returns {Array<{ property: string, value: string }>}
+ */
+function getRuleDeclarations(rule) {
+  const fromText = parseDeclarationsFromCssText(rule.cssText);
+  if (fromText.length > 0) return fromText;
+
+  // Fallback: indexed CSSStyleDeclaration (expanded longhands)
+  const style = rule.style;
+  const decls = [];
+  const seen = new Set();
+
+  for (let i = 0; i < style.length; i++) {
+    const property = style[i];
+    const value = style.getPropertyValue(property).trim();
+    if (!value || seen.has(property)) continue;
+    seen.add(property);
+    decls.push({ property, value });
+  }
+
+  // Shorthands with var() often omit from style.length — probe common ones.
+  for (const shorthand of SHORTHAND_PROPS) {
+    if (seen.has(shorthand)) continue;
+    const value = style.getPropertyValue(shorthand).trim();
+    if (!value) continue;
+    seen.add(shorthand);
+    decls.push({ property: shorthand, value });
+  }
+
+  return decls;
+}
+
+const SHORTHAND_PROPS = [
+  'border',
+  'border-top',
+  'border-right',
+  'border-bottom',
+  'border-left',
+  'border-width',
+  'border-style',
+  'border-color',
+  'background',
+  'margin',
+  'padding',
+  'font',
+  'outline',
+  'inset',
+  'gap',
+  'flex',
+  'grid',
+  'transition',
+  'animation',
+  'box-shadow',
+];
+
+/**
+ * @param {string} cssText e.g. `.icon-btn--delete { border: 1px solid var(--x); }`
+ */
+function parseDeclarationsFromCssText(cssText) {
+  if (!cssText) return [];
+  const start = cssText.indexOf('{');
+  const end = cssText.lastIndexOf('}');
+  if (start === -1 || end === -1 || end <= start) return [];
+
+  const body = cssText.slice(start + 1, end).trim();
+  if (!body) return [];
+
+  /** @type {Array<{ property: string, value: string }>} */
+  const decls = [];
+  let i = 0;
+
+  while (i < body.length) {
+    while (i < body.length && /\s/.test(body[i])) i++;
+    if (i >= body.length) break;
+
+    const colon = body.indexOf(':', i);
+    if (colon === -1) break;
+
+    const property = body.slice(i, colon).trim();
+    if (!property || property.startsWith('/*')) {
+      // Skip comments roughly
+      const commentEnd = body.indexOf('*/', i);
+      i = commentEnd === -1 ? body.length : commentEnd + 2;
+      continue;
+    }
+
+    i = colon + 1;
+    let value = '';
+    let depth = 0;
+    while (i < body.length) {
+      const ch = body[i];
+      if (ch === '(') depth++;
+      else if (ch === ')') depth = Math.max(0, depth - 1);
+      else if (ch === ';' && depth === 0) {
+        i++;
+        break;
+      }
+      value += ch;
+      i++;
+    }
+
+    const trimmedProp = property.replace(/\/\*[\s\S]*?\*\//g, '').trim();
+    const trimmedValue = value.replace(/\/\*[\s\S]*?\*\//g, '').trim();
+    if (trimmedProp && trimmedValue) {
+      decls.push({ property: trimmedProp, value: trimmedValue });
+    }
+  }
+
+  return decls;
 }
 
 function matchesElement(el, selectorText) {
