@@ -53,6 +53,9 @@ Click **✎** to open a filtered dropdown:
 | Property chip (e.g. `background` → `--color-bg-elevated`) | Matching **semantic** tokens | Overrides that property on the selector |
 | Expanded **semantic** row | Matching **primitive** tokens | Overrides that custom property on `:root` |
 | Expanded **component** token | Matching semantic/primitive | Overrides that component custom property |
+| Expanded **primitive** raw value | Hex / rem / text input (+ color picker) | Overrides the primitive on `:root` |
+| Literal props (`display`, `flex-direction`, `width`…) | Keyword dropdown or size suggestions + custom input | Overrides that property on the selector |
+| `grid-template-columns` / `rows` | Full track list editor (edit `2fr 4fr 1fr` ratios, keep `var(...)` tracks) | Overrides the whole template on the selector |
 
 Changes are **preview-only** — nothing is written to disk. Use **Reset preview** or reload the page to clear them.
 

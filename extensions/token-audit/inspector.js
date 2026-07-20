@@ -81,10 +81,12 @@ function onKeyDown(event) {
   if (!enabled) return;
   if (event.key === 'Escape') {
     // Close open dropdown first
-    const openDropdown = document.querySelector('#slimvg-token-inspect-root .ti-dropdown.open');
-    if (openDropdown) {
+    const openEditor = document.querySelector(
+      '#slimvg-token-inspect-root .ti-dropdown.open, #slimvg-token-inspect-root .ti-value-editor.open'
+    );
+    if (openEditor) {
       event.preventDefault();
-      openDropdown.classList.remove('open');
+      openEditor.classList.remove('open');
       return;
     }
     event.preventDefault();

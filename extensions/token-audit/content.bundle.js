@@ -503,6 +503,204 @@
     return propertyOverrides.size + tokenOverrides.size;
   }
 
+  // extensions/token-audit/property-options.js
+  var KEYWORD_OPTIONS = {
+    display: [
+      "none",
+      "block",
+      "inline",
+      "inline-block",
+      "flex",
+      "inline-flex",
+      "grid",
+      "inline-grid",
+      "contents",
+      "flow-root",
+      "list-item"
+    ],
+    "flex-direction": ["row", "row-reverse", "column", "column-reverse"],
+    "flex-wrap": ["nowrap", "wrap", "wrap-reverse"],
+    "align-items": ["stretch", "flex-start", "flex-end", "center", "baseline", "start", "end", "normal"],
+    "align-self": ["auto", "stretch", "flex-start", "flex-end", "center", "baseline", "start", "end"],
+    "align-content": [
+      "stretch",
+      "flex-start",
+      "flex-end",
+      "center",
+      "space-between",
+      "space-around",
+      "space-evenly",
+      "start",
+      "end",
+      "normal"
+    ],
+    "justify-content": [
+      "flex-start",
+      "flex-end",
+      "center",
+      "space-between",
+      "space-around",
+      "space-evenly",
+      "start",
+      "end",
+      "left",
+      "right",
+      "normal"
+    ],
+    "justify-items": ["stretch", "start", "end", "center", "left", "right", "normal"],
+    "justify-self": ["auto", "stretch", "start", "end", "center", "left", "right"],
+    position: ["static", "relative", "absolute", "fixed", "sticky"],
+    overflow: ["visible", "hidden", "clip", "scroll", "auto"],
+    "overflow-x": ["visible", "hidden", "clip", "scroll", "auto"],
+    "overflow-y": ["visible", "hidden", "clip", "scroll", "auto"],
+    "text-align": ["start", "end", "left", "right", "center", "justify"],
+    "white-space": ["normal", "nowrap", "pre", "pre-wrap", "pre-line", "break-spaces"],
+    "pointer-events": ["auto", "none"],
+    cursor: [
+      "auto",
+      "default",
+      "pointer",
+      "not-allowed",
+      "grab",
+      "grabbing",
+      "text",
+      "move",
+      "crosshair",
+      "help"
+    ],
+    "box-sizing": ["border-box", "content-box"],
+    visibility: ["visible", "hidden", "collapse"],
+    "object-fit": ["fill", "contain", "cover", "none", "scale-down"],
+    "object-position": ["center", "top", "bottom", "left", "right"],
+    "flex-shrink": ["0", "1"],
+    "flex-grow": ["0", "1"],
+    float: ["none", "left", "right"],
+    clear: ["none", "left", "right", "both"],
+    "user-select": ["auto", "none", "text", "all"],
+    "text-decoration": ["none", "underline", "line-through", "overline"],
+    "font-style": ["normal", "italic", "oblique"],
+    "font-weight": ["100", "200", "300", "400", "500", "600", "700", "800", "900", "normal", "bold"],
+    "border-style": ["none", "solid", "dashed", "dotted", "double", "groove", "ridge", "inset", "outset"]
+  };
+  var SIZE_SUGGESTIONS = [
+    "auto",
+    "0",
+    "100%",
+    "90%",
+    "80%",
+    "75%",
+    "50%",
+    "33%",
+    "25%",
+    "fit-content",
+    "max-content",
+    "min-content",
+    "100vw",
+    "100vh",
+    "1rem",
+    "1.5rem",
+    "2rem",
+    "2.5rem",
+    "3rem",
+    "4rem",
+    "8px",
+    "16px",
+    "24px",
+    "32px"
+  ];
+  var SIZE_PROPERTIES = /* @__PURE__ */ new Set([
+    "width",
+    "height",
+    "min-width",
+    "max-width",
+    "min-height",
+    "max-height",
+    "flex-basis",
+    "gap",
+    "row-gap",
+    "column-gap",
+    "top",
+    "right",
+    "bottom",
+    "left",
+    "inset",
+    "margin",
+    "margin-top",
+    "margin-right",
+    "margin-bottom",
+    "margin-left",
+    "padding",
+    "padding-top",
+    "padding-right",
+    "padding-bottom",
+    "padding-left",
+    "border-radius",
+    "border-width",
+    "font-size",
+    "line-height",
+    "outline-offset"
+  ]);
+  var GRID_TRACK_SUGGESTIONS = [
+    "1fr",
+    "1fr 1fr",
+    "1fr 2fr",
+    "2fr 1fr",
+    "1fr 1fr 1fr",
+    "2fr 3fr 1fr",
+    "2fr 4fr 1fr",
+    "1fr 3fr 1fr",
+    "auto 1fr",
+    "auto 1fr auto",
+    "max-content 1fr",
+    "minmax(0, 1fr)",
+    "minmax(0, 1fr) minmax(0, 2fr)",
+    "repeat(2, 1fr)",
+    "repeat(3, 1fr)",
+    "repeat(4, minmax(0, 1fr))"
+  ];
+  var GRID_TEMPLATE_PROPERTIES = /* @__PURE__ */ new Set([
+    "grid-template-columns",
+    "grid-template-rows",
+    "grid-auto-columns",
+    "grid-auto-rows",
+    "grid-template"
+  ]);
+  function prefersFullValueEdit(property) {
+    return GRID_TEMPLATE_PROPERTIES.has(property.toLowerCase());
+  }
+  function getPropertyValueEditor(property) {
+    const prop = property.toLowerCase();
+    if (GRID_TEMPLATE_PROPERTIES.has(prop)) {
+      return { mode: "grid", options: GRID_TRACK_SUGGESTIONS };
+    }
+    if (KEYWORD_OPTIONS[prop]) {
+      return { mode: "keywords", options: KEYWORD_OPTIONS[prop] };
+    }
+    if (SIZE_PROPERTIES.has(prop)) {
+      return { mode: "size", options: SIZE_SUGGESTIONS };
+    }
+    if (prop === "color" || prop === "background" || prop === "background-color" || prop.endsWith("-color") || prop === "fill" || prop === "stroke" || prop === "border" || prop.startsWith("border-") && prop.includes("color")) {
+      return { mode: "color", options: ["transparent", "currentColor", "#000000", "#ffffff"] };
+    }
+    if (prop === "opacity" || prop === "z-index" || prop === "order" || prop === "flex" || prop === "transform" || prop === "transition" || prop === "box-shadow" || prop === "border" || prop.startsWith("border-")) {
+      return { mode: "freeform", options: [] };
+    }
+    return { mode: "freeform", options: [] };
+  }
+  function detectRawValueKind(value) {
+    const v = value.trim();
+    if (/^#([0-9a-f]{3,8})$/i.test(v) || /^rgba?\(/i.test(v) || /^hsla?\(/i.test(v)) {
+      return "color";
+    }
+    if (/^-?[\d.]+(rem|px|em|%|vh|vw|ch|ex)$/i.test(v) || v === "0") {
+      return "length";
+    }
+    if (/^-?[\d.]+$/.test(v)) {
+      return "number";
+    }
+    return "text";
+  }
+
   // extensions/token-audit/token-options.js
   function tokenKind(name) {
     const n = name.toLowerCase();
@@ -631,7 +829,9 @@
   var STYLE_ID = "slimvg-token-inspect-style";
   var ui = null;
   var panelContext = null;
+  var outsideCloseArmed = false;
   function clearInspectorUi() {
+    disarmOutsideClose();
     document.getElementById(ROOT_ID)?.remove();
     document.getElementById(STYLE_ID)?.remove();
     ui = null;
@@ -946,6 +1146,67 @@
       border-radius: 4px;
       padding: 1px 4px;
     }
+    #${ROOT_ID} .ti-value-editor {
+      display: none;
+      margin-top: 6px;
+      width: 100%;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    #${ROOT_ID} .ti-value-editor.open {
+      display: block;
+    }
+    #${ROOT_ID} .ti-value-editor-form {
+      display: flex;
+      gap: 6px;
+      padding: 8px;
+      border-bottom: 1px solid #f0f0f0;
+      align-items: center;
+    }
+    #${ROOT_ID} .ti-value-input {
+      flex: 1;
+      min-width: 0;
+      border: 1px solid #e5e5e5;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      outline: none;
+    }
+    #${ROOT_ID} .ti-value-input:focus {
+      border-color: #2563eb;
+    }
+    #${ROOT_ID} .ti-color-input {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: 1px solid #e5e5e5;
+      border-radius: 6px;
+      background: transparent;
+      cursor: pointer;
+    }
+    #${ROOT_ID} .ti-apply {
+      border: none;
+      background: #171717;
+      color: #fff;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    #${ROOT_ID} .ti-apply:hover {
+      background: #404040;
+    }
+    #${ROOT_ID} .ti-literal-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
   `;
     document.documentElement.appendChild(style);
   }
@@ -1005,15 +1266,44 @@
     positionBox(current.selectBox, el);
     current.hoverBox.style.display = "none";
   }
-  function closeAllDropdowns(except) {
+  function closeAllEditors(except) {
     const root = document.getElementById(ROOT_ID);
     if (!root) return;
-    for (const dropdown of root.querySelectorAll(".ti-dropdown.open")) {
-      if (dropdown !== except) dropdown.classList.remove("open");
+    for (const el of root.querySelectorAll(".ti-dropdown.open, .ti-value-editor.open")) {
+      if (el !== except) el.classList.remove("open");
+    }
+    if (!root.querySelector(".ti-dropdown.open, .ti-value-editor.open")) {
+      disarmOutsideClose();
     }
   }
+  function onOutsidePointerDown(event) {
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return;
+    const open = root.querySelector(".ti-dropdown.open, .ti-value-editor.open");
+    if (!open) {
+      disarmOutsideClose();
+      return;
+    }
+    const target = event.target;
+    if (!(target instanceof Node)) return;
+    if (open.contains(target)) return;
+    closeAllEditors();
+  }
+  function armOutsideClose() {
+    if (outsideCloseArmed) return;
+    outsideCloseArmed = true;
+    window.setTimeout(() => {
+      if (!outsideCloseArmed) return;
+      document.addEventListener("pointerdown", onOutsidePointerDown, true);
+    }, 0);
+  }
+  function disarmOutsideClose() {
+    if (!outsideCloseArmed) return;
+    outsideCloseArmed = false;
+    document.removeEventListener("pointerdown", onOutsidePointerDown, true);
+  }
   function mountDropdown(host, config) {
-    closeAllDropdowns();
+    closeAllEditors();
     let dropdown = host.querySelector(":scope > .ti-dropdown");
     if (!dropdown) {
       dropdown = document.createElement("div");
@@ -1022,6 +1312,7 @@
     }
     dropdown.replaceChildren();
     dropdown.classList.add("open");
+    armOutsideClose();
     const search = document.createElement("input");
     search.className = "ti-dropdown-search";
     search.type = "search";
@@ -1069,9 +1360,98 @@
     search.addEventListener("click", (e) => e.stopPropagation());
     requestAnimationFrame(() => search.focus());
   }
+  function mountValueEditor(host, config) {
+    closeAllEditors();
+    let editor = host.querySelector(":scope > .ti-value-editor");
+    if (!editor) {
+      editor = document.createElement("div");
+      editor.className = "ti-value-editor";
+      host.appendChild(editor);
+    }
+    editor.replaceChildren();
+    editor.classList.add("open");
+    armOutsideClose();
+    const options = config.options ?? [];
+    const allowCustom = config.allowCustom !== false;
+    const valueKind = config.valueKind ?? detectRawValueKind(config.currentValue);
+    if (allowCustom) {
+      const form = document.createElement("form");
+      form.className = "ti-value-editor-form";
+      const textInput = document.createElement("input");
+      textInput.className = "ti-value-input";
+      textInput.type = "text";
+      textInput.value = config.currentValue;
+      textInput.placeholder = config.placeholder ?? "Enter value\u2026";
+      if (valueKind === "color") {
+        const colorInput = document.createElement("input");
+        colorInput.type = "color";
+        colorInput.className = "ti-color-input";
+        const hexMatch = config.currentValue.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+        colorInput.value = hexMatch ? normalizeHexForColorInput(config.currentValue.trim()) : "#000000";
+        colorInput.addEventListener("input", () => {
+          textInput.value = colorInput.value;
+        });
+        form.appendChild(colorInput);
+      }
+      form.appendChild(textInput);
+      const apply = document.createElement("button");
+      apply.type = "submit";
+      apply.className = "ti-apply";
+      apply.textContent = "Apply";
+      form.appendChild(apply);
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const next = textInput.value.trim();
+        if (!next) return;
+        editor.classList.remove("open");
+        config.onCommit(next);
+      });
+      textInput.addEventListener("click", (e) => e.stopPropagation());
+      editor.appendChild(form);
+      requestAnimationFrame(() => textInput.focus());
+    }
+    if (options.length) {
+      const list = document.createElement("div");
+      for (const opt of options) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "ti-dropdown-option";
+        if (opt === config.currentValue) btn.classList.add("active");
+        if (/^#|^rgb/i.test(opt) || opt === "transparent") {
+          const swatch = document.createElement("span");
+          swatch.className = "ti-swatch";
+          swatch.style.background = opt === "transparent" ? "transparent" : opt;
+          btn.appendChild(swatch);
+        }
+        btn.appendChild(document.createTextNode(opt));
+        btn.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          editor.classList.remove("open");
+          config.onCommit(opt);
+        });
+        list.appendChild(btn);
+      }
+      editor.appendChild(list);
+    }
+  }
+  function normalizeHexForColorInput(hex) {
+    const h = hex.replace("#", "");
+    if (h.length === 3) {
+      return `#${h[0]}${h[0]}${h[1]}${h[1]}${h[2]}${h[2]}`;
+    }
+    return `#${h.slice(0, 6)}`;
+  }
   function replaceVarRef(value, fromName, toName) {
     const re = new RegExp(`var\\(\\s*${fromName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*([,)])`, "g");
     return value.replace(re, `var(${toName}$1`);
+  }
+  function withCurrentGridOption(options, currentValue) {
+    const trimmed = currentValue.trim();
+    if (!trimmed) return options;
+    if (options.includes(trimmed)) return options;
+    return [trimmed, ...options];
   }
   function showInspectPanel(label, groups, context) {
     const current = ensureInspectorUi();
@@ -1125,10 +1505,9 @@
     }
   }
   function applyOverrideToProp(prop, selector, registry) {
-    if (!registry) return prop;
     const overridden = getPropertyOverride(selector, prop.property);
     if (!overridden) return prop;
-    const trees = resolveValueTrees(overridden, registry);
+    const trees = registry ? resolveValueTrees(overridden, registry) : [];
     let swatch = prop.swatch;
     if (trees.length) {
       const terminal = terminalValue(trees[0]);
@@ -1136,6 +1515,8 @@
       if (normalized.startsWith("#") || /^rgb/i.test(terminal)) {
         swatch = terminal;
       }
+    } else if (/^#|^rgb/i.test(overridden) || overridden === "transparent") {
+      swatch = overridden;
     }
     return {
       ...prop,
@@ -1174,7 +1555,11 @@
       }
       const chip = document.createElement("span");
       chip.className = "ti-token-chip";
-      chip.textContent = extractVarRefs(prop.value)[0] || primary.name;
+      chip.textContent = prefersFullValueEdit(prop.property) ? prop.value : extractVarRefs(prop.value)[0] || primary.name;
+      chip.title = prop.value;
+      if (prefersFullValueEdit(prop.property)) {
+        chip.style.maxWidth = "220px";
+      }
       btn.appendChild(chip);
       const chevron = document.createElement("span");
       chevron.className = "ti-chevron";
@@ -1196,40 +1581,67 @@
         btn.setAttribute("aria-expanded", open ? "true" : "false");
       });
       head.appendChild(btn);
-      const propEdit = editableTargetForProperty(prop);
-      if (propEdit && panelContext?.registry) {
-        const editBtn = document.createElement("button");
-        editBtn.type = "button";
-        editBtn.className = "ti-edit";
-        editBtn.title = `Reassign ${propEdit.optionLayer} token`;
-        editBtn.textContent = "\u270E";
-        editBtn.addEventListener("click", (event) => {
+      const valueEditor = getPropertyValueEditor(prop.property);
+      if (prefersFullValueEdit(prop.property) && valueEditor) {
+        const tracksEdit = document.createElement("button");
+        tracksEdit.type = "button";
+        tracksEdit.className = "ti-edit";
+        tracksEdit.title = "Edit grid tracks / ratios";
+        tracksEdit.textContent = "\u270E";
+        tracksEdit.addEventListener("click", (event) => {
           event.preventDefault();
           event.stopPropagation();
-          tree.classList.add("open");
-          btn.setAttribute("aria-expanded", "true");
-          const options = listTokensByLayerAndKind(
-            panelContext.registry,
-            propEdit.optionLayer,
-            propEdit.kind
-          );
-          mountDropdown(valueCell, {
-            options,
-            currentRef: propEdit.currentRef,
-            onPick: (tokenName) => {
-              const refs = extractVarRefs(prop.value);
-              const from = refs[0] || propEdit.currentRef;
-              const nextValue = refs.length > 0 ? replaceVarRef(prop.value, from, tokenName) : `var(${tokenName})`;
-              previewPropertyOverride(selector, prop.property, nextValue);
-              panelContext.onRefresh?.();
+          mountValueEditor(valueCell, {
+            currentValue: prop.value,
+            options: withCurrentGridOption(valueEditor.options, prop.value),
+            allowCustom: true,
+            valueKind: "text",
+            placeholder: "e.g. 2.5rem 2fr 4fr 1fr",
+            onCommit: (next) => {
+              previewPropertyOverride(selector, prop.property, next);
+              panelContext?.onRefresh?.();
             }
           });
         });
-        head.appendChild(editBtn);
+        head.appendChild(tracksEdit);
+      } else {
+        const propEdit = editableTargetForProperty(prop);
+        if (propEdit && panelContext?.registry) {
+          const editBtn = document.createElement("button");
+          editBtn.type = "button";
+          editBtn.className = "ti-edit";
+          editBtn.title = `Reassign ${propEdit.optionLayer} token`;
+          editBtn.textContent = "\u270E";
+          editBtn.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            tree.classList.add("open");
+            btn.setAttribute("aria-expanded", "true");
+            const options = listTokensByLayerAndKind(
+              panelContext.registry,
+              propEdit.optionLayer,
+              propEdit.kind
+            );
+            mountDropdown(valueCell, {
+              options,
+              currentRef: propEdit.currentRef,
+              onPick: (tokenName) => {
+                const refs = extractVarRefs(prop.value);
+                const from = refs[0] || propEdit.currentRef;
+                const nextValue = refs.length > 0 ? replaceVarRef(prop.value, from, tokenName) : `var(${tokenName})`;
+                previewPropertyOverride(selector, prop.property, nextValue);
+                panelContext.onRefresh?.();
+              }
+            });
+          });
+          head.appendChild(editBtn);
+        }
       }
       valueCell.appendChild(head);
       valueCell.appendChild(tree);
     } else {
+      const literalRow = document.createElement("div");
+      literalRow.className = "ti-literal-row";
       const literal = document.createElement("div");
       literal.className = "ti-literal";
       if (prop.swatch) {
@@ -1242,7 +1654,38 @@
         literal.appendChild(swatch);
       }
       literal.appendChild(document.createTextNode(prop.value));
-      valueCell.appendChild(literal);
+      literalRow.appendChild(literal);
+      if (prop.preview) {
+        const badge = document.createElement("span");
+        badge.className = "ti-preview-badge";
+        badge.textContent = "preview";
+        literalRow.appendChild(badge);
+      }
+      const valueEditor = getPropertyValueEditor(prop.property);
+      if (valueEditor) {
+        const editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "ti-edit";
+        editBtn.title = valueEditor.mode === "keywords" ? `Change ${prop.property}` : `Edit ${prop.property}`;
+        editBtn.textContent = "\u270E";
+        editBtn.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          mountValueEditor(valueCell, {
+            currentValue: prop.value,
+            options: valueEditor.options,
+            allowCustom: valueEditor.mode !== "keywords",
+            valueKind: valueEditor.mode === "color" ? "color" : valueEditor.mode === "size" ? "length" : detectRawValueKind(prop.value),
+            placeholder: valueEditor.mode === "size" ? "e.g. 90%, fit-content, 2rem" : `New ${prop.property} value`,
+            onCommit: (next) => {
+              previewPropertyOverride(selector, prop.property, next);
+              panelContext?.onRefresh?.();
+            }
+          });
+        });
+        literalRow.appendChild(editBtn);
+      }
+      valueCell.appendChild(literalRow);
     }
     row.appendChild(valueCell);
     wrap.appendChild(row);
@@ -1299,6 +1742,30 @@
         });
       });
       line.appendChild(editBtn);
+    }
+    if (node.layer === "primitive" && node.terminal && panelContext?.registry) {
+      const rawEdit = document.createElement("button");
+      rawEdit.type = "button";
+      rawEdit.className = "ti-edit";
+      rawEdit.title = "Edit raw value";
+      rawEdit.textContent = "\u270E";
+      rawEdit.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const kind = detectRawValueKind(node.value);
+        mountValueEditor(wrap, {
+          currentValue: node.value,
+          options: kind === "length" ? ["0", "0.25rem", "0.5rem", "1rem", "1.5rem", "2rem", "2.5rem", "3rem", "4rem"] : [],
+          allowCustom: true,
+          valueKind: kind,
+          placeholder: kind === "color" ? "#hex or rgb()" : kind === "length" ? "e.g. 1rem, 16px" : "Raw value",
+          onCommit: (next) => {
+            previewTokenOverride(node.name, next, panelContext.registry);
+            panelContext.onRefresh?.();
+          }
+        });
+      });
+      line.appendChild(rawEdit);
     }
     wrap.appendChild(line);
     for (const child of node.children || []) {
@@ -1376,10 +1843,12 @@
   function onKeyDown(event) {
     if (!enabled) return;
     if (event.key === "Escape") {
-      const openDropdown = document.querySelector("#slimvg-token-inspect-root .ti-dropdown.open");
-      if (openDropdown) {
+      const openEditor = document.querySelector(
+        "#slimvg-token-inspect-root .ti-dropdown.open, #slimvg-token-inspect-root .ti-value-editor.open"
+      );
+      if (openEditor) {
         event.preventDefault();
-        openDropdown.classList.remove("open");
+        openEditor.classList.remove("open");
         return;
       }
       event.preventDefault();
