@@ -1,4 +1,5 @@
 import { collectMatchedStyles, elementLabel } from './collect-styles.js';
+import { clearOverrides } from './overrides.js';
 import { loadTokenRegistry } from './tokens.js';
 import {
   clearInspectorUi,
@@ -32,6 +33,21 @@ async function ensureRegistry() {
   return tokenRegistry;
 }
 
+function refreshSelectedPanel() {
+  if (!selectedEl || !tokenRegistry) return;
+  const groups = collectMatchedStyles(selectedEl, tokenRegistry);
+  showInspectPanel(elementLabel(selectedEl), groups, {
+    registry: tokenRegistry,
+    onRefresh: refreshSelectedPanel,
+    onReset: () => {
+      clearOverrides(tokenRegistry);
+      // Reload registry from source so semantic values aren't stuck on preview
+      tokenRegistry = null;
+      ensureRegistry().then(() => refreshSelectedPanel());
+    },
+  });
+}
+
 function onMouseMove(event) {
   if (!enabled) return;
   const target = event.target;
@@ -57,14 +73,20 @@ async function onClick(event) {
   setSelectTarget(target);
   setHoverTarget(null);
 
-  const registry = await ensureRegistry();
-  const groups = collectMatchedStyles(target, registry);
-  showInspectPanel(elementLabel(target), groups);
+  await ensureRegistry();
+  refreshSelectedPanel();
 }
 
 function onKeyDown(event) {
   if (!enabled) return;
   if (event.key === 'Escape') {
+    // Close open dropdown first
+    const openDropdown = document.querySelector('#slimvg-token-inspect-root .ti-dropdown.open');
+    if (openDropdown) {
+      event.preventDefault();
+      openDropdown.classList.remove('open');
+      return;
+    }
     event.preventDefault();
     setEnabled(false);
   }

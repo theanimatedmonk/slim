@@ -42,6 +42,19 @@ The **npm audit** (`npm run audit:tokens`) stays separate for CI. This extension
 | Property row | Declared CSS value |
 | Token chip + ▸ | Click to expand semantic → primitive → hex/rem |
 | Layer badges | `component` / `semantic` / `primitive` |
+| ✎ | Reassign token (temporary browser preview) |
+
+## Reassign tokens (temporary preview)
+
+Click **✎** to open a filtered dropdown:
+
+| Edit point | Dropdown | Effect |
+|------------|----------|--------|
+| Property chip (e.g. `background` → `--color-bg-elevated`) | Matching **semantic** tokens | Overrides that property on the selector |
+| Expanded **semantic** row | Matching **primitive** tokens | Overrides that custom property on `:root` |
+| Expanded **component** token | Matching semantic/primitive | Overrides that component custom property |
+
+Changes are **preview-only** — nothing is written to disk. Use **Reset preview** or reload the page to clear them.
 
 ## Shared core
 

@@ -1,13 +1,35 @@
+import {
+  getPropertyOverride,
+  hasOverrides,
+  overrideCount,
+  previewPropertyOverride,
+  previewTokenOverride,
+} from './overrides.js';
+import {
+  editableTargetForNode,
+  editableTargetForProperty,
+  listTokensByLayerAndKind,
+} from './token-options.js';
+import { extractVarRefs, resolveValueTrees, terminalValue, normalizeColor } from './tokens.js';
+
 const ROOT_ID = 'slimvg-token-inspect-root';
 const STYLE_ID = 'slimvg-token-inspect-style';
 
 /** @type {{ hoverBox: HTMLElement, selectBox: HTMLElement, panel: HTMLElement, onClose?: () => void } | null} */
 let ui = null;
 
+/** @type {{
+ *   registry: Map<string, { value: string, file: string, layer: string }>,
+ *   onRefresh?: () => void,
+ *   onReset?: () => void,
+ * } | null} */
+let panelContext = null;
+
 export function clearInspectorUi() {
   document.getElementById(ROOT_ID)?.remove();
   document.getElementById(STYLE_ID)?.remove();
   ui = null;
+  panelContext = null;
 }
 
 function ensureStyles() {
@@ -46,7 +68,7 @@ function ensureStyles() {
       position: fixed;
       top: 16px;
       right: 16px;
-      width: min(340px, calc(100vw - 32px));
+      width: min(360px, calc(100vw - 32px));
       max-height: calc(100vh - 32px);
       overflow: auto;
       pointer-events: auto;
@@ -65,7 +87,7 @@ function ensureStyles() {
     #${ROOT_ID} .ti-header {
       position: sticky;
       top: 0;
-      z-index: 1;
+      z-index: 2;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -102,6 +124,26 @@ function ensureStyles() {
       font-size: 12px;
       color: #737373;
       border-bottom: 1px solid #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    #${ROOT_ID} .ti-hint-text {
+      flex: 1;
+    }
+    #${ROOT_ID} .ti-reset {
+      border: 1px solid #e5e5e5;
+      background: #fff;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      color: #525252;
+      white-space: nowrap;
+    }
+    #${ROOT_ID} .ti-reset:hover {
+      background: #f5f5f5;
     }
     #${ROOT_ID} .ti-group {
       padding: 10px 14px 12px;
@@ -121,7 +163,7 @@ function ensureStyles() {
       margin-left: 6px;
     }
     #${ROOT_ID} .ti-prop {
-      margin: 0 0 6px;
+      margin: 0 0 8px;
     }
     #${ROOT_ID} .ti-prop-row {
       display: grid;
@@ -169,7 +211,7 @@ function ensureStyles() {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      max-width: 200px;
+      max-width: 180px;
     }
     #${ROOT_ID} .ti-chevron {
       color: #a3a3a3;
@@ -179,6 +221,21 @@ function ensureStyles() {
     }
     #${ROOT_ID} .ti-token-btn[aria-expanded="true"] .ti-chevron {
       transform: rotate(90deg);
+    }
+    #${ROOT_ID} .ti-edit {
+      border: none;
+      background: transparent;
+      color: #a3a3a3;
+      cursor: pointer;
+      padding: 0 2px;
+      font-size: 12px;
+      line-height: 1;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    #${ROOT_ID} .ti-edit:hover {
+      color: #2563eb;
+      background: #eff6ff;
     }
     #${ROOT_ID} .ti-literal {
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -204,6 +261,7 @@ function ensureStyles() {
       gap: 6px;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 11px;
+      flex-wrap: wrap;
     }
     #${ROOT_ID} .ti-layer {
       font-size: 9px;
@@ -223,6 +281,65 @@ function ensureStyles() {
     }
     #${ROOT_ID} .ti-tree-value {
       color: #737373;
+    }
+    #${ROOT_ID} .ti-dropdown {
+      display: none;
+      margin-top: 6px;
+      width: 100%;
+      max-height: 180px;
+      overflow: auto;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+    #${ROOT_ID} .ti-dropdown.open {
+      display: block;
+    }
+    #${ROOT_ID} .ti-dropdown-search {
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid #f0f0f0;
+      padding: 8px 10px;
+      font: inherit;
+      font-size: 11px;
+      outline: none;
+    }
+    #${ROOT_ID} .ti-dropdown-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      border: none;
+      background: transparent;
+      padding: 7px 10px;
+      text-align: left;
+      cursor: pointer;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      color: #262626;
+    }
+    #${ROOT_ID} .ti-dropdown-option:hover,
+    #${ROOT_ID} .ti-dropdown-option.active {
+      background: #f5f5f5;
+    }
+    #${ROOT_ID} .ti-dropdown-option.active {
+      color: #2563eb;
+    }
+    #${ROOT_ID} .ti-dropdown-empty {
+      padding: 10px;
+      font-size: 11px;
+      color: #a3a3a3;
+    }
+    #${ROOT_ID} .ti-preview-badge {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #b45309;
+      background: #fef3c7;
+      border-radius: 4px;
+      padding: 1px 4px;
     }
   `;
   document.documentElement.appendChild(style);
@@ -259,7 +376,9 @@ export function ensureInspectorUi() {
         <div class="ti-selector">Select an element</div>
         <button type="button" class="ti-close" aria-label="Close">×</button>
       </div>
-      <div class="ti-hint">Click an element to inspect. Esc exits inspect mode.</div>
+      <div class="ti-hint">
+        <span class="ti-hint-text">Expand tokens · ✎ reassigns in-browser only (clears on reload)</span>
+      </div>
       <div class="ti-body"></div>
     </aside>
   `;
@@ -289,14 +408,130 @@ export function setSelectTarget(el) {
   current.hoverBox.style.display = 'none';
 }
 
+function closeAllDropdowns(except) {
+  const root = document.getElementById(ROOT_ID);
+  if (!root) return;
+  for (const dropdown of root.querySelectorAll('.ti-dropdown.open')) {
+    if (dropdown !== except) dropdown.classList.remove('open');
+  }
+}
+
+/**
+ * @param {HTMLElement} host
+ * @param {{
+ *   options: Array<{ name: string, swatch: string | null, label: string }>,
+ *   currentRef: string,
+ *   onPick: (name: string) => void,
+ * }} config
+ */
+function mountDropdown(host, config) {
+  closeAllDropdowns();
+
+  let dropdown = host.querySelector(':scope > .ti-dropdown');
+  if (!dropdown) {
+    dropdown = document.createElement('div');
+    dropdown.className = 'ti-dropdown';
+    host.appendChild(dropdown);
+  }
+
+  dropdown.replaceChildren();
+  dropdown.classList.add('open');
+
+  const search = document.createElement('input');
+  search.className = 'ti-dropdown-search';
+  search.type = 'search';
+  search.placeholder = 'Filter tokens…';
+  dropdown.appendChild(search);
+
+  const list = document.createElement('div');
+  dropdown.appendChild(list);
+
+  function renderOptions(filter = '') {
+    list.replaceChildren();
+    const q = filter.trim().toLowerCase();
+    const filtered = config.options.filter(
+      (opt) => !q || opt.name.toLowerCase().includes(q) || opt.label.toLowerCase().includes(q)
+    );
+
+    if (!filtered.length) {
+      const empty = document.createElement('div');
+      empty.className = 'ti-dropdown-empty';
+      empty.textContent = 'No matching tokens';
+      list.appendChild(empty);
+      return;
+    }
+
+    for (const opt of filtered) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ti-dropdown-option';
+      if (opt.name === config.currentRef) btn.classList.add('active');
+
+      if (opt.swatch) {
+        const swatch = document.createElement('span');
+        swatch.className = 'ti-swatch';
+        swatch.style.background = opt.swatch;
+        btn.appendChild(swatch);
+      }
+
+      btn.appendChild(document.createTextNode(opt.name));
+      btn.title = opt.label;
+      btn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        dropdown.classList.remove('open');
+        config.onPick(opt.name);
+      });
+      list.appendChild(btn);
+    }
+  }
+
+  renderOptions();
+  search.addEventListener('input', () => renderOptions(search.value));
+  search.addEventListener('click', (e) => e.stopPropagation());
+  requestAnimationFrame(() => search.focus());
+}
+
+function replaceVarRef(value, fromName, toName) {
+  const re = new RegExp(`var\\(\\s*${fromName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*([,)])`, 'g');
+  return value.replace(re, `var(${toName}$1`);
+}
+
 /**
  * @param {string} label
  * @param {Array<{ selector: string, file: string, properties: Array<any> }>} groups
+ * @param {{
+ *   registry: Map<string, any>,
+ *   onRefresh?: () => void,
+ *   onReset?: () => void,
+ * }} [context]
  */
-export function showInspectPanel(label, groups) {
+export function showInspectPanel(label, groups, context) {
   const current = ensureInspectorUi();
+  panelContext = context ?? null;
   current.panel.classList.add('open');
   current.panel.querySelector('.ti-selector').textContent = label;
+
+  const hint = current.panel.querySelector('.ti-hint');
+  hint.replaceChildren();
+  const hintText = document.createElement('span');
+  hintText.className = 'ti-hint-text';
+  hintText.textContent = hasOverrides()
+    ? `Preview active (${overrideCount()}) · ✎ edits are temporary`
+    : 'Expand tokens · ✎ reassigns in-browser only (clears on reload)';
+  hint.appendChild(hintText);
+
+  if (hasOverrides() && context?.onReset) {
+    const reset = document.createElement('button');
+    reset.type = 'button';
+    reset.className = 'ti-reset';
+    reset.textContent = 'Reset preview';
+    reset.addEventListener('click', (e) => {
+      e.stopPropagation();
+      context.onReset();
+    });
+    hint.appendChild(reset);
+  }
 
   const body = current.panel.querySelector('.ti-body');
   body.replaceChildren();
@@ -325,14 +560,40 @@ export function showInspectPanel(label, groups) {
     section.appendChild(title);
 
     for (const prop of group.properties) {
-      section.appendChild(renderProperty(prop));
+      const displayProp = applyOverrideToProp(prop, group.selector, context?.registry);
+      section.appendChild(renderProperty(displayProp, group.selector));
     }
 
     body.appendChild(section);
   }
 }
 
-function renderProperty(prop) {
+function applyOverrideToProp(prop, selector, registry) {
+  if (!registry) return prop;
+  const overridden = getPropertyOverride(selector, prop.property);
+  if (!overridden) return prop;
+
+  const trees = resolveValueTrees(overridden, registry);
+  let swatch = prop.swatch;
+  if (trees.length) {
+    const terminal = terminalValue(trees[0]);
+    const normalized = normalizeColor(terminal);
+    if (normalized.startsWith('#') || /^rgb/i.test(terminal)) {
+      swatch = terminal;
+    }
+  }
+
+  return {
+    ...prop,
+    value: overridden,
+    trees,
+    swatch,
+    hasTokens: trees.length > 0,
+    preview: true,
+  };
+}
+
+function renderProperty(prop, selector) {
   const wrap = document.createElement('div');
   wrap.className = 'ti-prop';
 
@@ -348,6 +609,11 @@ function renderProperty(prop) {
 
   if (prop.trees?.length) {
     const primary = prop.trees[0];
+    const head = document.createElement('div');
+    head.style.display = 'flex';
+    head.style.alignItems = 'center';
+    head.style.gap = '4px';
+
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'ti-token-btn';
@@ -362,13 +628,20 @@ function renderProperty(prop) {
 
     const chip = document.createElement('span');
     chip.className = 'ti-token-chip';
-    chip.textContent = primary.name;
+    chip.textContent = extractVarRefs(prop.value)[0] || primary.name;
     btn.appendChild(chip);
 
     const chevron = document.createElement('span');
     chevron.className = 'ti-chevron';
     chevron.textContent = '▸';
     btn.appendChild(chevron);
+
+    if (prop.preview) {
+      const badge = document.createElement('span');
+      badge.className = 'ti-preview-badge';
+      badge.textContent = 'preview';
+      head.appendChild(badge);
+    }
 
     const tree = document.createElement('div');
     tree.className = 'ti-tree';
@@ -381,7 +654,43 @@ function renderProperty(prop) {
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
 
-    valueCell.appendChild(btn);
+    head.appendChild(btn);
+
+    const propEdit = editableTargetForProperty(prop);
+    if (propEdit && panelContext?.registry) {
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'ti-edit';
+      editBtn.title = `Reassign ${propEdit.optionLayer} token`;
+      editBtn.textContent = '✎';
+      editBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        tree.classList.add('open');
+        btn.setAttribute('aria-expanded', 'true');
+
+        const options = listTokensByLayerAndKind(
+          panelContext.registry,
+          propEdit.optionLayer,
+          propEdit.kind
+        );
+        mountDropdown(valueCell, {
+          options,
+          currentRef: propEdit.currentRef,
+          onPick: (tokenName) => {
+            const refs = extractVarRefs(prop.value);
+            const from = refs[0] || propEdit.currentRef;
+            const nextValue =
+              refs.length > 0 ? replaceVarRef(prop.value, from, tokenName) : `var(${tokenName})`;
+            previewPropertyOverride(selector, prop.property, nextValue);
+            panelContext.onRefresh?.();
+          },
+        });
+      });
+      head.appendChild(editBtn);
+    }
+
+    valueCell.appendChild(head);
     valueCell.appendChild(tree);
   } else {
     const literal = document.createElement('div');
@@ -434,6 +743,37 @@ function renderTreeNode(node, depth) {
       swatch.style.background = node.value;
       line.appendChild(swatch);
     }
+  }
+
+  const nodeEdit = editableTargetForNode(node);
+  if (nodeEdit && panelContext?.registry) {
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'ti-edit';
+    editBtn.title =
+      nodeEdit.optionLayer === 'primitive'
+        ? 'Reassign primitive'
+        : 'Reassign semantic';
+    editBtn.textContent = '✎';
+    editBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const options = listTokensByLayerAndKind(
+        panelContext.registry,
+        nodeEdit.optionLayer,
+        nodeEdit.kind
+      );
+      mountDropdown(wrap, {
+        options,
+        currentRef: nodeEdit.currentRef,
+        onPick: (tokenName) => {
+          previewTokenOverride(nodeEdit.tokenName, `var(${tokenName})`, panelContext.registry);
+          panelContext.onRefresh?.();
+        },
+      });
+    });
+    line.appendChild(editBtn);
   }
 
   wrap.appendChild(line);

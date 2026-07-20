@@ -441,14 +441,201 @@
     return el.tagName.toLowerCase();
   }
 
+  // extensions/token-audit/overrides.js
+  var OVERRIDE_STYLE_ID = "slimvg-token-inspect-overrides";
+  var propertyOverrides = /* @__PURE__ */ new Map();
+  var tokenOverrides = /* @__PURE__ */ new Map();
+  function propertyKey(selector, property) {
+    return `${selector}\0${property}`;
+  }
+  function ensureOverrideSheet() {
+    let el = document.getElementById(OVERRIDE_STYLE_ID);
+    if (!el) {
+      el = document.createElement("style");
+      el.id = OVERRIDE_STYLE_ID;
+      document.documentElement.appendChild(el);
+    }
+    return el;
+  }
+  function rebuildPropertySheet() {
+    const el = ensureOverrideSheet();
+    const rules = [];
+    for (const { selector, property, value } of propertyOverrides.values()) {
+      rules.push(`${selector} { ${property}: ${value} !important; }`);
+    }
+    el.textContent = rules.join("\n");
+  }
+  function previewPropertyOverride(selector, property, cssValue) {
+    propertyOverrides.set(propertyKey(selector, property), {
+      selector,
+      property,
+      value: cssValue
+    });
+    rebuildPropertySheet();
+  }
+  function previewTokenOverride(tokenName, cssValue, registry) {
+    document.documentElement.style.setProperty(tokenName, cssValue);
+    tokenOverrides.set(tokenName, cssValue);
+    const existing = registry.get(tokenName);
+    registry.set(tokenName, {
+      value: cssValue,
+      file: existing?.file ?? "preview",
+      layer: existing?.layer ?? "semantic"
+    });
+  }
+  function getPropertyOverride(selector, property) {
+    return propertyOverrides.get(propertyKey(selector, property))?.value ?? null;
+  }
+  function hasOverrides() {
+    return propertyOverrides.size > 0 || tokenOverrides.size > 0;
+  }
+  function clearOverrides(registry) {
+    for (const name of tokenOverrides.keys()) {
+      document.documentElement.style.removeProperty(name);
+      void registry;
+    }
+    tokenOverrides.clear();
+    propertyOverrides.clear();
+    const el = document.getElementById(OVERRIDE_STYLE_ID);
+    if (el) el.textContent = "";
+  }
+  function overrideCount() {
+    return propertyOverrides.size + tokenOverrides.size;
+  }
+
+  // extensions/token-audit/token-options.js
+  function tokenKind(name) {
+    const n = name.toLowerCase();
+    if (n.includes("color") || n.includes("brand") || n.includes("success") || n.includes("warning") || n.includes("error") || n.includes("-white") || n.endsWith("white") || n.includes("-black") || n.includes("bg-") || n.includes("text-") || n.includes("border-") || n.includes("fill") || n.includes("stroke")) {
+      return "color";
+    }
+    if (n.includes("space") || n.includes("gap") || n.includes("inset") || n.includes("page-")) {
+      return "space";
+    }
+    if (n.includes("radius")) return "radius";
+    if (n.includes("font-size") || n.includes("line-height")) return "font-size";
+    if (n.includes("font-weight") || n.includes("font-family") || n.includes("letter-spacing")) {
+      return "font";
+    }
+    if (n.includes("shadow")) return "shadow";
+    if (n.includes("duration") || n.includes("ease")) return "motion";
+    if (n.includes("z-") || n.includes("z-index")) return "z";
+    if (n.includes("icon")) return "icon";
+    return "other";
+  }
+  function listTokensByLayerAndKind(registry, layer, kind) {
+    const options = [];
+    for (const [name, entry] of registry.entries()) {
+      if (entry.layer !== layer) continue;
+      if (tokenKind(name) !== kind) continue;
+      const tree = resolveTokenTree(name, registry);
+      const terminal = terminalValue(tree);
+      let swatch = null;
+      if (kind === "color") {
+        const normalized = normalizeColor(terminal);
+        if (normalized.startsWith("#") || /^rgba?\(/i.test(terminal) || terminal === "transparent") {
+          swatch = terminal.startsWith("#") || terminal.startsWith("rgb") || terminal === "transparent" ? terminal : normalized;
+        }
+      }
+      options.push({
+        name,
+        value: entry.value,
+        swatch,
+        label: kind === "color" && terminal ? `${name} \xB7 ${terminal}` : name
+      });
+    }
+    options.sort((a, b) => a.name.localeCompare(b.name));
+    return options;
+  }
+  function editableTargetForNode(node) {
+    if (!node?.children?.length) return null;
+    const child = node.children[0];
+    if (node.layer === "semantic") {
+      if (child?.layer === "primitive" || child?.name?.startsWith("--primitive-")) {
+        return {
+          mode: "token",
+          tokenName: node.name,
+          currentRef: child.name,
+          optionLayer: "primitive",
+          kind: tokenKind(node.name)
+        };
+      }
+      if (child?.layer === "semantic") {
+        return {
+          mode: "token",
+          tokenName: node.name,
+          currentRef: child.name,
+          optionLayer: "semantic",
+          kind: tokenKind(node.name)
+        };
+      }
+    }
+    if (node.layer === "component") {
+      if (child?.layer === "semantic") {
+        return {
+          mode: "token",
+          tokenName: node.name,
+          currentRef: child.name,
+          optionLayer: "semantic",
+          kind: tokenKind(child.name)
+        };
+      }
+      if (child?.layer === "primitive") {
+        return {
+          mode: "token",
+          tokenName: node.name,
+          currentRef: child.name,
+          optionLayer: "primitive",
+          kind: tokenKind(child.name)
+        };
+      }
+    }
+    return null;
+  }
+  function editableTargetForProperty(prop) {
+    if (!prop?.trees?.length) return null;
+    const primary = prop.trees[0];
+    if (!primary?.name) return null;
+    if (primary.layer === "semantic") {
+      return {
+        mode: "property",
+        currentRef: primary.name,
+        optionLayer: "semantic",
+        kind: tokenKind(primary.name)
+      };
+    }
+    if (primary.layer === "primitive") {
+      return {
+        mode: "property",
+        currentRef: primary.name,
+        optionLayer: "primitive",
+        kind: tokenKind(primary.name)
+      };
+    }
+    if (primary.layer === "component") {
+      const child = primary.children?.[0];
+      if (child?.layer === "semantic") {
+        return {
+          mode: "property",
+          currentRef: primary.name,
+          optionLayer: "semantic",
+          kind: tokenKind(child.name)
+        };
+      }
+    }
+    return null;
+  }
+
   // extensions/token-audit/panel.js
   var ROOT_ID = "slimvg-token-inspect-root";
   var STYLE_ID = "slimvg-token-inspect-style";
   var ui = null;
+  var panelContext = null;
   function clearInspectorUi() {
     document.getElementById(ROOT_ID)?.remove();
     document.getElementById(STYLE_ID)?.remove();
     ui = null;
+    panelContext = null;
   }
   function ensureStyles() {
     if (document.getElementById(STYLE_ID)) return;
@@ -486,7 +673,7 @@
       position: fixed;
       top: 16px;
       right: 16px;
-      width: min(340px, calc(100vw - 32px));
+      width: min(360px, calc(100vw - 32px));
       max-height: calc(100vh - 32px);
       overflow: auto;
       pointer-events: auto;
@@ -505,7 +692,7 @@
     #${ROOT_ID} .ti-header {
       position: sticky;
       top: 0;
-      z-index: 1;
+      z-index: 2;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -542,6 +729,26 @@
       font-size: 12px;
       color: #737373;
       border-bottom: 1px solid #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    #${ROOT_ID} .ti-hint-text {
+      flex: 1;
+    }
+    #${ROOT_ID} .ti-reset {
+      border: 1px solid #e5e5e5;
+      background: #fff;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      color: #525252;
+      white-space: nowrap;
+    }
+    #${ROOT_ID} .ti-reset:hover {
+      background: #f5f5f5;
     }
     #${ROOT_ID} .ti-group {
       padding: 10px 14px 12px;
@@ -561,7 +768,7 @@
       margin-left: 6px;
     }
     #${ROOT_ID} .ti-prop {
-      margin: 0 0 6px;
+      margin: 0 0 8px;
     }
     #${ROOT_ID} .ti-prop-row {
       display: grid;
@@ -609,7 +816,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      max-width: 200px;
+      max-width: 180px;
     }
     #${ROOT_ID} .ti-chevron {
       color: #a3a3a3;
@@ -619,6 +826,21 @@
     }
     #${ROOT_ID} .ti-token-btn[aria-expanded="true"] .ti-chevron {
       transform: rotate(90deg);
+    }
+    #${ROOT_ID} .ti-edit {
+      border: none;
+      background: transparent;
+      color: #a3a3a3;
+      cursor: pointer;
+      padding: 0 2px;
+      font-size: 12px;
+      line-height: 1;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    #${ROOT_ID} .ti-edit:hover {
+      color: #2563eb;
+      background: #eff6ff;
     }
     #${ROOT_ID} .ti-literal {
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -644,6 +866,7 @@
       gap: 6px;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 11px;
+      flex-wrap: wrap;
     }
     #${ROOT_ID} .ti-layer {
       font-size: 9px;
@@ -663,6 +886,65 @@
     }
     #${ROOT_ID} .ti-tree-value {
       color: #737373;
+    }
+    #${ROOT_ID} .ti-dropdown {
+      display: none;
+      margin-top: 6px;
+      width: 100%;
+      max-height: 180px;
+      overflow: auto;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+    #${ROOT_ID} .ti-dropdown.open {
+      display: block;
+    }
+    #${ROOT_ID} .ti-dropdown-search {
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid #f0f0f0;
+      padding: 8px 10px;
+      font: inherit;
+      font-size: 11px;
+      outline: none;
+    }
+    #${ROOT_ID} .ti-dropdown-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      border: none;
+      background: transparent;
+      padding: 7px 10px;
+      text-align: left;
+      cursor: pointer;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      color: #262626;
+    }
+    #${ROOT_ID} .ti-dropdown-option:hover,
+    #${ROOT_ID} .ti-dropdown-option.active {
+      background: #f5f5f5;
+    }
+    #${ROOT_ID} .ti-dropdown-option.active {
+      color: #2563eb;
+    }
+    #${ROOT_ID} .ti-dropdown-empty {
+      padding: 10px;
+      font-size: 11px;
+      color: #a3a3a3;
+    }
+    #${ROOT_ID} .ti-preview-badge {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #b45309;
+      background: #fef3c7;
+      border-radius: 4px;
+      padding: 1px 4px;
     }
   `;
     document.documentElement.appendChild(style);
@@ -696,7 +978,9 @@
         <div class="ti-selector">Select an element</div>
         <button type="button" class="ti-close" aria-label="Close">\xD7</button>
       </div>
-      <div class="ti-hint">Click an element to inspect. Esc exits inspect mode.</div>
+      <div class="ti-hint">
+        <span class="ti-hint-text">Expand tokens \xB7 \u270E reassigns in-browser only (clears on reload)</span>
+      </div>
       <div class="ti-body"></div>
     </aside>
   `;
@@ -721,10 +1005,96 @@
     positionBox(current.selectBox, el);
     current.hoverBox.style.display = "none";
   }
-  function showInspectPanel(label, groups) {
+  function closeAllDropdowns(except) {
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return;
+    for (const dropdown of root.querySelectorAll(".ti-dropdown.open")) {
+      if (dropdown !== except) dropdown.classList.remove("open");
+    }
+  }
+  function mountDropdown(host, config) {
+    closeAllDropdowns();
+    let dropdown = host.querySelector(":scope > .ti-dropdown");
+    if (!dropdown) {
+      dropdown = document.createElement("div");
+      dropdown.className = "ti-dropdown";
+      host.appendChild(dropdown);
+    }
+    dropdown.replaceChildren();
+    dropdown.classList.add("open");
+    const search = document.createElement("input");
+    search.className = "ti-dropdown-search";
+    search.type = "search";
+    search.placeholder = "Filter tokens\u2026";
+    dropdown.appendChild(search);
+    const list = document.createElement("div");
+    dropdown.appendChild(list);
+    function renderOptions(filter = "") {
+      list.replaceChildren();
+      const q = filter.trim().toLowerCase();
+      const filtered = config.options.filter(
+        (opt) => !q || opt.name.toLowerCase().includes(q) || opt.label.toLowerCase().includes(q)
+      );
+      if (!filtered.length) {
+        const empty = document.createElement("div");
+        empty.className = "ti-dropdown-empty";
+        empty.textContent = "No matching tokens";
+        list.appendChild(empty);
+        return;
+      }
+      for (const opt of filtered) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "ti-dropdown-option";
+        if (opt.name === config.currentRef) btn.classList.add("active");
+        if (opt.swatch) {
+          const swatch = document.createElement("span");
+          swatch.className = "ti-swatch";
+          swatch.style.background = opt.swatch;
+          btn.appendChild(swatch);
+        }
+        btn.appendChild(document.createTextNode(opt.name));
+        btn.title = opt.label;
+        btn.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          dropdown.classList.remove("open");
+          config.onPick(opt.name);
+        });
+        list.appendChild(btn);
+      }
+    }
+    renderOptions();
+    search.addEventListener("input", () => renderOptions(search.value));
+    search.addEventListener("click", (e) => e.stopPropagation());
+    requestAnimationFrame(() => search.focus());
+  }
+  function replaceVarRef(value, fromName, toName) {
+    const re = new RegExp(`var\\(\\s*${fromName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*([,)])`, "g");
+    return value.replace(re, `var(${toName}$1`);
+  }
+  function showInspectPanel(label, groups, context) {
     const current = ensureInspectorUi();
+    panelContext = context ?? null;
     current.panel.classList.add("open");
     current.panel.querySelector(".ti-selector").textContent = label;
+    const hint = current.panel.querySelector(".ti-hint");
+    hint.replaceChildren();
+    const hintText = document.createElement("span");
+    hintText.className = "ti-hint-text";
+    hintText.textContent = hasOverrides() ? `Preview active (${overrideCount()}) \xB7 \u270E edits are temporary` : "Expand tokens \xB7 \u270E reassigns in-browser only (clears on reload)";
+    hint.appendChild(hintText);
+    if (hasOverrides() && context?.onReset) {
+      const reset = document.createElement("button");
+      reset.type = "button";
+      reset.className = "ti-reset";
+      reset.textContent = "Reset preview";
+      reset.addEventListener("click", (e) => {
+        e.stopPropagation();
+        context.onReset();
+      });
+      hint.appendChild(reset);
+    }
     const body = current.panel.querySelector(".ti-body");
     body.replaceChildren();
     if (!groups.length) {
@@ -748,12 +1118,35 @@
       }
       section.appendChild(title);
       for (const prop of group.properties) {
-        section.appendChild(renderProperty(prop));
+        const displayProp = applyOverrideToProp(prop, group.selector, context?.registry);
+        section.appendChild(renderProperty(displayProp, group.selector));
       }
       body.appendChild(section);
     }
   }
-  function renderProperty(prop) {
+  function applyOverrideToProp(prop, selector, registry) {
+    if (!registry) return prop;
+    const overridden = getPropertyOverride(selector, prop.property);
+    if (!overridden) return prop;
+    const trees = resolveValueTrees(overridden, registry);
+    let swatch = prop.swatch;
+    if (trees.length) {
+      const terminal = terminalValue(trees[0]);
+      const normalized = normalizeColor(terminal);
+      if (normalized.startsWith("#") || /^rgb/i.test(terminal)) {
+        swatch = terminal;
+      }
+    }
+    return {
+      ...prop,
+      value: overridden,
+      trees,
+      swatch,
+      hasTokens: trees.length > 0,
+      preview: true
+    };
+  }
+  function renderProperty(prop, selector) {
     const wrap = document.createElement("div");
     wrap.className = "ti-prop";
     const row = document.createElement("div");
@@ -765,6 +1158,10 @@
     const valueCell = document.createElement("div");
     if (prop.trees?.length) {
       const primary = prop.trees[0];
+      const head = document.createElement("div");
+      head.style.display = "flex";
+      head.style.alignItems = "center";
+      head.style.gap = "4px";
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "ti-token-btn";
@@ -777,12 +1174,18 @@
       }
       const chip = document.createElement("span");
       chip.className = "ti-token-chip";
-      chip.textContent = primary.name;
+      chip.textContent = extractVarRefs(prop.value)[0] || primary.name;
       btn.appendChild(chip);
       const chevron = document.createElement("span");
       chevron.className = "ti-chevron";
       chevron.textContent = "\u25B8";
       btn.appendChild(chevron);
+      if (prop.preview) {
+        const badge = document.createElement("span");
+        badge.className = "ti-preview-badge";
+        badge.textContent = "preview";
+        head.appendChild(badge);
+      }
       const tree = document.createElement("div");
       tree.className = "ti-tree";
       for (const node of prop.trees) {
@@ -792,7 +1195,39 @@
         const open = tree.classList.toggle("open");
         btn.setAttribute("aria-expanded", open ? "true" : "false");
       });
-      valueCell.appendChild(btn);
+      head.appendChild(btn);
+      const propEdit = editableTargetForProperty(prop);
+      if (propEdit && panelContext?.registry) {
+        const editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "ti-edit";
+        editBtn.title = `Reassign ${propEdit.optionLayer} token`;
+        editBtn.textContent = "\u270E";
+        editBtn.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          tree.classList.add("open");
+          btn.setAttribute("aria-expanded", "true");
+          const options = listTokensByLayerAndKind(
+            panelContext.registry,
+            propEdit.optionLayer,
+            propEdit.kind
+          );
+          mountDropdown(valueCell, {
+            options,
+            currentRef: propEdit.currentRef,
+            onPick: (tokenName) => {
+              const refs = extractVarRefs(prop.value);
+              const from = refs[0] || propEdit.currentRef;
+              const nextValue = refs.length > 0 ? replaceVarRef(prop.value, from, tokenName) : `var(${tokenName})`;
+              previewPropertyOverride(selector, prop.property, nextValue);
+              panelContext.onRefresh?.();
+            }
+          });
+        });
+        head.appendChild(editBtn);
+      }
+      valueCell.appendChild(head);
       valueCell.appendChild(tree);
     } else {
       const literal = document.createElement("div");
@@ -839,6 +1274,32 @@
         line.appendChild(swatch);
       }
     }
+    const nodeEdit = editableTargetForNode(node);
+    if (nodeEdit && panelContext?.registry) {
+      const editBtn = document.createElement("button");
+      editBtn.type = "button";
+      editBtn.className = "ti-edit";
+      editBtn.title = nodeEdit.optionLayer === "primitive" ? "Reassign primitive" : "Reassign semantic";
+      editBtn.textContent = "\u270E";
+      editBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const options = listTokensByLayerAndKind(
+          panelContext.registry,
+          nodeEdit.optionLayer,
+          nodeEdit.kind
+        );
+        mountDropdown(wrap, {
+          options,
+          currentRef: nodeEdit.currentRef,
+          onPick: (tokenName2) => {
+            previewTokenOverride(nodeEdit.tokenName, `var(${tokenName2})`, panelContext.registry);
+            panelContext.onRefresh?.();
+          }
+        });
+      });
+      line.appendChild(editBtn);
+    }
     wrap.appendChild(line);
     for (const child of node.children || []) {
       wrap.appendChild(renderTreeNode(child, depth + 1));
@@ -875,6 +1336,19 @@
     }
     return tokenRegistry;
   }
+  function refreshSelectedPanel() {
+    if (!selectedEl || !tokenRegistry) return;
+    const groups = collectMatchedStyles(selectedEl, tokenRegistry);
+    showInspectPanel(elementLabel(selectedEl), groups, {
+      registry: tokenRegistry,
+      onRefresh: refreshSelectedPanel,
+      onReset: () => {
+        clearOverrides(tokenRegistry);
+        tokenRegistry = null;
+        ensureRegistry().then(() => refreshSelectedPanel());
+      }
+    });
+  }
   function onMouseMove(event) {
     if (!enabled) return;
     const target = event.target;
@@ -896,13 +1370,18 @@
     hoverEl = null;
     setSelectTarget(target);
     setHoverTarget(null);
-    const registry = await ensureRegistry();
-    const groups = collectMatchedStyles(target, registry);
-    showInspectPanel(elementLabel(target), groups);
+    await ensureRegistry();
+    refreshSelectedPanel();
   }
   function onKeyDown(event) {
     if (!enabled) return;
     if (event.key === "Escape") {
+      const openDropdown = document.querySelector("#slimvg-token-inspect-root .ti-dropdown.open");
+      if (openDropdown) {
+        event.preventDefault();
+        openDropdown.classList.remove("open");
+        return;
+      }
       event.preventDefault();
       setEnabled(false);
     }
