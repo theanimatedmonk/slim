@@ -12,6 +12,8 @@ import {
   showInspectPanel,
 } from './panel.js';
 
+// Writer clears after successful push — drop preview overlays so Vite HMR is source of truth
+
 const STORAGE_KEY = 'tokenInspectEnabled';
 
 /** @type {Map<string, { value: string, file: string, layer: string }> | null} */
@@ -41,9 +43,16 @@ function refreshSelectedPanel() {
     onRefresh: refreshSelectedPanel,
     onReset: () => {
       clearOverrides(tokenRegistry);
-      // Reload registry from source so semantic values aren't stuck on preview
       tokenRegistry = null;
       ensureRegistry().then(() => refreshSelectedPanel());
+    },
+    onPushed: () => {
+      clearOverrides(tokenRegistry);
+      tokenRegistry = null;
+      // Brief delay so Vite can pick up writes before re-inspect
+      setTimeout(() => {
+        ensureRegistry().then(() => refreshSelectedPanel());
+      }, 300);
     },
   });
 }

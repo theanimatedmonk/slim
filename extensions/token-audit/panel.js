@@ -1,6 +1,8 @@
 import {
   getPropertyOverride,
   hasOverrides,
+  listPendingEdits,
+  normalizeTokenFile,
   overrideCount,
   previewPropertyOverride,
   previewTokenOverride,
@@ -10,6 +12,7 @@ import {
   getPropertyValueEditor,
   prefersFullValueEdit,
 } from './property-options.js';
+import { pushEditsToWriter } from './push.js';
 import {
   editableTargetForNode,
   editableTargetForProperty,
@@ -27,6 +30,7 @@ let ui = null;
  *   registry: Map<string, { value: string, file: string, layer: string }>,
  *   onRefresh?: () => void,
  *   onReset?: () => void,
+ *   onPushed?: () => void,
  * } | null} */
 let panelContext = null;
 
@@ -140,7 +144,13 @@ function ensureStyles() {
     #${ROOT_ID} .ti-hint-text {
       flex: 1;
     }
-    #${ROOT_ID} .ti-reset {
+    #${ROOT_ID} .ti-hint-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    #${ROOT_ID} .ti-reset,
+    #${ROOT_ID} .ti-push {
       border: 1px solid #e5e5e5;
       background: #fff;
       border-radius: 6px;
@@ -150,8 +160,33 @@ function ensureStyles() {
       color: #525252;
       white-space: nowrap;
     }
-    #${ROOT_ID} .ti-reset:hover {
+    #${ROOT_ID} .ti-reset:hover,
+    #${ROOT_ID} .ti-push:hover {
       background: #f5f5f5;
+    }
+    #${ROOT_ID} .ti-push {
+      background: #171717;
+      border-color: #171717;
+      color: #fff;
+      font-weight: 600;
+    }
+    #${ROOT_ID} .ti-push:hover {
+      background: #404040;
+    }
+    #${ROOT_ID} .ti-push:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+    #${ROOT_ID} .ti-push-status {
+      font-size: 11px;
+      color: #525252;
+      padding: 0 14px 10px;
+    }
+    #${ROOT_ID} .ti-push-status.error {
+      color: #e11d48;
+    }
+    #${ROOT_ID} .ti-push-status.ok {
+      color: #059669;
     }
     #${ROOT_ID} .ti-group {
       padding: 10px 14px 12px;
@@ -727,11 +762,12 @@ function withCurrentGridOption(options, currentValue) {
 
 /**
  * @param {string} label
- * @param {Array<{ selector: string, file: string, properties: Array<any> }>} groups
+ * @param {Array<{ selector: string, file: string, sourcePath?: string, properties: Array<any> }>} groups
  * @param {{
  *   registry: Map<string, any>,
  *   onRefresh?: () => void,
  *   onReset?: () => void,
+ *   onPushed?: () => void,
  * }} [context]
  */
 export function showInspectPanel(label, groups, context) {
@@ -744,22 +780,59 @@ export function showInspectPanel(label, groups, context) {
   hint.replaceChildren();
   const hintText = document.createElement('span');
   hintText.className = 'ti-hint-text';
-  hintText.textContent = hasOverrides()
-    ? `Preview active (${overrideCount()}) · ✎ edits are temporary`
-    : 'Expand tokens · ✎ reassigns in-browser only (clears on reload)';
+  const count = overrideCount();
+  hintText.textContent = count
+    ? `${count} pending edit(s) · preview only until Push`
+    : 'Expand tokens · ✎ preview · Push writes CSS via local writer';
   hint.appendChild(hintText);
 
-  if (hasOverrides() && context?.onReset) {
-    const reset = document.createElement('button');
-    reset.type = 'button';
-    reset.className = 'ti-reset';
-    reset.textContent = 'Reset preview';
-    reset.addEventListener('click', (e) => {
+  if (count) {
+    const actions = document.createElement('div');
+    actions.className = 'ti-hint-actions';
+
+    if (context?.onReset) {
+      const reset = document.createElement('button');
+      reset.type = 'button';
+      reset.className = 'ti-reset';
+      reset.textContent = 'Reset';
+      reset.addEventListener('click', (e) => {
+        e.stopPropagation();
+        context.onReset();
+      });
+      actions.appendChild(reset);
+    }
+
+    const push = document.createElement('button');
+    push.type = 'button';
+    push.className = 'ti-push';
+    push.textContent = `Push ${count} change${count === 1 ? '' : 's'}`;
+    push.addEventListener('click', async (e) => {
       e.stopPropagation();
-      context.onReset();
+      push.disabled = true;
+      push.textContent = 'Pushing…';
+      setPushStatus('Writing CSS files…', null);
+      const result = await pushEditsToWriter(listPendingEdits());
+      if (result.ok) {
+        setPushStatus(
+          `${result.message}${result.written?.length ? `: ${result.written.join(', ')}` : ''}`,
+          'ok'
+        );
+        context?.onPushed?.();
+      } else {
+        setPushStatus(
+          result.detail ? `${result.message} — ${result.detail}` : result.message,
+          'error'
+        );
+        push.disabled = false;
+        push.textContent = `Push ${overrideCount()} change${overrideCount() === 1 ? '' : 's'}`;
+      }
     });
-    hint.appendChild(reset);
+    actions.appendChild(push);
+    hint.appendChild(actions);
   }
+
+  // Clear previous status line
+  current.panel.querySelector('.ti-push-status')?.remove();
 
   const body = current.panel.querySelector('.ti-body');
   body.replaceChildren();
@@ -789,11 +862,64 @@ export function showInspectPanel(label, groups, context) {
 
     for (const prop of group.properties) {
       const displayProp = applyOverrideToProp(prop, group.selector, context?.registry);
-      section.appendChild(renderProperty(displayProp, group.selector));
+      section.appendChild(renderProperty(displayProp, group));
     }
 
     body.appendChild(section);
   }
+}
+
+function setPushStatus(text, kind) {
+  const panel = document.querySelector(`#${ROOT_ID} .ti-panel`);
+  if (!panel) return;
+  let status = panel.querySelector('.ti-push-status');
+  if (!status) {
+    status = document.createElement('div');
+    status.className = 'ti-push-status';
+    const hint = panel.querySelector('.ti-hint');
+    hint?.insertAdjacentElement('afterend', status);
+  }
+  status.textContent = text;
+  status.classList.remove('error', 'ok');
+  if (kind) status.classList.add(kind);
+}
+
+function groupFileMeta(group) {
+  const sourcePath = group.sourcePath || '';
+  let file = group.file || '';
+  if (sourcePath.startsWith('src/')) {
+    file = `apps/frontend/${sourcePath}`;
+  } else if (file && file !== 'inline' && file.endsWith('.css') && !file.includes('/')) {
+    // Basename only — writer can resolve via allowlisted index
+    file = file;
+  }
+  return { file, sourcePath };
+}
+
+function commitPropertyEdit(group, prop, next) {
+  const { file, sourcePath } = groupFileMeta(group);
+  previewPropertyOverride({
+    selector: group.selector,
+    property: prop.property,
+    from: prop._sourceValue ?? prop.value,
+    to: next,
+    file,
+    sourcePath,
+  });
+  panelContext?.onRefresh?.();
+}
+
+function commitTokenEdit(tokenName, from, to) {
+  if (!panelContext?.registry) return;
+  const entry = panelContext.registry.get(tokenName);
+  previewTokenOverride({
+    tokenName,
+    from,
+    to,
+    file: normalizeTokenFile(entry?.file || ''),
+    registry: panelContext.registry,
+  });
+  panelContext.onRefresh?.();
 }
 
 function applyOverrideToProp(prop, selector, registry) {
@@ -814,6 +940,7 @@ function applyOverrideToProp(prop, selector, registry) {
 
   return {
     ...prop,
+    _sourceValue: prop._sourceValue ?? prop.value,
     value: overridden,
     trees,
     swatch,
@@ -822,7 +949,8 @@ function applyOverrideToProp(prop, selector, registry) {
   };
 }
 
-function renderProperty(prop, selector) {
+function renderProperty(prop, group) {
+  const selector = group.selector;
   const wrap = document.createElement('div');
   wrap.className = 'ti-prop';
 
@@ -909,10 +1037,7 @@ function renderProperty(prop, selector) {
           allowCustom: true,
           valueKind: 'text',
           placeholder: 'e.g. 2.5rem 2fr 4fr 1fr',
-          onCommit: (next) => {
-            previewPropertyOverride(selector, prop.property, next);
-            panelContext?.onRefresh?.();
-          },
+          onCommit: (next) => commitPropertyEdit(group, prop, next),
         });
       });
       head.appendChild(tracksEdit);
@@ -940,11 +1065,12 @@ function renderProperty(prop, selector) {
             currentRef: propEdit.currentRef,
             onPick: (tokenName) => {
               const refs = extractVarRefs(prop.value);
-              const from = refs[0] || propEdit.currentRef;
+              const fromRef = refs[0] || propEdit.currentRef;
               const nextValue =
-                refs.length > 0 ? replaceVarRef(prop.value, from, tokenName) : `var(${tokenName})`;
-              previewPropertyOverride(selector, prop.property, nextValue);
-              panelContext.onRefresh?.();
+                refs.length > 0
+                  ? replaceVarRef(prop.value, fromRef, tokenName)
+                  : `var(${tokenName})`;
+              commitPropertyEdit(group, prop, nextValue);
             },
           });
         });
@@ -1006,10 +1132,7 @@ function renderProperty(prop, selector) {
             valueEditor.mode === 'size'
               ? 'e.g. 90%, fit-content, 2rem'
               : `New ${prop.property} value`,
-          onCommit: (next) => {
-            previewPropertyOverride(selector, prop.property, next);
-            panelContext?.onRefresh?.();
-          },
+          onCommit: (next) => commitPropertyEdit(group, prop, next),
         });
       });
       literalRow.appendChild(editBtn);
@@ -1078,8 +1201,10 @@ function renderTreeNode(node, depth) {
         options,
         currentRef: nodeEdit.currentRef,
         onPick: (tokenName) => {
-          previewTokenOverride(nodeEdit.tokenName, `var(${tokenName})`, panelContext.registry);
-          panelContext.onRefresh?.();
+          const declared =
+            panelContext.registry.get(nodeEdit.tokenName)?.value ||
+            `var(${nodeEdit.currentRef})`;
+          commitTokenEdit(nodeEdit.tokenName, declared, `var(${tokenName})`);
         },
       });
     });
@@ -1104,8 +1229,8 @@ function renderTreeNode(node, depth) {
         valueKind: kind,
         placeholder: kind === 'color' ? '#hex or rgb()' : kind === 'length' ? 'e.g. 1rem, 16px' : 'Raw value',
         onCommit: (next) => {
-          previewTokenOverride(node.name, next, panelContext.registry);
-          panelContext.onRefresh?.();
+          const declared = panelContext.registry.get(node.name)?.value || node.value;
+          commitTokenEdit(node.name, declared, next);
         },
       });
     });

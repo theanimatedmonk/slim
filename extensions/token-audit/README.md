@@ -57,7 +57,30 @@ Click **✎** to open a filtered dropdown:
 | Literal props (`display`, `flex-direction`, `width`…) | Keyword dropdown or size suggestions + custom input | Overrides that property on the selector |
 | `grid-template-columns` / `rows` | Full track list editor (edit `2fr 4fr 1fr` ratios, keep `var(...)` tracks) | Overrides the whole template on the selector |
 
-Changes are **preview-only** — nothing is written to disk. Use **Reset preview** or reload the page to clear them.
+### Push changes to the codebase (local writer)
+
+Preview edits stay in the browser until you push them with the **Push N changes** button.
+
+1. In a separate terminal (repo root):
+
+   ```bash
+   npm run token-inspect:writer
+   ```
+
+   This starts `http://127.0.0.1:7319` and only writes under `apps/frontend/src/**/*.css`.
+
+2. Make preview edits in the extension.
+
+3. Click **Push N changes** — the writer applies exact `from → to` replacements (CSS only). Vite HMR picks them up.
+
+Hard rules enforced by the writer:
+
+- Allowlisted paths only (`apps/frontend/src/**/*.css`)
+- Exact declaration match required (`property: from;` / `--token: from;`)
+- All-or-nothing: if any edit fails, nothing is written
+- No JS/TS/HTML files
+
+Use **Reset** to discard previews without writing.
 
 ## Shared core
 

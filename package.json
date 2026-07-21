@@ -15,7 +15,8 @@
     "audit:tokens": "node scripts/audit-design-tokens.mjs",
     "audit:tokens:strict": "node scripts/audit-design-tokens.mjs --strict",
     "sync:token-audit": "node scripts/sync-token-audit-core.mjs",
-    "prepare:token-audit": "npm run sync:token-audit"
+    "prepare:token-audit": "npm run sync:token-audit",
+    "token-inspect:writer": "node scripts/token-inspect-writer.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

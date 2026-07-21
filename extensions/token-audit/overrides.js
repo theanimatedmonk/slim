@@ -1,13 +1,37 @@
 const OVERRIDE_STYLE_ID = 'slimvg-token-inspect-overrides';
 
+/**
+ * @typedef {{
+ *   id: string,
+ *   kind: 'property' | 'token',
+ *   file: string,
+ *   sourcePath?: string,
+ *   selector?: string,
+ *   property?: string,
+ *   tokenName?: string,
+ *   from: string,
+ *   to: string,
+ * }} PendingEdit
+ */
+
 /** @type {Map<string, { selector: string, property: string, value: string }>} */
 const propertyOverrides = new Map();
 
 /** @type {Map<string, string>} */
 const tokenOverrides = new Map();
 
+/** @type {Map<string, PendingEdit>} */
+const pendingEdits = new Map();
+
 function propertyKey(selector, property) {
   return `${selector}\0${property}`;
+}
+
+function editKey(edit) {
+  if (edit.kind === 'property') {
+    return `property\0${edit.file || edit.sourcePath || ''}\0${edit.selector || ''}\0${edit.property}`;
+  }
+  return `token\0${edit.file || ''}\0${edit.tokenName}`;
 }
 
 function ensureOverrideSheet() {
@@ -24,39 +48,82 @@ function rebuildPropertySheet() {
   const el = ensureOverrideSheet();
   const rules = [];
   for (const { selector, property, value } of propertyOverrides.values()) {
-    // High specificity + !important so preview wins over source rules temporarily
     rules.push(`${selector} { ${property}: ${value} !important; }`);
   }
   el.textContent = rules.join('\n');
 }
 
-/**
- * Temporarily reassign a CSS property on a selector (e.g. background → different semantic).
- */
-export function previewPropertyOverride(selector, property, cssValue) {
-  propertyOverrides.set(propertyKey(selector, property), {
-    selector,
-    property,
-    value: cssValue,
+function rememberEdit(partial) {
+  const key = editKey(partial);
+  const existing = pendingEdits.get(key);
+  const from = existing ? existing.from : partial.from;
+  const to = partial.to;
+  if (from === to) {
+    pendingEdits.delete(key);
+    return;
+  }
+  pendingEdits.set(key, {
+    ...partial,
+    id: existing?.id || key,
+    from,
+    to,
   });
-  rebuildPropertySheet();
 }
 
 /**
- * Temporarily reassign a custom property on :root (e.g. semantic → different primitive).
- * Also updates the in-memory registry so trees refresh.
- * @param {string} tokenName
- * @param {string} cssValue e.g. `var(--primitive-brand-800)`
- * @param {Map<string, { value: string, file: string, layer: string }>} registry
+ * @param {{
+ *   selector: string,
+ *   property: string,
+ *   from: string,
+ *   to: string,
+ *   file?: string,
+ *   sourcePath?: string,
+ * }} input
  */
-export function previewTokenOverride(tokenName, cssValue, registry) {
-  document.documentElement.style.setProperty(tokenName, cssValue);
-  tokenOverrides.set(tokenName, cssValue);
+export function previewPropertyOverride(input) {
+  const { selector, property, from, to, file = '', sourcePath = '' } = input;
+  propertyOverrides.set(propertyKey(selector, property), {
+    selector,
+    property,
+    value: to,
+  });
+  rebuildPropertySheet();
+  rememberEdit({
+    kind: 'property',
+    file,
+    sourcePath,
+    selector,
+    property,
+    from,
+    to,
+  });
+}
+
+/**
+ * @param {{
+ *   tokenName: string,
+ *   from: string,
+ *   to: string,
+ *   file?: string,
+ *   registry: Map<string, { value: string, file: string, layer: string }>,
+ * }} input
+ */
+export function previewTokenOverride(input) {
+  const { tokenName, from, to, file = '', registry } = input;
+  document.documentElement.style.setProperty(tokenName, to);
+  tokenOverrides.set(tokenName, to);
   const existing = registry.get(tokenName);
   registry.set(tokenName, {
-    value: cssValue,
-    file: existing?.file ?? 'preview',
+    value: to,
+    file: existing?.file ?? file ?? 'preview',
     layer: existing?.layer ?? 'semantic',
+  });
+  rememberEdit({
+    kind: 'token',
+    file: file || existing?.file || '',
+    tokenName,
+    from,
+    to,
   });
 }
 
@@ -75,15 +142,37 @@ export function hasOverrides() {
 export function clearOverrides(registry) {
   for (const name of tokenOverrides.keys()) {
     document.documentElement.style.removeProperty(name);
-    // Registry values stay dirty until reload — acceptable for session preview
     void registry;
   }
   tokenOverrides.clear();
   propertyOverrides.clear();
+  pendingEdits.clear();
   const el = document.getElementById(OVERRIDE_STYLE_ID);
   if (el) el.textContent = '';
 }
 
 export function overrideCount() {
-  return propertyOverrides.size + tokenOverrides.size;
+  return pendingEdits.size;
+}
+
+/** @returns {PendingEdit[]} */
+export function listPendingEdits() {
+  return [...pendingEdits.values()];
+}
+
+/**
+ * Map token registry file labels to repo-ish paths for the writer.
+ * @param {string} file
+ */
+export function normalizeTokenFile(file) {
+  if (!file) return '';
+  if (file === 'semantic.css' || file.endsWith('/semantic.css')) {
+    return 'apps/frontend/src/styles/tokens/semantic.css';
+  }
+  if (file === 'primitives.css' || file.endsWith('/primitives.css')) {
+    return 'apps/frontend/src/styles/tokens/primitives.css';
+  }
+  if (file.startsWith('apps/frontend/')) return file;
+  if (file.startsWith('src/')) return `apps/frontend/${file}`;
+  return file;
 }

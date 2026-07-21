@@ -206,13 +206,15 @@
   function collectMatchedStyles(el, tokenRegistry2) {
     const groups = [];
     for (const sheet of document.styleSheets) {
-      let href = "inline";
+      let href = "";
       try {
-        href = sheet.href ?? "inline";
+        href = sheet.href ?? "";
       } catch {
         continue;
       }
-      const file = fileNameFromHref2(href);
+      const viteId = viteDevIdFromSheet(sheet);
+      const sourcePath = sourcePathFromHref(href) || sourcePathFromViteId(viteId);
+      const file = fileNameFromHref2(href) || fileNameFromPath(sourcePath) || (viteId ? fileNameFromPath(viteId) : "inline");
       for (const rule of walkStyleRules(sheet)) {
         const selector = rule.selectorText;
         if (!selector || !matchesElement(el, selector)) continue;
@@ -234,7 +236,7 @@
         }
         if (properties.length === 0) continue;
         properties.sort((a, b) => Number(b.hasTokens) - Number(a.hasTokens));
-        groups.push({ selector, file, properties });
+        groups.push({ selector, file, sourcePath, properties });
       }
     }
     if (el instanceof HTMLElement && el.style.length > 0) {
@@ -414,6 +416,45 @@
       return href.split("/").pop() || href;
     }
   }
+  function sourcePathFromHref(href) {
+    if (!href || href === "inline") return "";
+    try {
+      const pathname = new URL(href).pathname;
+      const idx = pathname.indexOf("/src/");
+      if (idx !== -1) return decodeURIComponent(pathname.slice(idx + 1));
+      return decodeURIComponent(pathname.replace(/^\//, ""));
+    } catch {
+      return "";
+    }
+  }
+  function viteDevIdFromSheet(sheet) {
+    try {
+      const node = sheet.ownerNode;
+      if (!(node instanceof HTMLElement)) return "";
+      return node.getAttribute("data-vite-dev-id") || node.dataset?.viteDevId || "";
+    } catch {
+      return "";
+    }
+  }
+  function sourcePathFromViteId(viteId) {
+    if (!viteId) return "";
+    const cleaned = viteId.split("?")[0].replace(/\\/g, "/");
+    const marker = "/src/";
+    const idx = cleaned.lastIndexOf(marker);
+    if (idx !== -1) return cleaned.slice(idx + 1);
+    if (cleaned.endsWith(".css")) {
+      const parts = cleaned.split("/");
+      const file = parts[parts.length - 1];
+      return file;
+    }
+    return "";
+  }
+  function fileNameFromPath(path) {
+    if (!path) return "";
+    const clean = path.split("?")[0];
+    const parts = clean.split("/");
+    return parts[parts.length - 1] || "";
+  }
   function colorSwatchFor(property, trees, computed, declared) {
     const isColorProp = /color|background|fill|stroke|border|outline|shadow/i.test(property) || property === "background";
     if (!isColorProp) return null;
@@ -445,8 +486,15 @@
   var OVERRIDE_STYLE_ID = "slimvg-token-inspect-overrides";
   var propertyOverrides = /* @__PURE__ */ new Map();
   var tokenOverrides = /* @__PURE__ */ new Map();
+  var pendingEdits = /* @__PURE__ */ new Map();
   function propertyKey(selector, property) {
     return `${selector}\0${property}`;
+  }
+  function editKey(edit) {
+    if (edit.kind === "property") {
+      return `property\0${edit.file || edit.sourcePath || ""}\0${edit.selector || ""}\0${edit.property}`;
+    }
+    return `token\0${edit.file || ""}\0${edit.tokenName}`;
   }
   function ensureOverrideSheet() {
     let el = document.getElementById(OVERRIDE_STYLE_ID);
@@ -465,29 +513,60 @@
     }
     el.textContent = rules.join("\n");
   }
-  function previewPropertyOverride(selector, property, cssValue) {
+  function rememberEdit(partial) {
+    const key = editKey(partial);
+    const existing = pendingEdits.get(key);
+    const from = existing ? existing.from : partial.from;
+    const to = partial.to;
+    if (from === to) {
+      pendingEdits.delete(key);
+      return;
+    }
+    pendingEdits.set(key, {
+      ...partial,
+      id: existing?.id || key,
+      from,
+      to
+    });
+  }
+  function previewPropertyOverride(input) {
+    const { selector, property, from, to, file = "", sourcePath = "" } = input;
     propertyOverrides.set(propertyKey(selector, property), {
       selector,
       property,
-      value: cssValue
+      value: to
     });
     rebuildPropertySheet();
+    rememberEdit({
+      kind: "property",
+      file,
+      sourcePath,
+      selector,
+      property,
+      from,
+      to
+    });
   }
-  function previewTokenOverride(tokenName, cssValue, registry) {
-    document.documentElement.style.setProperty(tokenName, cssValue);
-    tokenOverrides.set(tokenName, cssValue);
+  function previewTokenOverride(input) {
+    const { tokenName, from, to, file = "", registry } = input;
+    document.documentElement.style.setProperty(tokenName, to);
+    tokenOverrides.set(tokenName, to);
     const existing = registry.get(tokenName);
     registry.set(tokenName, {
-      value: cssValue,
-      file: existing?.file ?? "preview",
+      value: to,
+      file: existing?.file ?? file ?? "preview",
       layer: existing?.layer ?? "semantic"
+    });
+    rememberEdit({
+      kind: "token",
+      file: file || existing?.file || "",
+      tokenName,
+      from,
+      to
     });
   }
   function getPropertyOverride(selector, property) {
     return propertyOverrides.get(propertyKey(selector, property))?.value ?? null;
-  }
-  function hasOverrides() {
-    return propertyOverrides.size > 0 || tokenOverrides.size > 0;
   }
   function clearOverrides(registry) {
     for (const name of tokenOverrides.keys()) {
@@ -496,11 +575,27 @@
     }
     tokenOverrides.clear();
     propertyOverrides.clear();
+    pendingEdits.clear();
     const el = document.getElementById(OVERRIDE_STYLE_ID);
     if (el) el.textContent = "";
   }
   function overrideCount() {
-    return propertyOverrides.size + tokenOverrides.size;
+    return pendingEdits.size;
+  }
+  function listPendingEdits() {
+    return [...pendingEdits.values()];
+  }
+  function normalizeTokenFile(file) {
+    if (!file) return "";
+    if (file === "semantic.css" || file.endsWith("/semantic.css")) {
+      return "apps/frontend/src/styles/tokens/semantic.css";
+    }
+    if (file === "primitives.css" || file.endsWith("/primitives.css")) {
+      return "apps/frontend/src/styles/tokens/primitives.css";
+    }
+    if (file.startsWith("apps/frontend/")) return file;
+    if (file.startsWith("src/")) return `apps/frontend/${file}`;
+    return file;
   }
 
   // extensions/token-audit/property-options.js
@@ -699,6 +794,66 @@
       return "number";
     }
     return "text";
+  }
+
+  // extensions/token-audit/push.js
+  var WRITER_BASE = "http://127.0.0.1:7319";
+  async function pushEditsToWriter(edits) {
+    if (!edits.length) {
+      return { ok: false, message: "No pending edits" };
+    }
+    const payload = {
+      edits: edits.map((e) => {
+        if (e.kind === "property") {
+          return {
+            kind: "property",
+            file: e.file,
+            sourcePath: e.sourcePath,
+            selector: e.selector,
+            property: e.property,
+            from: e.from,
+            to: e.to
+          };
+        }
+        return {
+          kind: "token",
+          file: e.file,
+          tokenName: e.tokenName,
+          from: e.from,
+          to: e.to
+        };
+      })
+    };
+    let res;
+    try {
+      res = await fetch(`${WRITER_BASE}/apply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+    } catch {
+      return {
+        ok: false,
+        message: "Writer not reachable. Run `npm run token-inspect:writer` in the repo, then try again."
+      };
+    }
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok || !body.ok) {
+      const failed = (body.results || []).filter((r) => !r.ok);
+      const detail = failed.map((f) => f.error).filter(Boolean).join("; ");
+      return {
+        ok: false,
+        message: body.message || `Push failed (${res.status})`,
+        detail,
+        body
+      };
+    }
+    return {
+      ok: true,
+      message: body.message || "Pushed",
+      written: body.written || [],
+      body
+    };
   }
 
   // extensions/token-audit/token-options.js
@@ -937,7 +1092,13 @@
     #${ROOT_ID} .ti-hint-text {
       flex: 1;
     }
-    #${ROOT_ID} .ti-reset {
+    #${ROOT_ID} .ti-hint-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    #${ROOT_ID} .ti-reset,
+    #${ROOT_ID} .ti-push {
       border: 1px solid #e5e5e5;
       background: #fff;
       border-radius: 6px;
@@ -947,8 +1108,33 @@
       color: #525252;
       white-space: nowrap;
     }
-    #${ROOT_ID} .ti-reset:hover {
+    #${ROOT_ID} .ti-reset:hover,
+    #${ROOT_ID} .ti-push:hover {
       background: #f5f5f5;
+    }
+    #${ROOT_ID} .ti-push {
+      background: #171717;
+      border-color: #171717;
+      color: #fff;
+      font-weight: 600;
+    }
+    #${ROOT_ID} .ti-push:hover {
+      background: #404040;
+    }
+    #${ROOT_ID} .ti-push:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+    #${ROOT_ID} .ti-push-status {
+      font-size: 11px;
+      color: #525252;
+      padding: 0 14px 10px;
+    }
+    #${ROOT_ID} .ti-push-status.error {
+      color: #e11d48;
+    }
+    #${ROOT_ID} .ti-push-status.ok {
+      color: #059669;
     }
     #${ROOT_ID} .ti-group {
       padding: 10px 14px 12px;
@@ -1462,19 +1648,52 @@
     hint.replaceChildren();
     const hintText = document.createElement("span");
     hintText.className = "ti-hint-text";
-    hintText.textContent = hasOverrides() ? `Preview active (${overrideCount()}) \xB7 \u270E edits are temporary` : "Expand tokens \xB7 \u270E reassigns in-browser only (clears on reload)";
+    const count = overrideCount();
+    hintText.textContent = count ? `${count} pending edit(s) \xB7 preview only until Push` : "Expand tokens \xB7 \u270E preview \xB7 Push writes CSS via local writer";
     hint.appendChild(hintText);
-    if (hasOverrides() && context?.onReset) {
-      const reset = document.createElement("button");
-      reset.type = "button";
-      reset.className = "ti-reset";
-      reset.textContent = "Reset preview";
-      reset.addEventListener("click", (e) => {
+    if (count) {
+      const actions = document.createElement("div");
+      actions.className = "ti-hint-actions";
+      if (context?.onReset) {
+        const reset = document.createElement("button");
+        reset.type = "button";
+        reset.className = "ti-reset";
+        reset.textContent = "Reset";
+        reset.addEventListener("click", (e) => {
+          e.stopPropagation();
+          context.onReset();
+        });
+        actions.appendChild(reset);
+      }
+      const push = document.createElement("button");
+      push.type = "button";
+      push.className = "ti-push";
+      push.textContent = `Push ${count} change${count === 1 ? "" : "s"}`;
+      push.addEventListener("click", async (e) => {
         e.stopPropagation();
-        context.onReset();
+        push.disabled = true;
+        push.textContent = "Pushing\u2026";
+        setPushStatus("Writing CSS files\u2026", null);
+        const result = await pushEditsToWriter(listPendingEdits());
+        if (result.ok) {
+          setPushStatus(
+            `${result.message}${result.written?.length ? `: ${result.written.join(", ")}` : ""}`,
+            "ok"
+          );
+          context?.onPushed?.();
+        } else {
+          setPushStatus(
+            result.detail ? `${result.message} \u2014 ${result.detail}` : result.message,
+            "error"
+          );
+          push.disabled = false;
+          push.textContent = `Push ${overrideCount()} change${overrideCount() === 1 ? "" : "s"}`;
+        }
       });
-      hint.appendChild(reset);
+      actions.appendChild(push);
+      hint.appendChild(actions);
     }
+    current.panel.querySelector(".ti-push-status")?.remove();
     const body = current.panel.querySelector(".ti-body");
     body.replaceChildren();
     if (!groups.length) {
@@ -1499,10 +1718,58 @@
       section.appendChild(title);
       for (const prop of group.properties) {
         const displayProp = applyOverrideToProp(prop, group.selector, context?.registry);
-        section.appendChild(renderProperty(displayProp, group.selector));
+        section.appendChild(renderProperty(displayProp, group));
       }
       body.appendChild(section);
     }
+  }
+  function setPushStatus(text, kind) {
+    const panel = document.querySelector(`#${ROOT_ID} .ti-panel`);
+    if (!panel) return;
+    let status = panel.querySelector(".ti-push-status");
+    if (!status) {
+      status = document.createElement("div");
+      status.className = "ti-push-status";
+      const hint = panel.querySelector(".ti-hint");
+      hint?.insertAdjacentElement("afterend", status);
+    }
+    status.textContent = text;
+    status.classList.remove("error", "ok");
+    if (kind) status.classList.add(kind);
+  }
+  function groupFileMeta(group) {
+    const sourcePath = group.sourcePath || "";
+    let file = group.file || "";
+    if (sourcePath.startsWith("src/")) {
+      file = `apps/frontend/${sourcePath}`;
+    } else if (file && file !== "inline" && file.endsWith(".css") && !file.includes("/")) {
+      file = file;
+    }
+    return { file, sourcePath };
+  }
+  function commitPropertyEdit(group, prop, next) {
+    const { file, sourcePath } = groupFileMeta(group);
+    previewPropertyOverride({
+      selector: group.selector,
+      property: prop.property,
+      from: prop._sourceValue ?? prop.value,
+      to: next,
+      file,
+      sourcePath
+    });
+    panelContext?.onRefresh?.();
+  }
+  function commitTokenEdit(tokenName, from, to) {
+    if (!panelContext?.registry) return;
+    const entry = panelContext.registry.get(tokenName);
+    previewTokenOverride({
+      tokenName,
+      from,
+      to,
+      file: normalizeTokenFile(entry?.file || ""),
+      registry: panelContext.registry
+    });
+    panelContext.onRefresh?.();
   }
   function applyOverrideToProp(prop, selector, registry) {
     const overridden = getPropertyOverride(selector, prop.property);
@@ -1520,6 +1787,7 @@
     }
     return {
       ...prop,
+      _sourceValue: prop._sourceValue ?? prop.value,
       value: overridden,
       trees,
       swatch,
@@ -1527,7 +1795,8 @@
       preview: true
     };
   }
-  function renderProperty(prop, selector) {
+  function renderProperty(prop, group) {
+    const selector = group.selector;
     const wrap = document.createElement("div");
     wrap.className = "ti-prop";
     const row = document.createElement("div");
@@ -1597,10 +1866,7 @@
             allowCustom: true,
             valueKind: "text",
             placeholder: "e.g. 2.5rem 2fr 4fr 1fr",
-            onCommit: (next) => {
-              previewPropertyOverride(selector, prop.property, next);
-              panelContext?.onRefresh?.();
-            }
+            onCommit: (next) => commitPropertyEdit(group, prop, next)
           });
         });
         head.appendChild(tracksEdit);
@@ -1627,10 +1893,9 @@
               currentRef: propEdit.currentRef,
               onPick: (tokenName) => {
                 const refs = extractVarRefs(prop.value);
-                const from = refs[0] || propEdit.currentRef;
-                const nextValue = refs.length > 0 ? replaceVarRef(prop.value, from, tokenName) : `var(${tokenName})`;
-                previewPropertyOverride(selector, prop.property, nextValue);
-                panelContext.onRefresh?.();
+                const fromRef = refs[0] || propEdit.currentRef;
+                const nextValue = refs.length > 0 ? replaceVarRef(prop.value, fromRef, tokenName) : `var(${tokenName})`;
+                commitPropertyEdit(group, prop, nextValue);
               }
             });
           });
@@ -1677,10 +1942,7 @@
             allowCustom: valueEditor.mode !== "keywords",
             valueKind: valueEditor.mode === "color" ? "color" : valueEditor.mode === "size" ? "length" : detectRawValueKind(prop.value),
             placeholder: valueEditor.mode === "size" ? "e.g. 90%, fit-content, 2rem" : `New ${prop.property} value`,
-            onCommit: (next) => {
-              previewPropertyOverride(selector, prop.property, next);
-              panelContext?.onRefresh?.();
-            }
+            onCommit: (next) => commitPropertyEdit(group, prop, next)
           });
         });
         literalRow.appendChild(editBtn);
@@ -1736,8 +1998,8 @@
           options,
           currentRef: nodeEdit.currentRef,
           onPick: (tokenName2) => {
-            previewTokenOverride(nodeEdit.tokenName, `var(${tokenName2})`, panelContext.registry);
-            panelContext.onRefresh?.();
+            const declared = panelContext.registry.get(nodeEdit.tokenName)?.value || `var(${nodeEdit.currentRef})`;
+            commitTokenEdit(nodeEdit.tokenName, declared, `var(${tokenName2})`);
           }
         });
       });
@@ -1760,8 +2022,8 @@
           valueKind: kind,
           placeholder: kind === "color" ? "#hex or rgb()" : kind === "length" ? "e.g. 1rem, 16px" : "Raw value",
           onCommit: (next) => {
-            previewTokenOverride(node.name, next, panelContext.registry);
-            panelContext.onRefresh?.();
+            const declared = panelContext.registry.get(node.name)?.value || node.value;
+            commitTokenEdit(node.name, declared, next);
           }
         });
       });
@@ -1813,6 +2075,13 @@
         clearOverrides(tokenRegistry);
         tokenRegistry = null;
         ensureRegistry().then(() => refreshSelectedPanel());
+      },
+      onPushed: () => {
+        clearOverrides(tokenRegistry);
+        tokenRegistry = null;
+        setTimeout(() => {
+          ensureRegistry().then(() => refreshSelectedPanel());
+        }, 300);
       }
     });
   }

@@ -10,13 +10,18 @@ export function collectMatchedStyles(el, tokenRegistry) {
   const groups = [];
 
   for (const sheet of document.styleSheets) {
-    let href = 'inline';
+    let href = '';
     try {
-      href = sheet.href ?? 'inline';
+      href = sheet.href ?? '';
     } catch {
       continue;
     }
-    const file = fileNameFromHref(href);
+
+    // Vite injects imported CSS as <style data-vite-dev-id=".../AssetRow.css">
+    // with no href — without this, edits get tagged as "inline" and Push fails.
+    const viteId = viteDevIdFromSheet(sheet);
+    const sourcePath = sourcePathFromHref(href) || sourcePathFromViteId(viteId);
+    const file = fileNameFromHref(href) || fileNameFromPath(sourcePath) || (viteId ? fileNameFromPath(viteId) : 'inline');
 
     for (const rule of walkStyleRules(sheet)) {
       const selector = rule.selectorText;
@@ -50,7 +55,7 @@ export function collectMatchedStyles(el, tokenRegistry) {
       // Prefer token-bearing props first within the group
       properties.sort((a, b) => Number(b.hasTokens) - Number(a.hasTokens));
 
-      groups.push({ selector, file, properties });
+      groups.push({ selector, file, sourcePath, properties });
     }
   }
 
@@ -259,6 +264,56 @@ function fileNameFromHref(href) {
   } catch {
     return href.split('/').pop() || href;
   }
+}
+
+/** Vite path like /src/components/AssetRow.css → src/components/AssetRow.css */
+function sourcePathFromHref(href) {
+  if (!href || href === 'inline') return '';
+  try {
+    const pathname = new URL(href).pathname;
+    const idx = pathname.indexOf('/src/');
+    if (idx !== -1) return decodeURIComponent(pathname.slice(idx + 1));
+    return decodeURIComponent(pathname.replace(/^\//, ''));
+  } catch {
+    return '';
+  }
+}
+
+function viteDevIdFromSheet(sheet) {
+  try {
+    const node = sheet.ownerNode;
+    if (!(node instanceof HTMLElement)) return '';
+    return node.getAttribute('data-vite-dev-id') || node.dataset?.viteDevId || '';
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * data-vite-dev-id is often an absolute filesystem path or a URL-like id ending in .css
+ * e.g. /Users/.../apps/frontend/src/components/AssetRow.css
+ *    or /Users/.../apps/frontend/src/components/AssetRow.css?type=style&lang.css
+ */
+function sourcePathFromViteId(viteId) {
+  if (!viteId) return '';
+  const cleaned = viteId.split('?')[0].replace(/\\/g, '/');
+  const marker = '/src/';
+  const idx = cleaned.lastIndexOf(marker);
+  if (idx !== -1) return cleaned.slice(idx + 1); // src/components/AssetRow.css
+  if (cleaned.endsWith('.css')) {
+    const parts = cleaned.split('/');
+    const file = parts[parts.length - 1];
+    // Prefer full src-relative if present elsewhere
+    return file;
+  }
+  return '';
+}
+
+function fileNameFromPath(path) {
+  if (!path) return '';
+  const clean = path.split('?')[0];
+  const parts = clean.split('/');
+  return parts[parts.length - 1] || '';
 }
 
 function colorSwatchFor(property, trees, computed, declared) {

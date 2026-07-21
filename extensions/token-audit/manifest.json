@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
   "name": "SlimVG Token Inspect",
-  "version": "2.0.0",
-  "description": "Inspect page elements and expand design-token trees (component → semantic → primitive).",
+  "version": "2.1.0",
+  "description": "Inspect page elements, preview token edits, and push CSS changes via the local writer.",
   "permissions": ["storage", "activeTab", "scripting"],
   "host_permissions": [
     "http://localhost/*",
-    "http://127.0.0.1/*"
+    "http://127.0.0.1/*",
+    "http://127.0.0.1:7319/*"
   ],
   "action": {
     "default_title": "Token Inspect",
