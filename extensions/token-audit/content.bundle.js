@@ -1028,7 +1028,7 @@
       position: fixed;
       top: 16px;
       right: 16px;
-      width: min(360px, calc(100vw - 32px));
+      width: min(420px, calc(100vw - 32px));
       max-height: calc(100vh - 32px);
       overflow-x: hidden;
       overflow-y: auto;
