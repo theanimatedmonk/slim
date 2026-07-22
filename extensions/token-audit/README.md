@@ -42,11 +42,11 @@ The **npm audit** (`npm run audit:tokens`) stays separate for CI. This extension
 | Property row | Declared CSS value |
 | Token chip + ▸ | Click to expand semantic → primitive → hex/rem |
 | Layer badges | `component` / `semantic` / `primitive` |
-| ✎ | Reassign token (temporary browser preview) |
+| Edit icon (on hover) | Reassign / edit value (temporary browser preview) |
 
 ## Reassign tokens (temporary preview)
 
-Click **✎** to open a filtered dropdown:
+Hover an editable value to reveal the edit icon, then click it:
 
 | Edit point | Dropdown | Effect |
 |------------|----------|--------|

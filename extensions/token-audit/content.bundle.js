@@ -1213,20 +1213,41 @@
     #${ROOT_ID} .ti-token-btn[aria-expanded="true"] .ti-chevron {
       transform: rotate(90deg);
     }
+    #${ROOT_ID} .ti-editable {
+      border-radius: 6px;
+    }
     #${ROOT_ID} .ti-edit {
       border: none;
       background: transparent;
-      color: #a3a3a3;
+      color: #737373;
       cursor: pointer;
-      padding: 0 2px;
-      font-size: 12px;
-      line-height: 1;
+      padding: 0;
+      width: 22px;
+      height: 22px;
+      display: inline-grid;
+      place-items: center;
       border-radius: 4px;
       flex-shrink: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.12s ease, color 0.12s ease, background 0.12s ease;
     }
-    #${ROOT_ID} .ti-edit:hover {
+    #${ROOT_ID} .ti-edit svg {
+      width: 14px;
+      height: 14px;
+      display: block;
+    }
+    #${ROOT_ID} .ti-editable:hover .ti-edit,
+    #${ROOT_ID} .ti-editable:focus-within .ti-edit {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #${ROOT_ID} .ti-edit:hover,
+    #${ROOT_ID} .ti-edit:focus-visible {
       color: #2563eb;
       background: #eff6ff;
+      opacity: 1;
+      pointer-events: auto;
     }
     #${ROOT_ID} .ti-literal {
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -1426,7 +1447,7 @@
         <button type="button" class="ti-close" aria-label="Close">\xD7</button>
       </div>
       <div class="ti-hint">
-        <span class="ti-hint-text">Expand tokens \xB7 \u270E reassigns in-browser only (clears on reload)</span>
+        <span class="ti-hint-text">Hover a value to edit \xB7 Push writes CSS via local writer</span>
       </div>
       <div class="ti-body"></div>
     </aside>
@@ -1639,6 +1660,16 @@
     if (options.includes(trimmed)) return options;
     return [trimmed, ...options];
   }
+  var EDIT_ICON_SVG = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M2 14V11.1667L10.8 2.38333C10.9333 2.26111 11.0807 2.16667 11.242 2.1C11.4033 2.03333 11.5727 2 11.75 2C11.9273 2 12.0996 2.03333 12.2667 2.1C12.4338 2.16667 12.5782 2.26667 12.7 2.4L13.6167 3.33333C13.75 3.45556 13.8473 3.6 13.9087 3.76667C13.97 3.93333 14.0004 4.1 14 4.26667C14 4.44444 13.9696 4.614 13.9087 4.77533C13.8478 4.93667 13.7504 5.08378 13.6167 5.21667L4.83333 14H2ZM11.7333 5.2L12.6667 4.26667L11.7333 3.33333L10.8 4.26667L11.7333 5.2Z" fill="currentColor"/></svg>';
+  function createEditButton(title) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "ti-edit";
+    btn.title = title;
+    btn.setAttribute("aria-label", title);
+    btn.innerHTML = EDIT_ICON_SVG;
+    return btn;
+  }
   function showInspectPanel(label, groups, context) {
     const current = ensureInspectorUi();
     panelContext = context ?? null;
@@ -1649,7 +1680,7 @@
     const hintText = document.createElement("span");
     hintText.className = "ti-hint-text";
     const count = overrideCount();
-    hintText.textContent = count ? `${count} pending edit(s) \xB7 preview only until Push` : "Expand tokens \xB7 \u270E preview \xB7 Push writes CSS via local writer";
+    hintText.textContent = count ? `${count} pending edit(s) \xB7 preview only until Push` : "Hover a value to edit \xB7 Push writes CSS via local writer";
     hint.appendChild(hintText);
     if (count) {
       const actions = document.createElement("div");
@@ -1809,6 +1840,7 @@
     if (prop.trees?.length) {
       const primary = prop.trees[0];
       const head = document.createElement("div");
+      head.className = "ti-editable";
       head.style.display = "flex";
       head.style.alignItems = "center";
       head.style.gap = "4px";
@@ -1852,11 +1884,7 @@
       head.appendChild(btn);
       const valueEditor = getPropertyValueEditor(prop.property);
       if (prefersFullValueEdit(prop.property) && valueEditor) {
-        const tracksEdit = document.createElement("button");
-        tracksEdit.type = "button";
-        tracksEdit.className = "ti-edit";
-        tracksEdit.title = "Edit grid tracks / ratios";
-        tracksEdit.textContent = "\u270E";
+        const tracksEdit = createEditButton("Edit grid tracks / ratios");
         tracksEdit.addEventListener("click", (event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -1873,11 +1901,7 @@
       } else {
         const propEdit = editableTargetForProperty(prop);
         if (propEdit && panelContext?.registry) {
-          const editBtn = document.createElement("button");
-          editBtn.type = "button";
-          editBtn.className = "ti-edit";
-          editBtn.title = `Reassign ${propEdit.optionLayer} token`;
-          editBtn.textContent = "\u270E";
+          const editBtn = createEditButton(`Reassign ${propEdit.optionLayer} token`);
           editBtn.addEventListener("click", (event) => {
             event.preventDefault();
             event.stopPropagation();
@@ -1928,11 +1952,10 @@
       }
       const valueEditor = getPropertyValueEditor(prop.property);
       if (valueEditor) {
-        const editBtn = document.createElement("button");
-        editBtn.type = "button";
-        editBtn.className = "ti-edit";
-        editBtn.title = valueEditor.mode === "keywords" ? `Change ${prop.property}` : `Edit ${prop.property}`;
-        editBtn.textContent = "\u270E";
+        literalRow.classList.add("ti-editable");
+        const editBtn = createEditButton(
+          valueEditor.mode === "keywords" ? `Change ${prop.property}` : `Edit ${prop.property}`
+        );
         editBtn.addEventListener("click", (event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -1981,11 +2004,10 @@
     }
     const nodeEdit = editableTargetForNode(node);
     if (nodeEdit && panelContext?.registry) {
-      const editBtn = document.createElement("button");
-      editBtn.type = "button";
-      editBtn.className = "ti-edit";
-      editBtn.title = nodeEdit.optionLayer === "primitive" ? "Reassign primitive" : "Reassign semantic";
-      editBtn.textContent = "\u270E";
+      line.classList.add("ti-editable");
+      const editBtn = createEditButton(
+        nodeEdit.optionLayer === "primitive" ? "Reassign primitive" : "Reassign semantic"
+      );
       editBtn.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -2006,11 +2028,8 @@
       line.appendChild(editBtn);
     }
     if (node.layer === "primitive" && node.terminal && panelContext?.registry) {
-      const rawEdit = document.createElement("button");
-      rawEdit.type = "button";
-      rawEdit.className = "ti-edit";
-      rawEdit.title = "Edit raw value";
-      rawEdit.textContent = "\u270E";
+      line.classList.add("ti-editable");
+      const rawEdit = createEditButton("Edit raw value");
       rawEdit.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
