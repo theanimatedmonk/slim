@@ -1204,6 +1204,14 @@
       white-space: nowrap;
       max-width: 180px;
     }
+    #${ROOT_ID} .ti-token-chip.wide {
+      max-width: 240px;
+    }
+    #${ROOT_ID} .ti-token-sep {
+      color: #a3a3a3;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
     #${ROOT_ID} .ti-chevron {
       color: #a3a3a3;
       font-size: 10px;
@@ -1670,6 +1678,45 @@
     btn.innerHTML = EDIT_ICON_SVG;
     return btn;
   }
+  function appendPropertyChips(host, prop) {
+    if (prefersFullValueEdit(prop.property)) {
+      const chip = document.createElement("span");
+      chip.className = "ti-token-chip wide";
+      chip.textContent = prop.value;
+      chip.title = prop.value;
+      host.appendChild(chip);
+      return;
+    }
+    const refs = extractVarRefs(prop.value);
+    if (refs.length === 0) {
+      const chip = document.createElement("span");
+      chip.className = "ti-token-chip";
+      chip.textContent = prop.trees?.[0]?.name || prop.value;
+      chip.title = prop.value;
+      host.appendChild(chip);
+      return;
+    }
+    refs.forEach((ref, index) => {
+      if (index > 0) {
+        const sep = document.createElement("span");
+        sep.className = "ti-token-sep";
+        sep.textContent = "\xB7";
+        host.appendChild(sep);
+      }
+      const chip = document.createElement("span");
+      chip.className = "ti-token-chip";
+      const tree = prop.trees?.[index];
+      const terminal = tree ? terminalValue(tree) : "";
+      if (refs.length > 1 && terminal && !terminal.startsWith("var(")) {
+        chip.textContent = `${ref} = ${terminal}`;
+        chip.classList.add("wide");
+      } else {
+        chip.textContent = ref;
+      }
+      chip.title = tree ? `${ref}${terminal ? ` \u2192 ${terminal}` : ""}` : prop.value;
+      host.appendChild(chip);
+    });
+  }
   function showInspectPanel(label, groups, context) {
     const current = ensureInspectorUi();
     panelContext = context ?? null;
@@ -1838,7 +1885,6 @@
     row.appendChild(name);
     const valueCell = document.createElement("div");
     if (prop.trees?.length) {
-      const primary = prop.trees[0];
       const head = document.createElement("div");
       head.className = "ti-editable";
       head.style.display = "flex";
@@ -1848,20 +1894,13 @@
       btn.type = "button";
       btn.className = "ti-token-btn";
       btn.setAttribute("aria-expanded", "false");
-      if (prop.swatch) {
+      if (prop.swatch && prop.trees.length === 1) {
         const swatch = document.createElement("span");
         swatch.className = "ti-swatch";
         swatch.style.background = prop.swatch;
         btn.appendChild(swatch);
       }
-      const chip = document.createElement("span");
-      chip.className = "ti-token-chip";
-      chip.textContent = prefersFullValueEdit(prop.property) ? prop.value : extractVarRefs(prop.value)[0] || primary.name;
-      chip.title = prop.value;
-      if (prefersFullValueEdit(prop.property)) {
-        chip.style.maxWidth = "220px";
-      }
-      btn.appendChild(chip);
+      appendPropertyChips(btn, prop);
       const chevron = document.createElement("span");
       chevron.className = "ti-chevron";
       chevron.textContent = "\u25B8";
