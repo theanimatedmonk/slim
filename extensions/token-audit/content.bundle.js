@@ -1030,7 +1030,8 @@
       right: 16px;
       width: min(360px, calc(100vw - 32px));
       max-height: calc(100vh - 32px);
-      overflow: auto;
+      overflow-x: hidden;
+      overflow-y: auto;
       pointer-events: auto;
       background: #fff;
       color: #171717;
@@ -1158,7 +1159,7 @@
     }
     #${ROOT_ID} .ti-prop-row {
       display: grid;
-      grid-template-columns: auto 1fr;
+      grid-template-columns: auto minmax(0, 1fr);
       gap: 8px;
       align-items: start;
       min-height: 22px;
@@ -1169,8 +1170,12 @@
       padding-top: 2px;
       min-width: 4.5rem;
     }
+    #${ROOT_ID} .ti-prop-row > div {
+      min-width: 0;
+    }
     #${ROOT_ID} .ti-token-btn {
       display: inline-flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 6px;
       border: none;
@@ -1181,6 +1186,7 @@
       text-align: left;
       color: #171717;
       max-width: 100%;
+      min-width: 0;
     }
     #${ROOT_ID} .ti-token-btn:hover .ti-token-chip {
       background: #f0f0f0;
@@ -1199,13 +1205,13 @@
       border-radius: 6px;
       padding: 2px 6px;
       color: #262626;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 180px;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      max-width: 100%;
     }
     #${ROOT_ID} .ti-token-chip.wide {
-      max-width: 240px;
+      max-width: 100%;
     }
     #${ROOT_ID} .ti-token-sep {
       color: #a3a3a3;
@@ -1222,7 +1228,21 @@
       transform: rotate(90deg);
     }
     #${ROOT_ID} .ti-editable {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px;
       border-radius: 6px;
+      min-width: 0;
+      max-width: 100%;
+    }
+    #${ROOT_ID} .ti-literal-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      max-width: 100%;
     }
     #${ROOT_ID} .ti-edit {
       border: none;
@@ -1415,12 +1435,6 @@
     }
     #${ROOT_ID} .ti-apply:hover {
       background: #404040;
-    }
-    #${ROOT_ID} .ti-literal-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
     }
   `;
     document.documentElement.appendChild(style);
@@ -1887,9 +1901,6 @@
     if (prop.trees?.length) {
       const head = document.createElement("div");
       head.className = "ti-editable";
-      head.style.display = "flex";
-      head.style.alignItems = "center";
-      head.style.gap = "4px";
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "ti-token-btn";
