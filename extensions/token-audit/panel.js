@@ -211,22 +211,25 @@ function ensureStyles() {
     }
     #${ROOT_ID} .ti-prop-row {
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
-      gap: 8px;
+      grid-template-columns: 1fr 2fr;
+      column-gap: 4px;
       align-items: start;
       min-height: 22px;
     }
     #${ROOT_ID} .ti-prop-name {
       color: #737373;
       font-size: 12px;
+      line-height: 1.4;
       padding-top: 2px;
-      min-width: 4.5rem;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     #${ROOT_ID} .ti-prop-row > div {
       min-width: 0;
+      max-width: 100%;
     }
     #${ROOT_ID} .ti-token-btn {
-      display: inline-flex;
+      display: flex;
       flex-wrap: wrap;
       align-items: center;
       gap: 6px;
@@ -237,6 +240,7 @@ function ensureStyles() {
       font: inherit;
       text-align: left;
       color: #171717;
+      width: 100%;
       max-width: 100%;
       min-width: 0;
     }
@@ -285,6 +289,7 @@ function ensureStyles() {
       align-items: center;
       gap: 4px;
       border-radius: 6px;
+      width: 100%;
       min-width: 0;
       max-width: 100%;
     }
@@ -293,6 +298,7 @@ function ensureStyles() {
       flex-wrap: wrap;
       align-items: center;
       gap: 6px;
+      width: 100%;
       min-width: 0;
       max-width: 100%;
     }
