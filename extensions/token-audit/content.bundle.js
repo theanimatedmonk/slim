@@ -206,6 +206,7 @@
   function collectMatchedStyles(el, tokenRegistry2) {
     const groups = [];
     for (const sheet of document.styleSheets) {
+      if (isInspectorStylesheet(sheet)) continue;
       let href = "";
       try {
         href = sheet.href ?? "";
@@ -259,7 +260,38 @@
         groups.unshift({ selector: "element.style", file: "inline", properties });
       }
     }
-    return prioritizeGroups(groups, el);
+    return prioritizeGroups(mergeGroupsBySelector(groups), el);
+  }
+  function mergeGroupsBySelector(groups) {
+    const merged = /* @__PURE__ */ new Map();
+    const order = [];
+    for (const group of groups) {
+      const key = `${group.selector}\0${group.file}\0${group.sourcePath || ""}`;
+      if (!merged.has(key)) {
+        merged.set(key, {
+          selector: group.selector,
+          file: group.file,
+          sourcePath: group.sourcePath,
+          byProp: /* @__PURE__ */ new Map()
+        });
+        order.push(key);
+      }
+      const target = merged.get(key);
+      for (const prop of group.properties) {
+        target.byProp.set(prop.property, prop);
+      }
+    }
+    return order.map((key) => {
+      const entry = merged.get(key);
+      const properties = [...entry.byProp.values()];
+      properties.sort((a, b) => Number(b.hasTokens) - Number(a.hasTokens));
+      return {
+        selector: entry.selector,
+        file: entry.file,
+        sourcePath: entry.sourcePath,
+        properties
+      };
+    });
   }
   function prioritizeGroups(groups, el) {
     const classList = el instanceof Element ? [...el.classList] : [];
@@ -434,6 +466,16 @@
       return node.getAttribute("data-vite-dev-id") || node.dataset?.viteDevId || "";
     } catch {
       return "";
+    }
+  }
+  function isInspectorStylesheet(sheet) {
+    try {
+      const node = sheet.ownerNode;
+      if (!(node instanceof HTMLElement)) return false;
+      const id = node.id || "";
+      return id === "slimvg-token-inspect-overrides" || id === "slimvg-token-inspect-style" || id === "slimvg-token-inspect-root";
+    } catch {
+      return false;
     }
   }
   function sourcePathFromViteId(viteId) {

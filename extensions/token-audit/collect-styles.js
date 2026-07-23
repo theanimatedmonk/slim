@@ -10,6 +10,9 @@ export function collectMatchedStyles(el, tokenRegistry) {
   const groups = [];
 
   for (const sheet of document.styleSheets) {
+    // Skip Token Inspect's own preview/override sheets (they re-list the same selectors)
+    if (isInspectorStylesheet(sheet)) continue;
+
     let href = '';
     try {
       href = sheet.href ?? '';
@@ -81,8 +84,49 @@ export function collectMatchedStyles(el, tokenRegistry) {
     }
   }
 
-  // Most specific / later rules last in DevTools; reverse so primary class is first-ish
-  return prioritizeGroups(groups, el);
+  // Merge duplicate selectors from the same file (e.g. base `.asset-row` +
+  // `@media { .asset-row { ... } }`) into one panel section. Later rules win
+  // for the same property (CSS cascade).
+  return prioritizeGroups(mergeGroupsBySelector(groups), el);
+}
+
+/**
+ * @param {Array<{ selector: string, file: string, sourcePath?: string, properties: Array<any> }>} groups
+ */
+function mergeGroupsBySelector(groups) {
+  /** @type {Map<string, { selector: string, file: string, sourcePath?: string, byProp: Map<string, any> }>} */
+  const merged = new Map();
+  const order = [];
+
+  for (const group of groups) {
+    const key = `${group.selector}\0${group.file}\0${group.sourcePath || ''}`;
+    if (!merged.has(key)) {
+      merged.set(key, {
+        selector: group.selector,
+        file: group.file,
+        sourcePath: group.sourcePath,
+        byProp: new Map(),
+      });
+      order.push(key);
+    }
+    const target = merged.get(key);
+    for (const prop of group.properties) {
+      // Walk order is stylesheet order — later declaration overrides earlier
+      target.byProp.set(prop.property, prop);
+    }
+  }
+
+  return order.map((key) => {
+    const entry = merged.get(key);
+    const properties = [...entry.byProp.values()];
+    properties.sort((a, b) => Number(b.hasTokens) - Number(a.hasTokens));
+    return {
+      selector: entry.selector,
+      file: entry.file,
+      sourcePath: entry.sourcePath,
+      properties,
+    };
+  });
 }
 
 function prioritizeGroups(groups, el) {
@@ -286,6 +330,21 @@ function viteDevIdFromSheet(sheet) {
     return node.getAttribute('data-vite-dev-id') || node.dataset?.viteDevId || '';
   } catch {
     return '';
+  }
+}
+
+function isInspectorStylesheet(sheet) {
+  try {
+    const node = sheet.ownerNode;
+    if (!(node instanceof HTMLElement)) return false;
+    const id = node.id || '';
+    return (
+      id === 'slimvg-token-inspect-overrides' ||
+      id === 'slimvg-token-inspect-style' ||
+      id === 'slimvg-token-inspect-root'
+    );
+  } catch {
+    return false;
   }
 }
 
