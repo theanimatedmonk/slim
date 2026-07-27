@@ -1320,8 +1320,8 @@
     }
     #${ROOT_ID} .ti-edit:hover,
     #${ROOT_ID} .ti-edit:focus-visible {
-      color: #2563eb;
-      background: #eff6ff;
+      color: #171717;
+      background: #f0f0f0;
       opacity: 1;
       pointer-events: auto;
     }
