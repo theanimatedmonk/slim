@@ -640,6 +640,175 @@
     return file;
   }
 
+  // extensions/token-audit/design-pane.js
+  var DESIGN_SECTIONS = [
+    {
+      id: "layout",
+      title: "Layout",
+      fields: [
+        { property: "display", label: "Display" },
+        { property: "flex-direction", label: "Direction" },
+        { property: "flex-wrap", label: "Wrap" },
+        { property: "align-items", label: "Align" },
+        { property: "align-content", label: "Align content" },
+        { property: "justify-content", label: "Justify" },
+        { property: "justify-items", label: "Justify items" },
+        { property: "gap", label: "Gap" },
+        { property: "row-gap", label: "Row gap" },
+        { property: "column-gap", label: "Column gap" },
+        { property: "grid-template-columns", label: "Columns" },
+        { property: "grid-template-rows", label: "Rows" },
+        { property: "place-items", label: "Place" },
+        { property: "position", label: "Position" },
+        { property: "inset", label: "Inset" },
+        { property: "top", label: "Top" },
+        { property: "right", label: "Right" },
+        { property: "bottom", label: "Bottom" },
+        { property: "left", label: "Left" },
+        { property: "z-index", label: "Z-index" },
+        { property: "overflow", label: "Overflow" },
+        { property: "overflow-x", label: "Overflow X" },
+        { property: "overflow-y", label: "Overflow Y" }
+      ]
+    },
+    {
+      id: "spacing",
+      title: "Spacing",
+      fields: [
+        { property: "padding", label: "Padding" },
+        { property: "padding-top", label: "Padding top" },
+        { property: "padding-right", label: "Padding right" },
+        { property: "padding-bottom", label: "Padding bottom" },
+        { property: "padding-left", label: "Padding left" },
+        { property: "padding-block", label: "Padding block" },
+        { property: "padding-inline", label: "Padding inline" },
+        { property: "margin", label: "Margin" },
+        { property: "margin-top", label: "Margin top" },
+        { property: "margin-right", label: "Margin right" },
+        { property: "margin-bottom", label: "Margin bottom" },
+        { property: "margin-left", label: "Margin left" },
+        { property: "margin-block", label: "Margin block" },
+        { property: "margin-inline", label: "Margin inline" }
+      ]
+    },
+    {
+      id: "size",
+      title: "Size",
+      fields: [
+        { property: "width", label: "Width" },
+        { property: "height", label: "Height" },
+        { property: "min-width", label: "Min width" },
+        { property: "max-width", label: "Max width" },
+        { property: "min-height", label: "Min height" },
+        { property: "max-height", label: "Max height" },
+        { property: "flex", label: "Flex" },
+        { property: "flex-grow", label: "Grow" },
+        { property: "flex-shrink", label: "Shrink" },
+        { property: "flex-basis", label: "Basis" },
+        { property: "aspect-ratio", label: "Aspect" },
+        { property: "box-sizing", label: "Box sizing" }
+      ]
+    },
+    {
+      id: "fill",
+      title: "Fill",
+      fields: [
+        { property: "background", label: "Fill" },
+        { property: "background-color", label: "Fill color" },
+        { property: "background-image", label: "Fill image" },
+        { property: "color", label: "Text" },
+        { property: "opacity", label: "Opacity" },
+        { property: "fill", label: "SVG fill" }
+      ]
+    },
+    {
+      id: "stroke",
+      title: "Stroke",
+      fields: [
+        { property: "border", label: "Stroke" },
+        { property: "border-width", label: "Weight" },
+        { property: "border-style", label: "Style" },
+        { property: "border-color", label: "Color" },
+        { property: "border-top", label: "Top" },
+        { property: "border-right", label: "Right" },
+        { property: "border-bottom", label: "Bottom" },
+        { property: "border-left", label: "Left" },
+        { property: "outline", label: "Outline" },
+        { property: "stroke", label: "SVG stroke" },
+        { property: "stroke-width", label: "SVG weight" }
+      ]
+    },
+    {
+      id: "corner",
+      title: "Corner",
+      fields: [
+        { property: "border-radius", label: "Radius" },
+        { property: "border-top-left-radius", label: "Top left" },
+        { property: "border-top-right-radius", label: "Top right" },
+        { property: "border-bottom-right-radius", label: "Bottom right" },
+        { property: "border-bottom-left-radius", label: "Bottom left" }
+      ]
+    },
+    {
+      id: "effects",
+      title: "Effects",
+      fields: [
+        { property: "box-shadow", label: "Shadow" },
+        { property: "filter", label: "Filter" },
+        { property: "backdrop-filter", label: "Backdrop" },
+        { property: "transition", label: "Transition" },
+        { property: "transform", label: "Transform" },
+        { property: "cursor", label: "Cursor" },
+        { property: "pointer-events", label: "Pointer" },
+        { property: "visibility", label: "Visibility" }
+      ]
+    },
+    {
+      id: "type",
+      title: "Typography",
+      fields: [
+        { property: "font-family", label: "Family" },
+        { property: "font-size", label: "Size" },
+        { property: "font-weight", label: "Weight" },
+        { property: "font-style", label: "Style" },
+        { property: "line-height", label: "Line height" },
+        { property: "letter-spacing", label: "Letter spacing" },
+        { property: "text-align", label: "Align" },
+        { property: "text-decoration", label: "Decoration" },
+        { property: "text-transform", label: "Transform" },
+        { property: "white-space", label: "Whitespace" }
+      ]
+    }
+  ];
+  function flattenWinningProps(groups, applyOverride) {
+    const map = /* @__PURE__ */ new Map();
+    for (const group of groups) {
+      for (const prop of group.properties) {
+        map.set(prop.property, {
+          prop: applyOverride(prop, group.selector),
+          group
+        });
+      }
+    }
+    return map;
+  }
+  function listPresentDesignSections(winning) {
+    return DESIGN_SECTIONS.map((section) => ({
+      id: section.id,
+      title: section.title,
+      rows: section.fields.map((field) => {
+        const hit = winning.get(field.property);
+        if (!hit) return null;
+        return {
+          property: field.property,
+          label: field.label,
+          prop: hit.prop,
+          group: hit.group
+        };
+      }).filter(Boolean)
+    })).filter((section) => section.rows.length > 0);
+  }
+
   // extensions/token-audit/property-options.js
   var KEYWORD_OPTIONS = {
     display: [
@@ -1026,6 +1195,8 @@
   var STYLE_ID = "slimvg-token-inspect-style";
   var ui = null;
   var panelContext = null;
+  var activeTab = "css";
+  var panelView = { label: "", groups: [] };
   var outsideCloseArmed = false;
   function clearInspectorUi() {
     disarmOutsideClose();
@@ -1179,9 +1350,65 @@
     #${ROOT_ID} .ti-push-status.ok {
       color: #059669;
     }
+    #${ROOT_ID} .ti-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 14px;
+      background: #fafafa;
+      border-bottom: 1px solid #e5e5e5;
+      position: sticky;
+      top: 45px;
+      z-index: 2;
+    }
+    #${ROOT_ID} .ti-tab {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 10px 8px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      color: #737373;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+    #${ROOT_ID} .ti-tab:hover {
+      color: #404040;
+    }
+    #${ROOT_ID} .ti-tab.active {
+      color: #171717;
+      border-bottom-color: #171717;
+    }
     #${ROOT_ID} .ti-group {
       padding: 10px 14px 12px;
       border-bottom: 1px solid #f0f0f0;
+    }
+    #${ROOT_ID} .ti-design-section {
+      padding: 12px 14px 14px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    #${ROOT_ID} .ti-design-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #a3a3a3;
+      margin-bottom: 10px;
+    }
+    #${ROOT_ID} .ti-design-source {
+      font-size: 10px;
+      font-weight: 500;
+      color: #c4c4c4;
+      margin-left: 6px;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    #${ROOT_ID} .ti-design-empty {
+      padding: 24px 14px;
+      font-size: 12px;
+      color: #a3a3a3;
+      text-align: center;
     }
     #${ROOT_ID} .ti-group-title {
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -1519,6 +1746,10 @@
       <div class="ti-hint">
         <span class="ti-hint-text">Hover a value to edit \xB7 Push writes CSS via local writer</span>
       </div>
+      <div class="ti-tabs" role="tablist" aria-label="Inspector views">
+        <button type="button" class="ti-tab active" role="tab" aria-selected="true" data-tab="css">CSS</button>
+        <button type="button" class="ti-tab" role="tab" aria-selected="false" data-tab="design">Design</button>
+      </div>
       <div class="ti-body"></div>
     </aside>
   `;
@@ -1527,12 +1758,29 @@
     panel.querySelector(".ti-close").addEventListener("click", () => {
       ui?.onClose?.();
     });
+    for (const tab of panel.querySelectorAll(".ti-tab")) {
+      tab.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const next = tab.getAttribute("data-tab");
+        if (next !== "css" && next !== "design") return;
+        if (activeTab === next) return;
+        activeTab = next;
+        showInspectPanel(panelView.label, panelView.groups, panelContext);
+      });
+    }
     ui = {
       hoverBox: root.querySelector(".ti-box.hover"),
       selectBox: root.querySelector(".ti-box.select"),
       panel
     };
     return ui;
+  }
+  function syncTabButtons(panel) {
+    for (const tab of panel.querySelectorAll(".ti-tab")) {
+      const isActive = tab.getAttribute("data-tab") === activeTab;
+      tab.classList.toggle("active", isActive);
+      tab.setAttribute("aria-selected", isActive ? "true" : "false");
+    }
   }
   function setHoverTarget(el) {
     const current = ensureInspectorUi();
@@ -1782,14 +2030,22 @@
   function showInspectPanel(label, groups, context) {
     const current = ensureInspectorUi();
     panelContext = context ?? null;
+    panelView = { label, groups: groups ?? [] };
     current.panel.classList.add("open");
     current.panel.querySelector(".ti-selector").textContent = label;
+    syncTabButtons(current.panel);
     const hint = current.panel.querySelector(".ti-hint");
     hint.replaceChildren();
     const hintText = document.createElement("span");
     hintText.className = "ti-hint-text";
     const count = overrideCount();
-    hintText.textContent = count ? `${count} pending edit(s) \xB7 preview only until Push` : "Hover a value to edit \xB7 Push writes CSS via local writer";
+    if (count) {
+      hintText.textContent = `${count} pending edit(s) \xB7 preview only until Push`;
+    } else if (activeTab === "design") {
+      hintText.textContent = "Design view \xB7 edit values like Figma \xB7 Push writes CSS";
+    } else {
+      hintText.textContent = "Hover a value to edit \xB7 Push writes CSS via local writer";
+    }
     hint.appendChild(hintText);
     if (count) {
       const actions = document.createElement("div");
@@ -1834,15 +2090,27 @@
       hint.appendChild(actions);
     }
     current.panel.querySelector(".ti-push-status")?.remove();
+    renderPanelBody();
+  }
+  function renderPanelBody() {
+    const current = ensureInspectorUi();
     const body = current.panel.querySelector(".ti-body");
     body.replaceChildren();
+    const groups = panelView.groups;
     if (!groups.length) {
       const empty = document.createElement("div");
-      empty.className = "ti-hint";
+      empty.className = "ti-design-empty";
       empty.textContent = "No matching stylesheet rules found for this element.";
       body.appendChild(empty);
       return;
     }
+    if (activeTab === "design") {
+      renderDesignBody(body, groups);
+    } else {
+      renderCssBody(body, groups);
+    }
+  }
+  function renderCssBody(body, groups) {
     for (const group of groups) {
       const section = document.createElement("section");
       section.className = "ti-group";
@@ -1857,10 +2125,42 @@
       }
       section.appendChild(title);
       for (const prop of group.properties) {
-        const displayProp = applyOverrideToProp(prop, group.selector, context?.registry);
+        const displayProp = applyOverrideToProp(prop, group.selector, panelContext?.registry);
         section.appendChild(renderProperty(displayProp, group));
       }
       body.appendChild(section);
+    }
+  }
+  function renderDesignBody(body, groups) {
+    const winning = flattenWinningProps(
+      groups,
+      (prop, selector) => applyOverrideToProp(prop, selector, panelContext?.registry)
+    );
+    const sections = listPresentDesignSections(winning);
+    if (!sections.length) {
+      const empty = document.createElement("div");
+      empty.className = "ti-design-empty";
+      empty.textContent = "No Design-mapped properties on this element. Switch to CSS for the full list.";
+      body.appendChild(empty);
+      return;
+    }
+    for (const section of sections) {
+      const el = document.createElement("section");
+      el.className = "ti-design-section";
+      const title = document.createElement("div");
+      title.className = "ti-design-title";
+      title.textContent = section.title;
+      el.appendChild(title);
+      for (const row of section.rows) {
+        const propEl = renderProperty(row.prop, row.group, row.label);
+        const source = document.createElement("span");
+        source.className = "ti-design-source";
+        source.textContent = row.group.selector;
+        source.title = [row.group.selector, row.group.file].filter(Boolean).join(" \xB7 ");
+        propEl.querySelector(".ti-prop-name")?.appendChild(source);
+        el.appendChild(propEl);
+      }
+      body.appendChild(el);
     }
   }
   function setPushStatus(text, kind) {
@@ -1935,15 +2235,14 @@
       preview: true
     };
   }
-  function renderProperty(prop, group) {
-    const selector = group.selector;
+  function renderProperty(prop, group, label) {
     const wrap = document.createElement("div");
     wrap.className = "ti-prop";
     const row = document.createElement("div");
     row.className = "ti-prop-row";
     const name = document.createElement("div");
     name.className = "ti-prop-name";
-    name.textContent = prop.property;
+    name.textContent = label || prop.property;
     row.appendChild(name);
     const valueCell = document.createElement("div");
     if (prop.trees?.length) {

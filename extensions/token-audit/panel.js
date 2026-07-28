@@ -1,3 +1,4 @@
+import { flattenWinningProps, listPresentDesignSections } from './design-pane.js';
 import {
   getPropertyOverride,
   hasOverrides,
@@ -33,6 +34,12 @@ let ui = null;
  *   onPushed?: () => void,
  * } | null} */
 let panelContext = null;
+
+/** @type {'css' | 'design'} */
+let activeTab = 'css';
+
+/** @type {{ label: string, groups: Array<any> }} */
+let panelView = { label: '', groups: [] };
 
 let outsideCloseArmed = false;
 
@@ -189,9 +196,65 @@ function ensureStyles() {
     #${ROOT_ID} .ti-push-status.ok {
       color: #059669;
     }
+    #${ROOT_ID} .ti-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 14px;
+      background: #fafafa;
+      border-bottom: 1px solid #e5e5e5;
+      position: sticky;
+      top: 45px;
+      z-index: 2;
+    }
+    #${ROOT_ID} .ti-tab {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 10px 8px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      color: #737373;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+    #${ROOT_ID} .ti-tab:hover {
+      color: #404040;
+    }
+    #${ROOT_ID} .ti-tab.active {
+      color: #171717;
+      border-bottom-color: #171717;
+    }
     #${ROOT_ID} .ti-group {
       padding: 10px 14px 12px;
       border-bottom: 1px solid #f0f0f0;
+    }
+    #${ROOT_ID} .ti-design-section {
+      padding: 12px 14px 14px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    #${ROOT_ID} .ti-design-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #a3a3a3;
+      margin-bottom: 10px;
+    }
+    #${ROOT_ID} .ti-design-source {
+      font-size: 10px;
+      font-weight: 500;
+      color: #c4c4c4;
+      margin-left: 6px;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    #${ROOT_ID} .ti-design-empty {
+      padding: 24px 14px;
+      font-size: 12px;
+      color: #a3a3a3;
+      text-align: center;
     }
     #${ROOT_ID} .ti-group-title {
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -532,6 +595,10 @@ export function ensureInspectorUi() {
       <div class="ti-hint">
         <span class="ti-hint-text">Hover a value to edit · Push writes CSS via local writer</span>
       </div>
+      <div class="ti-tabs" role="tablist" aria-label="Inspector views">
+        <button type="button" class="ti-tab active" role="tab" aria-selected="true" data-tab="css">CSS</button>
+        <button type="button" class="ti-tab" role="tab" aria-selected="false" data-tab="design">Design</button>
+      </div>
       <div class="ti-body"></div>
     </aside>
   `;
@@ -542,12 +609,31 @@ export function ensureInspectorUi() {
     ui?.onClose?.();
   });
 
+  for (const tab of panel.querySelectorAll('.ti-tab')) {
+    tab.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const next = tab.getAttribute('data-tab');
+      if (next !== 'css' && next !== 'design') return;
+      if (activeTab === next) return;
+      activeTab = next;
+      showInspectPanel(panelView.label, panelView.groups, panelContext);
+    });
+  }
+
   ui = {
     hoverBox: root.querySelector('.ti-box.hover'),
     selectBox: root.querySelector('.ti-box.select'),
     panel,
   };
   return ui;
+}
+
+function syncTabButtons(panel) {
+  for (const tab of panel.querySelectorAll('.ti-tab')) {
+    const isActive = tab.getAttribute('data-tab') === activeTab;
+    tab.classList.toggle('active', isActive);
+    tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  }
 }
 
 export function setHoverTarget(el) {
@@ -888,17 +974,23 @@ function appendPropertyChips(host, prop) {
 export function showInspectPanel(label, groups, context) {
   const current = ensureInspectorUi();
   panelContext = context ?? null;
+  panelView = { label, groups: groups ?? [] };
   current.panel.classList.add('open');
   current.panel.querySelector('.ti-selector').textContent = label;
+  syncTabButtons(current.panel);
 
   const hint = current.panel.querySelector('.ti-hint');
   hint.replaceChildren();
   const hintText = document.createElement('span');
   hintText.className = 'ti-hint-text';
   const count = overrideCount();
-  hintText.textContent = count
-    ? `${count} pending edit(s) · preview only until Push`
-    : 'Hover a value to edit · Push writes CSS via local writer';
+  if (count) {
+    hintText.textContent = `${count} pending edit(s) · preview only until Push`;
+  } else if (activeTab === 'design') {
+    hintText.textContent = 'Design view · edit values like Figma · Push writes CSS';
+  } else {
+    hintText.textContent = 'Hover a value to edit · Push writes CSS via local writer';
+  }
   hint.appendChild(hintText);
 
   if (count) {
@@ -949,17 +1041,31 @@ export function showInspectPanel(label, groups, context) {
   // Clear previous status line
   current.panel.querySelector('.ti-push-status')?.remove();
 
+  renderPanelBody();
+}
+
+function renderPanelBody() {
+  const current = ensureInspectorUi();
   const body = current.panel.querySelector('.ti-body');
   body.replaceChildren();
 
+  const groups = panelView.groups;
   if (!groups.length) {
     const empty = document.createElement('div');
-    empty.className = 'ti-hint';
+    empty.className = 'ti-design-empty';
     empty.textContent = 'No matching stylesheet rules found for this element.';
     body.appendChild(empty);
     return;
   }
 
+  if (activeTab === 'design') {
+    renderDesignBody(body, groups);
+  } else {
+    renderCssBody(body, groups);
+  }
+}
+
+function renderCssBody(body, groups) {
   for (const group of groups) {
     const section = document.createElement('section');
     section.className = 'ti-group';
@@ -976,11 +1082,48 @@ export function showInspectPanel(label, groups, context) {
     section.appendChild(title);
 
     for (const prop of group.properties) {
-      const displayProp = applyOverrideToProp(prop, group.selector, context?.registry);
+      const displayProp = applyOverrideToProp(prop, group.selector, panelContext?.registry);
       section.appendChild(renderProperty(displayProp, group));
     }
 
     body.appendChild(section);
+  }
+}
+
+function renderDesignBody(body, groups) {
+  const winning = flattenWinningProps(groups, (prop, selector) =>
+    applyOverrideToProp(prop, selector, panelContext?.registry)
+  );
+  const sections = listPresentDesignSections(winning);
+
+  if (!sections.length) {
+    const empty = document.createElement('div');
+    empty.className = 'ti-design-empty';
+    empty.textContent = 'No Design-mapped properties on this element. Switch to CSS for the full list.';
+    body.appendChild(empty);
+    return;
+  }
+
+  for (const section of sections) {
+    const el = document.createElement('section');
+    el.className = 'ti-design-section';
+
+    const title = document.createElement('div');
+    title.className = 'ti-design-title';
+    title.textContent = section.title;
+    el.appendChild(title);
+
+    for (const row of section.rows) {
+      const propEl = renderProperty(row.prop, row.group, row.label);
+      const source = document.createElement('span');
+      source.className = 'ti-design-source';
+      source.textContent = row.group.selector;
+      source.title = [row.group.selector, row.group.file].filter(Boolean).join(' · ');
+      propEl.querySelector('.ti-prop-name')?.appendChild(source);
+      el.appendChild(propEl);
+    }
+
+    body.appendChild(el);
   }
 }
 
@@ -1064,8 +1207,12 @@ function applyOverrideToProp(prop, selector, registry) {
   };
 }
 
-function renderProperty(prop, group) {
-  const selector = group.selector;
+/**
+ * @param {any} prop
+ * @param {any} group
+ * @param {string} [label]
+ */
+function renderProperty(prop, group, label) {
   const wrap = document.createElement('div');
   wrap.className = 'ti-prop';
 
@@ -1074,7 +1221,7 @@ function renderProperty(prop, group) {
 
   const name = document.createElement('div');
   name.className = 'ti-prop-name';
-  name.textContent = prop.property;
+  name.textContent = label || prop.property;
   row.appendChild(name);
 
   const valueCell = document.createElement('div');
