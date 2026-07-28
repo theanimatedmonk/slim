@@ -1,6 +1,9 @@
 /**
  * Figma-style Design tab: map authored CSS props into visual sections.
+ * Layout (flex/grid/gap/padding) is rendered by design-layout.js.
  */
+
+import { LAYOUT_EDITOR_PROPS } from './design-layout.js';
 
 /** @typedef {{ property: string, label: string }} DesignField */
 /** @typedef {{ id: string, title: string, fields: DesignField[] }} DesignSectionDef */
@@ -8,22 +11,9 @@
 /** @type {DesignSectionDef[]} */
 export const DESIGN_SECTIONS = [
   {
-    id: 'layout',
-    title: 'Layout',
+    id: 'position',
+    title: 'Position',
     fields: [
-      { property: 'display', label: 'Display' },
-      { property: 'flex-direction', label: 'Direction' },
-      { property: 'flex-wrap', label: 'Wrap' },
-      { property: 'align-items', label: 'Align' },
-      { property: 'align-content', label: 'Align content' },
-      { property: 'justify-content', label: 'Justify' },
-      { property: 'justify-items', label: 'Justify items' },
-      { property: 'gap', label: 'Gap' },
-      { property: 'row-gap', label: 'Row gap' },
-      { property: 'column-gap', label: 'Column gap' },
-      { property: 'grid-template-columns', label: 'Columns' },
-      { property: 'grid-template-rows', label: 'Rows' },
-      { property: 'place-items', label: 'Place' },
       { property: 'position', label: 'Position' },
       { property: 'inset', label: 'Inset' },
       { property: 'top', label: 'Top' },
@@ -40,13 +30,6 @@ export const DESIGN_SECTIONS = [
     id: 'spacing',
     title: 'Spacing',
     fields: [
-      { property: 'padding', label: 'Padding' },
-      { property: 'padding-top', label: 'Padding top' },
-      { property: 'padding-right', label: 'Padding right' },
-      { property: 'padding-bottom', label: 'Padding bottom' },
-      { property: 'padding-left', label: 'Padding left' },
-      { property: 'padding-block', label: 'Padding block' },
-      { property: 'padding-inline', label: 'Padding inline' },
       { property: 'margin', label: 'Margin' },
       { property: 'margin-top', label: 'Margin top' },
       { property: 'margin-right', label: 'Margin right' },
@@ -176,6 +159,7 @@ export function listPresentDesignSections(winning) {
     title: section.title,
     rows: section.fields
       .map((field) => {
+        if (LAYOUT_EDITOR_PROPS.has(field.property)) return null;
         const hit = winning.get(field.property);
         if (!hit) return null;
         return {

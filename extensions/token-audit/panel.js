@@ -1,3 +1,4 @@
+import { hasLayoutEditorContent, renderLayoutEditor } from './design-layout.js';
 import { flattenWinningProps, listPresentDesignSections } from './design-pane.js';
 import {
   getPropertyOverride,
@@ -255,6 +256,160 @@ function ensureStyles() {
       font-size: 12px;
       color: #a3a3a3;
       text-align: center;
+    }
+    #${ROOT_ID} .ti-layout-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: none;
+      letter-spacing: 0;
+      color: #171717;
+      margin-bottom: 0;
+    }
+    #${ROOT_ID} .ti-layout-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    #${ROOT_ID} .ti-layout-row {
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    #${ROOT_ID} .ti-layout-label {
+      font-size: 12px;
+      color: #525252;
+    }
+    #${ROOT_ID} .ti-layout-control {
+      min-width: 0;
+    }
+    #${ROOT_ID} .ti-seg {
+      display: flex;
+      width: 100%;
+      padding: 3px;
+      gap: 2px;
+      background: #f0f0f0;
+      border-radius: 8px;
+    }
+    #${ROOT_ID} .ti-seg-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: #737373;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
+    }
+    #${ROOT_ID} .ti-seg-btn:hover:not(:disabled) {
+      color: #404040;
+    }
+    #${ROOT_ID} .ti-seg-btn.active {
+      background: #fff;
+      color: #171717;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    }
+    #${ROOT_ID} .ti-seg-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    #${ROOT_ID} .ti-seg-btn svg {
+      display: block;
+    }
+    #${ROOT_ID} .ti-layout-select-wrap {
+      width: 100%;
+    }
+    #${ROOT_ID} .ti-layout-select {
+      width: 100%;
+      appearance: none;
+      border: none;
+      background: #f0f0f0 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23737373' d='M3 4.5L6 8l3-3.5'/%3E%3C/svg%3E") no-repeat right 10px center;
+      border-radius: 8px;
+      padding: 7px 28px 7px 10px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      color: #171717;
+      cursor: pointer;
+    }
+    #${ROOT_ID} .ti-layout-select:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    #${ROOT_ID} .ti-layout-num {
+      width: 100%;
+      border: none;
+      background: #f0f0f0;
+      border-radius: 8px;
+      padding: 7px 8px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      color: #171717;
+      outline: none;
+      min-width: 0;
+    }
+    #${ROOT_ID} .ti-layout-num--wide {
+      width: 100%;
+    }
+    #${ROOT_ID} .ti-layout-num:focus {
+      box-shadow: 0 0 0 2px #e5e5e5;
+    }
+    #${ROOT_ID} .ti-layout-pad-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      min-width: 0;
+    }
+    #${ROOT_ID} .ti-layout-pad-controls > .ti-layout-select-wrap {
+      flex: 1;
+      min-width: 0;
+    }
+    #${ROOT_ID} .ti-layout-pad-mode {
+      width: auto;
+      flex-shrink: 0;
+    }
+    #${ROOT_ID} .ti-layout-pad-mode .ti-seg-btn {
+      flex: 0 0 auto;
+      width: 30px;
+      padding: 6px;
+    }
+    #${ROOT_ID} .ti-layout-pad-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      flex: 1;
+      min-width: 0;
+    }
+    #${ROOT_ID} .ti-layout-pad-cell {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    #${ROOT_ID} .ti-layout-pad-cell > span {
+      font-size: 10px;
+      font-weight: 700;
+      color: #a3a3a3;
+      flex-shrink: 0;
+      width: 10px;
+    }
+    #${ROOT_ID} .ti-layout-pad-cell .ti-layout-select-wrap {
+      flex: 1;
+      min-width: 0;
+    }
+    #${ROOT_ID} .ti-layout-pad-cell .ti-layout-select {
+      font-size: 11px;
+      padding-left: 8px;
     }
     #${ROOT_ID} .ti-group-title {
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -1095,13 +1250,26 @@ function renderDesignBody(body, groups) {
     applyOverrideToProp(prop, selector, panelContext?.registry)
   );
   const sections = listPresentDesignSections(winning);
+  const showLayout = hasLayoutEditorContent(winning);
 
-  if (!sections.length) {
+  if (!showLayout && !sections.length) {
     const empty = document.createElement('div');
     empty.className = 'ti-design-empty';
     empty.textContent = 'No Design-mapped properties on this element. Switch to CSS for the full list.';
     body.appendChild(empty);
     return;
+  }
+
+  if (showLayout) {
+    body.appendChild(
+      renderLayoutEditor(winning, {
+        registry: panelContext?.registry,
+        onCommit: (hit, next) => {
+          if (!hit?.prop || !hit?.group) return;
+          commitPropertyEdit(hit.group, { ...hit.prop, property: hit.property }, next);
+        },
+      })
+    );
   }
 
   for (const section of sections) {
