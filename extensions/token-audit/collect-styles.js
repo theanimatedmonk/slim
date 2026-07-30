@@ -295,9 +295,39 @@ function* walkStyleRules(styleSheet, seen = new Set()) {
     } else if (rule.type === CSSRule.IMPORT_RULE) {
       const imported = /** @type {CSSImportRule} */ (rule).styleSheet;
       if (imported) yield* walkStyleRules(imported, seen);
+    } else if (rule.type === CSSRule.MEDIA_RULE) {
+      // Skip inactive breakpoints — otherwise mobile `display: flex` merges over
+      // desktop `display: grid` for the same selector.
+      if (!mediaRuleMatches(/** @type {CSSMediaRule} */ (rule))) continue;
+      yield* walkStyleRules(/** @type {any} */ (rule), seen);
+    } else if (rule.type === CSSRule.SUPPORTS_RULE) {
+      if (!supportsRuleMatches(/** @type {CSSSupportsRule} */ (rule))) continue;
+      yield* walkStyleRules(/** @type {any} */ (rule), seen);
     } else if ('cssRules' in rule && rule.cssRules) {
-      yield* walkStyleRules(/** @type {CSSStyleSheet} */ (rule), seen);
+      yield* walkStyleRules(/** @type {any} */ (rule), seen);
     }
+  }
+}
+
+/** @param {CSSMediaRule} rule */
+function mediaRuleMatches(rule) {
+  try {
+    const text = rule.media?.mediaText || rule.conditionText || '';
+    if (!text || text === 'all') return true;
+    return window.matchMedia(text).matches;
+  } catch {
+    return true;
+  }
+}
+
+/** @param {CSSSupportsRule} rule */
+function supportsRuleMatches(rule) {
+  try {
+    const text = rule.conditionText || '';
+    if (!text) return true;
+    return CSS.supports(text);
+  } catch {
+    return true;
   }
 }
 

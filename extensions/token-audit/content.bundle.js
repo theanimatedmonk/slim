@@ -431,13 +431,51 @@
           rule.styleSheet
         );
         if (imported) yield* walkStyleRules(imported, seen);
+      } else if (rule.type === CSSRule.MEDIA_RULE) {
+        if (!mediaRuleMatches(
+          /** @type {CSSMediaRule} */
+          rule
+        )) continue;
+        yield* walkStyleRules(
+          /** @type {any} */
+          rule,
+          seen
+        );
+      } else if (rule.type === CSSRule.SUPPORTS_RULE) {
+        if (!supportsRuleMatches(
+          /** @type {CSSSupportsRule} */
+          rule
+        )) continue;
+        yield* walkStyleRules(
+          /** @type {any} */
+          rule,
+          seen
+        );
       } else if ("cssRules" in rule && rule.cssRules) {
         yield* walkStyleRules(
-          /** @type {CSSStyleSheet} */
+          /** @type {any} */
           rule,
           seen
         );
       }
+    }
+  }
+  function mediaRuleMatches(rule) {
+    try {
+      const text = rule.media?.mediaText || rule.conditionText || "";
+      if (!text || text === "all") return true;
+      return window.matchMedia(text).matches;
+    } catch {
+      return true;
+    }
+  }
+  function supportsRuleMatches(rule) {
+    try {
+      const text = rule.conditionText || "";
+      if (!text) return true;
+      return CSS.supports(text);
+    } catch {
+      return true;
     }
   }
   function fileNameFromHref2(href) {
@@ -908,7 +946,7 @@
       "padding-top"
     ]);
     const paddingTarget = winning.get("padding") ? { ...winning.get("padding"), property: "padding" } : paddingHit;
-    const display = authored(displayHit).toLowerCase();
+    const display = String(hooks.computedDisplay || authored(displayHit) || "").toLowerCase();
     const isStack = display === "flex" || display === "inline-flex";
     const isGrid = display === "grid" || display === "inline-grid";
     if (displayHit) {
@@ -1327,7 +1365,7 @@
   ];
   function flattenWinningProps(groups, applyOverride) {
     const map = /* @__PURE__ */ new Map();
-    for (const group of groups) {
+    for (const group of [...groups].reverse()) {
       for (const prop of group.properties) {
         map.set(prop.property, {
           prop: applyOverride(prop, group.selector),
@@ -2723,9 +2761,11 @@
       return;
     }
     if (showLayout) {
+      const computedDisplay = panelContext?.element instanceof Element ? getComputedStyle(panelContext.element).display : "";
       body.appendChild(
         renderLayoutEditor(winning, {
           registry: panelContext?.registry,
+          computedDisplay,
           onCommit: (hit, next) => {
             if (!hit?.prop || !hit?.group) return;
             commitPropertyEdit(hit.group, { ...hit.prop, property: hit.property }, next);
@@ -3075,6 +3115,7 @@
     const groups = collectMatchedStyles(selectedEl, tokenRegistry);
     showInspectPanel(elementLabel(selectedEl), groups, {
       registry: tokenRegistry,
+      element: selectedEl,
       onRefresh: refreshSelectedPanel,
       onReset: () => {
         clearOverrides(tokenRegistry);

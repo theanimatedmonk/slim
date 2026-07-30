@@ -130,7 +130,8 @@ export const DESIGN_SECTIONS = [
 ];
 
 /**
- * Last declaration wins across matched groups (same cascade order as collectMatchedStyles).
+ * Build a property → winning declaration map for the Design tab.
+ * Groups are UI-sorted (specific first); we apply reverse so those win.
  * @param {Array<{ selector: string, file: string, sourcePath?: string, properties: Array<any> }>} groups
  * @param {(prop: any, selector: string) => any} applyOverride
  * @returns {Map<string, { prop: any, group: any }>}
@@ -138,7 +139,9 @@ export const DESIGN_SECTIONS = [
 export function flattenWinningProps(groups, applyOverride) {
   /** @type {Map<string, { prop: any, group: any }>} */
   const map = new Map();
-  for (const group of groups) {
+  // `groups` is UI-sorted with more specific / relevant selectors first.
+  // Apply in reverse so those preferred declarations win the Design model.
+  for (const group of [...groups].reverse()) {
     for (const prop of group.properties) {
       map.set(prop.property, {
         prop: applyOverride(prop, group.selector),

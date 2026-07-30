@@ -40,6 +40,7 @@ function refreshSelectedPanel() {
   const groups = collectMatchedStyles(selectedEl, tokenRegistry);
   showInspectPanel(elementLabel(selectedEl), groups, {
     registry: tokenRegistry,
+    element: selectedEl,
     onRefresh: refreshSelectedPanel,
     onReset: () => {
       clearOverrides(tokenRegistry);

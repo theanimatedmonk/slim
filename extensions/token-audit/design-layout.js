@@ -164,6 +164,7 @@ function isUniformPadding(value) {
  * @param {{
  *   onCommit: (hit: { prop: any, group: any, property: string }, next: string) => void,
  *   registry?: Map<string, any> | null,
+ *   computedDisplay?: string,
  * }} hooks
  */
 export function renderLayoutEditor(winning, hooks) {
@@ -196,7 +197,9 @@ export function renderLayoutEditor(winning, hooks) {
     ? { ...winning.get('padding'), property: 'padding' }
     : paddingHit;
 
-  const display = authored(displayHit).toLowerCase();
+  // Prefer live computed display so Type matches what's on screen (not an
+  // inactive breakpoint's authored value).
+  const display = String(hooks.computedDisplay || authored(displayHit) || '').toLowerCase();
   const isStack = display === 'flex' || display === 'inline-flex';
   const isGrid = display === 'grid' || display === 'inline-grid';
 

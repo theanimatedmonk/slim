@@ -30,6 +30,7 @@ let ui = null;
 
 /** @type {{
  *   registry: Map<string, { value: string, file: string, layer: string }>,
+ *   element?: Element | null,
  *   onRefresh?: () => void,
  *   onReset?: () => void,
  *   onPushed?: () => void,
@@ -1121,6 +1122,7 @@ function appendPropertyChips(host, prop) {
  * @param {Array<{ selector: string, file: string, sourcePath?: string, properties: Array<any> }>} groups
  * @param {{
  *   registry: Map<string, any>,
+ *   element?: Element | null,
  *   onRefresh?: () => void,
  *   onReset?: () => void,
  *   onPushed?: () => void,
@@ -1261,9 +1263,15 @@ function renderDesignBody(body, groups) {
   }
 
   if (showLayout) {
+    const computedDisplay =
+      panelContext?.element instanceof Element
+        ? getComputedStyle(panelContext.element).display
+        : '';
+
     body.appendChild(
       renderLayoutEditor(winning, {
         registry: panelContext?.registry,
+        computedDisplay,
         onCommit: (hit, next) => {
           if (!hit?.prop || !hit?.group) return;
           commitPropertyEdit(hit.group, { ...hit.prop, property: hit.property }, next);
