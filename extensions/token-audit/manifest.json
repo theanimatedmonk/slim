@@ -24,6 +24,7 @@
         "http://localhost/*",
         "http://127.0.0.1/*"
       ],
+      "css": ["panel.css"],
       "js": ["content.bundle.js"],
       "run_at": "document_idle"
     }

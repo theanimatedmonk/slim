@@ -43,6 +43,8 @@ const DISTRIBUTE_OPTIONS = [
 ];
 
 const ICONS = {
+  stack: `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="3" y="2.5" width="10" height="2.5" rx="0.75" fill="currentColor"/><rect x="3" y="6.75" width="10" height="2.5" rx="0.75" fill="currentColor"/><rect x="3" y="11" width="10" height="2.5" rx="0.75" fill="currentColor"/></svg>`,
+  grid: `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="2.5" y="2.5" width="4.5" height="4.5" rx="0.75" fill="currentColor"/><rect x="9" y="2.5" width="4.5" height="4.5" rx="0.75" fill="currentColor"/><rect x="2.5" y="9" width="4.5" height="4.5" rx="0.75" fill="currentColor"/><rect x="9" y="9" width="4.5" height="4.5" rx="0.75" fill="currentColor"/></svg>`,
   row: `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M2 7.25h9.2L8.6 4.65l.7-.7L13.4 8l-4.1 4.05-.7-.7 2.6-2.6H2v-1.5z"/></svg>`,
   column: `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M7.25 2v9.2l-2.6-2.6-.7.7L8 13.4l4.05-4.1-.7-.7-2.6 2.6V2h-1.5z"/></svg>`,
   alignStart: `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M2 2.5h12v1.25H2V2.5zm3 3.5h6v2H5v-2zm0 4h6v2H5v-2z"/></svg>`,
@@ -207,12 +209,16 @@ export function renderLayoutEditor(winning, hooks) {
     root.appendChild(
       row('Type', segment([
         {
+          html: ICONS.stack,
           label: 'Stack',
+          title: 'Stack',
           active: isStack,
           onClick: () => hooks.onCommit(displayHit, 'flex'),
         },
         {
+          html: ICONS.grid,
           label: 'Grid',
+          title: 'Grid',
           active: isGrid,
           onClick: () => hooks.onCommit(displayHit, 'grid'),
         },
@@ -452,8 +458,13 @@ function segment(items) {
     } else if (item.title) {
       btn.title = item.title;
     }
-    if (item.html) btn.innerHTML = item.html;
-    else btn.textContent = item.label || '';
+    if (item.html && item.label) {
+      btn.innerHTML = `${item.html}<span>${item.label}</span>`;
+    } else if (item.html) {
+      btn.innerHTML = item.html;
+    } else {
+      btn.textContent = item.label || '';
+    }
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
